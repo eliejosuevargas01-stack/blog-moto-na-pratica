@@ -286,6 +286,20 @@ add_action('wp_enqueue_scripts', function() {
 });
 
 /**
+ * Register a dynamic sidebar for the single post page.
+ */
+add_action('widgets_init', function() {
+    register_sidebar([
+        'name'          => 'Moto Sidebar',
+        'id'            => 'moto-sidebar',
+        'before_widget' => '<div id="%1$s" class="moto-sidebar-card widget %2$s">',
+        'after_widget'  => '</div>',
+        'before_title'  => '<div class="moto-sidebar-header"><span class="moto-sidebar-bar"></span><h3 class="moto-sidebar-title">',
+        'after_title'   => '</h3></div>',
+    ]);
+});
+
+/**
  * Register block pattern category and the "Hero do Post" reusable pattern.
  *
  * Usage: in the post editor, open the Block Inserter ("+"), go to "Patterns",
@@ -321,5 +335,36 @@ add_action('init', function() {
         'description' => 'Seção hero com imagem destacada, ponto focal drag-and-drop, categoria e título. Insira como PRIMEIRO bloco do post.',
         'categories'  => ['moto-single'],
         'content'     => $pattern_content,
+    ]);
+
+    // Newsletter Pattern
+    register_block_pattern('moto-single/newsletter', [
+        'title'       => 'Newsletter Moto',
+        'description' => 'Card de newsletter estilizado para a barra lateral ou conteúdo.',
+        'categories'  => ['moto-single'],
+        'content'     => '<!-- wp:group {"className":"moto-sidebar-card moto-sidebar-newsletter"} -->
+            <div class="wp-block-group moto-sidebar-card moto-sidebar-newsletter">
+            <!-- wp:heading {"level":3,"className":"moto-newsletter-title"} --><h3 class="moto-newsletter-title">Receba novos posts</h3><!-- /wp:heading -->
+            <!-- wp:paragraph {"className":"moto-newsletter-text"} --><p class="moto-newsletter-text">Sem spam. Só artigo novo quando sai.</p><!-- /wp:paragraph -->
+            <!-- wp:html -->
+            <form class="moto-newsletter-form"><input type="email" placeholder="seu@email.com" class="moto-newsletter-input" /><button type="submit" class="moto-newsletter-submit-btn">Inscrever</button></form>
+            <!-- /wp:html -->
+            </div><!-- /wp:group -->',
+    ]);
+
+    // About Pattern
+    register_block_pattern('moto-single/about', [
+        'title'       => 'Sobre o Blog (Sidebar)',
+        'description' => 'Card "Sobre o blog" para a barra lateral.',
+        'categories'  => ['moto-single'],
+        'content'     => '<!-- wp:group {"className":"moto-sidebar-card"} -->
+            <div class="wp-block-group moto-sidebar-card">
+            <!-- wp:group {"className":"moto-sidebar-header","layout":{"type":"flex","flexWrap":"nowrap"}} -->
+            <div class="wp-block-group moto-sidebar-header"><span class="moto-sidebar-bar"></span><!-- wp:heading {"level":3,"className":"moto-sidebar-title"} --><h3 class="moto-sidebar-title">Sobre o blog</h3><!-- /wp:heading --></div>
+            <!-- /wp:group -->
+            <!-- wp:image {"className":"moto-sidebar-about-img-wrap"} --><figure class="wp-block-image moto-sidebar-about-img-wrap"><img src="https://images.unsplash.com/photo-1761000989410-3fa81f1b94cb?w=640&h=280&fit=crop" alt="" class="moto-sidebar-about-img"/></figure><!-- /wp:image -->
+            <!-- wp:paragraph {"className":"moto-sidebar-about-text"} --><p class="moto-sidebar-about-text">Motociclista por paixão, dono de uma Fazer 250 Solid Grey 2026. Escrevo sobre o que vivo na estrada.</p><!-- /wp:paragraph -->
+            <!-- wp:paragraph {"className":"moto-sidebar-about-link"} --><p class="moto-sidebar-about-link"><a href="/sobre">Conhecer mais →</a></p><!-- /wp:paragraph -->
+            </div><!-- /wp:group -->',
     ]);
 });
