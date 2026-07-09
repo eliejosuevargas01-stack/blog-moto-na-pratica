@@ -1,18 +1,7 @@
 <?php
 /**
  * Custom single post template — Moto na Prática
- *
- * Hero section is now a Gutenberg Cover block (inserted via the "Hero do Post"
- * block pattern). This gives full WYSIWYG editing and a built-in focal point
- * picker directly in the post editor — no publishing needed to see the result.
- *
- * How to use when creating a new post:
- *  1. Open the post in the block editor.
- *  2. Click the "+" block inserter.
- *  3. Go to the "Patterns" tab → "🏍 Moto na Prática".
- *  4. Click "Hero do Post" — it inserts the Cover block as the first block.
- *  5. Drag the ⊕ focal point crosshair on the image to frame your shot.
- *  6. Write the body content below the Cover block normally.
+ * Matches the Figma React design (Post.tsx)
  *
  * @package Blocksy
  */
@@ -23,18 +12,54 @@ if (have_posts()) {
 
 $post_id = get_the_ID();
 
+// Read time calculation
+$content = get_post_field('post_content', $post_id);
+$word_count = str_word_count(strip_tags($content));
+$read_time = ceil($word_count / 200) . ' min';
+
+$feat_img = get_the_post_thumbnail_url($post_id, 'full') ?: 'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=2070&auto=format&fit=crop';
+$cat_label = moto_render_post_tag($post_id);
+
 ?>
 
 <div class="moto-single-post-container">
 
-    <!-- =============================================
-         MAIN CONTENT AREA (Hero + Body + Sidebar)
-         ============================================= -->
+    <!-- HERO SECTION (Full Width) -->
+    <div class="moto-hero-section" style="background-image: url('<?php echo esc_url($feat_img); ?>');">
+        <div class="moto-hero-overlay"></div>
+        <div class="moto-hero-inner">
+            <div class="moto-hero-back">
+                <a href="javascript:history.back()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                    Voltar
+                </a>
+            </div>
+            <div class="moto-hero-meta">
+                <span class="moto-hero-badge"><?php echo esc_html($cat_label); ?></span>
+                <span class="moto-hero-read-time">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    <?php echo esc_html($read_time); ?> de leitura
+                </span>
+                <span class="moto-hero-date"><?php echo get_the_date('j M Y'); ?></span>
+            </div>
+            <h1 class="moto-hero-title"><?php the_title(); ?></h1>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT AREA (Two Column) -->
     <div class="moto-content-area">
         <div class="moto-main-column">
 
             <div class="moto-post-content-wrap">
-                <?php the_content(); ?>
+                <?php if (has_excerpt()) : ?>
+                    <div class="moto-post-excerpt">
+                        <?php echo get_the_excerpt(); ?>
+                    </div>
+                <?php endif; ?>
+
+                <div class="moto-article-body">
+                    <?php the_content(); ?>
+                </div>
             </div>
 
             <!-- Tags -->
@@ -66,7 +91,6 @@ $post_id = get_the_ID();
             ]);
             $related_posts = $related_query->posts;
 
-            // Fallback: fill with latest posts if fewer than 2 related found
             if (count($related_posts) < 2) {
                 $exclude_ids = array_merge([$post_id], array_column($related_posts, 'ID'));
                 $fallback    = new WP_Query([
@@ -122,12 +146,10 @@ $post_id = get_the_ID();
 
         </div><!-- .moto-main-column -->
 
-        <!-- Sidebar -->
         <aside class="moto-sidebar-column">
             <?php if (is_active_sidebar('moto-sidebar')) : ?>
                 <?php dynamic_sidebar('moto-sidebar'); ?>
             <?php else : ?>
-                <!-- Fallback: About Card -->
                 <div class="moto-sidebar-card">
                     <div class="moto-sidebar-header">
                         <span class="moto-sidebar-bar"></span>
@@ -145,7 +167,6 @@ $post_id = get_the_ID();
                     </a>
                 </div>
 
-                <!-- Fallback: Categories Card -->
                 <div class="moto-sidebar-card">
                     <div class="moto-sidebar-header">
                         <span class="moto-sidebar-bar"></span>
@@ -169,7 +190,6 @@ $post_id = get_the_ID();
                     </ul>
                 </div>
 
-                <!-- Fallback: Newsletter Card -->
                 <div class="moto-sidebar-card moto-sidebar-newsletter">
                     <h3 class="moto-newsletter-title">Receba novos posts</h3>
                     <p class="moto-newsletter-text">Sem spam. Só artigo novo quando sai.</p>
@@ -179,12 +199,11 @@ $post_id = get_the_ID();
                     </form>
                 </div>
             <?php endif; ?>
-        </aside><!-- .moto-sidebar-column -->
-    </div><!-- .moto-content-area -->
+        </aside>
+    </div>
 
-</div><!-- .moto-single-post-container -->
+</div>
 
 <?php
-have_posts();
 wp_reset_query();
 ?>

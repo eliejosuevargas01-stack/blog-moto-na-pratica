@@ -7,8 +7,8 @@
  *  2. Global overrides (Blocksy wrappers)
  *  3. Scrollbar
  *  4. Main container
- *  5. Cover block hero (Gutenberg — WYSIWYG editing)
- *  6. Post content body (paragraphs, headings)
+ *  5. Hero section (Full Width)
+ *  6. Post content body (excerpt, paragraphs, headings)
  *  7. Tags section
  *  8. Related posts grid
  *  9. Sidebar widgets
@@ -44,10 +44,9 @@ body.single-post main {
     margin: 0 !important;
     max-width: none !important;
     overflow-x: hidden !important;
-    background-color: var(--moto-bg) !important;
 }
 
-/* Remove default Blocksy card background, borders, padding and shadows from boxed post layouts */
+/* Remove default Blocksy card background and borders */
 body.single-post article,
 body.single-post .post-wrapper,
 body.single-post .entry-content,
@@ -55,13 +54,12 @@ body.single-post [data-layout],
 body.single-post .ct-container,
 body.single-post .ct-container-inner {
     background: transparent !important;
-    background-color: transparent !important;
     box-shadow: none !important;
     border: none !important;
     padding: 0 !important;
 }
 
-/* Ensure dynamic widgets use Teko for titles and match Moto styles */
+/* Ensure dynamic widgets use Teko for titles */
 .moto-sidebar-card .widgettitle,
 .moto-sidebar-card .widget-title,
 .moto-sidebar-card h2,
@@ -73,57 +71,6 @@ body.single-post .ct-container-inner {
     letter-spacing: 0.05em !important;
     margin: 0 !important;
     color: var(--moto-fg) !important;
-}
-
-/* Standard WordPress Category Widget styles */
-.moto-sidebar-card.widget_categories ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.moto-sidebar-card.widget_categories ul li {
-    border-bottom: 1px solid var(--moto-border);
-}
-
-.moto-sidebar-card.widget_categories ul li a {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 0;
-    font-size: 13px;
-    color: var(--moto-muted-fg);
-    text-decoration: none !important;
-}
-
-.moto-sidebar-card.widget_categories ul li a:hover {
-    color: var(--moto-fg);
-}
-
-/* Standard WordPress Tag Cloud Widget styles */
-.moto-sidebar-card.widget_tag_cloud .tagcloud {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.moto-sidebar-card.widget_tag_cloud .tagcloud a {
-    display: inline-flex !important;
-    align-items: center;
-    padding: 4px 10px !important;
-    background-color: var(--moto-secondary);
-    border: 1px solid var(--moto-border);
-    font-size: 11px !important;
-    color: var(--moto-muted-fg) !important;
-    text-decoration: none !important;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    transition: all 0.2s ease;
-}
-
-.moto-sidebar-card.widget_tag_cloud .tagcloud a:hover {
-    color: var(--moto-primary) !important;
-    border-color: rgba(200, 16, 46, 0.4);
 }
 
 /* ===========================
@@ -151,197 +98,149 @@ body.single-post .ct-container-inner {
 }
 
 /* ===========================
-   5. COVER BLOCK HERO
-   (Gutenberg Cover with useFeaturedImage)
-
-   How it works:
-   - User inserts the "Hero do Post" block pattern as the first block
-   - The Cover block shows the featured image live in the editor
-   - Drag the ⊕ crosshair to set the focal point per-post
-   - The gradient, typography and layout are applied via this CSS
+   5. HERO SECTION
    =========================== */
-
-/* Wrapper for the_content() */
-.moto-post-content-wrap {
+.moto-hero-section {
     position: relative;
+    width: 100vw;
+    height: 60vh;
+    min-height: 400px;
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
 }
 
-/*
-   Since the Cover block is now inside .moto-content-area (the grid),
-   we need to break it out to be full-screen width while maintaining
-   its position as the first element.
-*/
-.moto-post-content-wrap .moto-hero-cover.alignfull,
-.moto-post-content-wrap .wp-block-cover.alignfull.moto-hero-cover {
-    width: 100vw !important;
-    max-width: 100vw !important;
-    position: relative;
-    left: 50%;
-    right: 50%;
-    margin-left: -50vw !important;
-    margin-right: -50vw !important;
-    margin-top: -64px !important; /* Offset the top padding of .moto-content-area */
-    margin-bottom: 40px !important;
-}
-
-@media (max-width: 1023px) {
-    .moto-post-content-wrap .moto-hero-cover.alignfull,
-    .moto-post-content-wrap .wp-block-cover.alignfull.moto-hero-cover {
-        margin-left: calc(-50vw - 12px) !important;
-        margin-right: calc(-50vw - 12px) !important;
-    }
-}
-
-/* Replace the Cover block's default solid dim with our custom gradient */
-.moto-hero-cover .wp-block-cover__background {
+.moto-hero-overlay {
+    position: absolute;
+    inset: 0;
     background: linear-gradient(
         to top,
         rgba(0,0,0,0.90) 0%,
         rgba(0,0,0,0.40) 55%,
         rgba(0,0,0,0.15) 100%
-    ) !important;
-    opacity: 1 !important;
+    );
+    z-index: 1;
 }
 
-/* Featured image inside the Cover block */
-.moto-hero-cover .wp-block-cover__image-background {
-    object-fit: cover;
-    width: 100% !important;
-    height: 100% !important;
-    position: absolute !important;
-    inset: 0;
-}
-
-/* Inner container — aligned bottom-left (set via contentPosition in block attrs) */
-.moto-hero-cover .wp-block-cover__inner-container {
+.moto-hero-inner {
+    position: relative;
+    z-index: 2;
     width: 100%;
     max-width: 900px;
-    padding: 0 24px 40px;
+    margin-left: max(0px, calc((100vw - 1200px) / 2));
+    padding: 0 24px 60px;
     display: flex;
     flex-direction: column;
     gap: 12px;
 }
 
-@media (min-width: 768px) {
-    .moto-hero-cover .wp-block-cover__inner-container {
-        padding: 0 48px 40px;
-    }
-}
-
-/* "← Voltar" back link */
-.moto-hero-cover .moto-back-link,
-.moto-hero-cover .moto-back-link p {
-    margin: 0 0 8px;
-}
-
-.moto-hero-cover .moto-back-link a {
+.moto-hero-back a {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     font-family: var(--moto-font-barlow);
     font-size: 12px;
-    color: var(--moto-muted-fg) !important;
+    color: var(--moto-muted-fg);
     text-decoration: none !important;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     transition: color 0.2s ease;
 }
 
-.moto-hero-cover .moto-back-link a:hover {
-    color: #FFFFFF !important;
-}
+.moto-hero-back a:hover { color: #FFFFFF; }
 
-/* Badges row (category + date) */
-.moto-hero-cover .moto-hero-badges {
+.moto-hero-meta {
     display: flex;
     align-items: center;
     gap: 12px;
     flex-wrap: wrap;
-    margin: 0;
 }
 
-/* Category badge */
-.moto-hero-cover .moto-badge a,
-.moto-hero-cover .moto-badge .wp-block-post-terms__link,
-.moto-hero-cover .wp-block-post-terms a {
-    font-family: var(--moto-font-barlow) !important;
-    font-size: 11px !important;
-    font-weight: 700 !important;
-    text-transform: uppercase !important;
+.moto-hero-badge {
+    font-family: var(--moto-font-barlow);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
     letter-spacing: 0.15em;
     padding: 4px 8px;
     background-color: var(--moto-primary);
-    color: #FFFFFF !important;
-    text-decoration: none !important;
-    display: inline-block;
+    color: #FFFFFF;
 }
 
-/* Date badge */
-.moto-hero-cover .moto-post-date-badge a,
-.moto-hero-cover .moto-post-date-badge time,
-.moto-hero-cover .wp-block-post-date a,
-.moto-hero-cover .wp-block-post-date time {
-    font-size: 12px !important;
-    color: var(--moto-muted-fg) !important;
-    text-decoration: none !important;
+.moto-hero-read-time {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--moto-muted-fg);
 }
 
-/* Hero H1 title (Post Title block inside Cover) */
-.moto-hero-cover .moto-hero-title,
-.moto-hero-cover .wp-block-post-title {
-    font-family: var(--moto-font-teko) !important;
-    font-size: 44px !important;
-    font-weight: 600 !important;
-    line-height: 1.0 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.02em !important;
-    color: #FFFFFF !important;
-    margin: 0 !important;
+.moto-hero-date {
+    font-size: 12px;
+    color: var(--moto-muted-fg);
+}
+
+.moto-hero-title {
+    font-family: var(--moto-font-teko);
+    font-size: 44px;
+    font-weight: 600;
+    line-height: 1.0;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: #FFFFFF;
+    margin: 0;
 }
 
 @media (min-width: 768px) {
-    .moto-hero-cover .moto-hero-title,
-    .moto-hero-cover .wp-block-post-title {
-        font-size: 64px !important;
-    }
+    .moto-hero-inner { padding-bottom: 60px; padding-left: 48px; }
+    .moto-hero-title { font-size: 64px; }
 }
 
 /* ===========================
    6. POST CONTENT BODY
-   (paragraphs and headings below the hero)
    =========================== */
-
-/* Constrain text content inside the main column */
-.moto-post-content-wrap .wp-block-paragraph,
-.moto-post-content-wrap .wp-block-heading,
-.moto-post-content-wrap .wp-block-list,
-.moto-post-content-wrap .wp-block-quote,
-.moto-post-content-wrap .wp-block-pullquote,
-.moto-post-content-wrap .wp-block-table {
-    max-width: 100% !important; /* Let the grid column handle width */
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
+.moto-content-area {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 64px 24px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 56px;
 }
 
-/* Paragraph */
-.moto-post-content-wrap .wp-block-paragraph {
+@media (min-width: 1024px) {
+    .moto-content-area {
+        grid-template-columns: 1fr 300px;
+        padding: 64px 48px;
+    }
+}
+
+.moto-main-column { min-width: 0; }
+
+.moto-post-excerpt {
+    font-size: 17px;
+    color: #BBBBBB;
+    line-height: 1.6;
+    border-left: 2px solid var(--moto-primary);
+    padding-left: 20px;
+    margin-bottom: 40px;
+}
+
+.moto-article-body {
     font-family: var(--moto-font-barlow);
     font-size: 15px;
     color: var(--moto-muted-fg);
     line-height: 1.7;
-    margin-bottom: 20px;
 }
 
-/* Strong inside paragraph */
-.moto-post-content-wrap .wp-block-paragraph strong {
-    color: var(--moto-fg);
-}
+.moto-article-body p { margin-bottom: 20px; }
+.moto-article-body strong { color: var(--moto-fg); }
 
-/* Headings (H2, H3) */
-.moto-post-content-wrap .wp-block-heading {
+.moto-article-body h2 {
     font-family: var(--moto-font-teko);
+    font-size: 28px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -349,36 +248,7 @@ body.single-post .ct-container-inner {
     padding-top: 16px;
     border-top: 1px solid var(--moto-border);
     margin-top: 32px;
-}
-
-.moto-post-content-wrap h2.wp-block-heading { font-size: 28px; }
-.moto-post-content-wrap h3.wp-block-heading { font-size: 22px; }
-
-/* Quote / Pullquote as excerpt callout */
-.moto-post-content-wrap .wp-block-quote,
-.moto-post-content-wrap .wp-block-pullquote {
-    border-left: 2px solid var(--moto-primary);
-    padding-left: 20px;
-    font-size: 17px;
-    color: #BBBBBB;
-    line-height: 1.6;
-    margin-bottom: 40px;
-}
-
-.moto-post-content-wrap .wp-block-quote p,
-.moto-post-content-wrap .wp-block-pullquote p {
-    margin: 0;
-    color: #BBBBBB;
-}
-
-/* Space between hero cover and first content block */
-.moto-post-content-wrap .moto-hero-cover + * {
-    margin-top: 40px;
-}
-
-/* Space below content before the two-column area */
-.moto-post-content-wrap {
-    padding-bottom: 0;
+    margin-bottom: 20px;
 }
 
 /* ===========================
@@ -428,27 +298,8 @@ body.single-post .ct-container-inner {
 }
 
 /* ===========================
-   8. TWO-COLUMN CONTENT AREA
-   (tags + related posts / sidebar)
+   8. RELATED POSTS
    =========================== */
-.moto-content-area {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 64px 24px;
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 56px;
-}
-
-@media (min-width: 1024px) {
-    .moto-content-area {
-        grid-template-columns: 1fr 300px;
-    }
-}
-
-.moto-main-column { min-width: 0; }
-
-/* RELATED POSTS */
 .moto-related-section { margin-top: 48px; }
 
 .moto-section-header {
@@ -463,7 +314,6 @@ body.single-post .ct-container-inner {
     width: 4px;
     height: 24px;
     background-color: var(--moto-primary);
-    flex-shrink: 0;
 }
 
 .moto-section-title {
@@ -502,7 +352,6 @@ body.single-post .ct-container-inner {
 .moto-related-card-img-wrap {
     position: relative;
     height: 160px;
-    overflow: hidden;
 }
 
 .moto-related-card-img {
@@ -526,15 +375,11 @@ body.single-post .ct-container-inner {
     z-index: 2;
 }
 
-/* Category badge colors (used in hero and related cards) */
-.moto-tag-review, .category-review a { background-color: #C8102E; color: #FFFFFF; }
-.moto-tag-manutencao,
-.moto-tag-manutenção    { background-color: #2A2A2A; color: #AAAAAA; }
-.moto-tag-rotas         { background-color: #1A3A2A; color: #6EC49A; }
-.moto-tag-equipamentos  { background-color: #1A2A3A; color: #6EAAC4; }
-.moto-tag-dicas         { background-color: #252525; color: #AAAAAA; }
-.moto-tag-default,
-.moto-tag-sin-categoria { background-color: #252525; color: #AAAAAA; }
+/* Category Specific Colors */
+.moto-tag-review { background-color: #C8102E; color: #FFFFFF; }
+.moto-tag-manutencao { background-color: #2A2A2A; color: #AAAAAA; }
+.moto-tag-rotas { background-color: #1A3A2A; color: #6EC49A; }
+.moto-tag-equipamentos { background-color: #1A2A3A; color: #6EAAC4; }
 
 .moto-related-card-body { padding: 16px; }
 
@@ -545,7 +390,6 @@ body.single-post .ct-container-inner {
     line-height: 1.2;
     text-transform: uppercase;
     margin: 0 0 6px;
-    transition: color 0.2s ease;
 }
 
 .moto-related-card-title a {
@@ -591,7 +435,6 @@ body.single-post .ct-container-inner {
     width: 4px;
     height: 20px;
     background-color: var(--moto-primary);
-    flex-shrink: 0;
 }
 
 .moto-sidebar-title {
@@ -678,50 +521,10 @@ body.single-post .ct-container-inner {
     color: var(--moto-secondary-fg);
 }
 
-/* Tag cloud */
-.moto-sidebar-tags-cloud {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-.moto-sidebar-tag-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 10px;
-    background-color: var(--moto-secondary);
-    border: 1px solid var(--moto-border);
-    font-size: 11px;
-    color: var(--moto-muted-fg);
-    text-decoration: none !important;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    transition: all 0.2s ease;
-}
-
-.moto-sidebar-tag-btn:hover {
-    color: var(--moto-primary);
-    border-color: rgba(200, 16, 46, 0.4);
-}
-
-/* Newsletter (Standard and Plugin widgets) */
-.moto-sidebar-newsletter,
-.widget_mailchimp_sf,
-.widget_wpforms_widget {
-    background-color: var(--moto-primary) !important;
-    border: none !important;
-    padding: 24px;
-}
-
-.widget_mailchimp_sf .moto-sidebar-title,
-.widget_wpforms_widget .moto-sidebar-title {
-    color: #FFFFFF !important;
-}
-
-.widget_mailchimp_sf .moto-sidebar-bar,
-.widget_wpforms_widget .moto-sidebar-bar {
-    background-color: #A50D25 !important;
+/* Newsletter */
+.moto-sidebar-newsletter {
+    background-color: var(--moto-primary);
+    border: none;
 }
 
 .moto-newsletter-title {
