@@ -13,16 +13,58 @@ if (have_posts()) {
 }
 
 $post_id = get_the_ID();
+
+// Parse post content blocks to extract the Hero block (moto-hero-cover)
+$post_content = get_the_content();
+$blocks = parse_blocks($post_content);
+
+$hero_block = null;
+$remaining_blocks = [];
+
+foreach ($blocks as $block) {
+    $is_hero = false;
+
+    // Check if this block is the custom Hero cover block
+    if (
+        (isset($block['attrs']['className']) && strpos($block['attrs']['className'], 'moto-hero-cover') !== false) ||
+        (isset($block['innerHTML']) && strpos($block['innerHTML'], 'moto-hero-cover') !== false)
+    ) {
+        $is_hero = true;
+    }
+
+    if ($is_hero && !$hero_block) {
+        $hero_block = $block;
+    } else {
+        $remaining_blocks[] = $block;
+    }
+}
 ?>
 
 <div class="moto-single-post-container">
+
+    <?php if ($hero_block) : ?>
+        <!-- HERO BLOCK (OUTSIDE THE GRID TO PREVENT SIDEBAR OVERLAP) -->
+        <div class="moto-hero-outside">
+            <?php echo apply_filters('the_content', render_block($hero_block)); ?>
+        </div>
+    <?php endif; ?>
 
     <!-- MAIN GRID CONTAINER -->
     <div class="moto-content-layout-grid">
 
         <main class="moto-main-column">
             <div class="moto-post-content">
-                <?php the_content(); ?>
+                <?php
+                if ($hero_block) {
+                    $remaining_content = '';
+                    foreach ($remaining_blocks as $block) {
+                        $remaining_content .= render_block($block);
+                    }
+                    echo apply_filters('the_content', $remaining_content);
+                } else {
+                    the_content();
+                }
+                ?>
             </div>
 
             <!-- Tags (Legacy support if not in blocks) -->

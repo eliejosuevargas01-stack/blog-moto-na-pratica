@@ -84,46 +84,24 @@ body.single-post .ct-container-inner {
 }
 
 /**
- * MAGIC TRICK:
- * By setting 'display: contents' on the column wrappers, their direct
- * children (the Gutenberg blocks) become direct children of the
- * .moto-content-layout-grid.
+ * MAIN COLUMN & POST CONTENT BEHAVIOR:
+ * Traditional robust two-column grid.
+ * Main column handles content layout naturally.
  */
-.moto-main-column,
-.moto-post-content {
-    display: contents;
-}
-
-/**
- * DEFAULT BLOCK BEHAVIOR:
- * Most blocks should stay in the first column (the content area).
- */
-.moto-post-content > *:not(.alignfull),
-.moto-tags-section,
-.moto-related-section {
+.moto-main-column {
     grid-column: 1;
+    display: flex;
+    flex-direction: column;
 }
 
-/**
- * FULL WIDTH BLOCK BEHAVIOR (The Hero):
- * Blocks with 'alignfull' (like the Cover block used as Hero)
- * will span both columns and the entire viewport.
- */
-.moto-post-content > .alignfull {
-    grid-column: 1 / -1; /* Span both columns */
-    width: 100vw !important;
-    position: relative;
-    left: 50%;
-    right: 50%;
-    margin-left: -50vw !important;
-    margin-right: -50vw !important;
-    margin-bottom: 60px;
+.moto-post-content {
+    width: 100%;
 }
 
 /**
  * SIDEBAR BEHAVIOR:
- * The sidebar stays in the second column.
- * It will naturally start below any block that spans both columns (the Hero).
+ * The sidebar stays in the second column on desktop, and stacks below on mobile.
+ * It flows naturally without any sticky or overlapping behavior, perfectly static.
  */
 .moto-sidebar-column {
     grid-column: 1; /* Mobile default */
@@ -133,27 +111,49 @@ body.single-post .ct-container-inner {
 }
 
 @media (min-width: 1024px) {
+    .moto-main-column {
+        grid-column: 1;
+    }
+
     .moto-sidebar-column {
         grid-column: 2; /* Sidebar column */
     }
 }
 
-/* ===========================
-   4. MANUAL HERO STYLING
-   =========================== */
+/**
+ * OUTSIDE HERO STYLING (The Teleport Fix Redefined):
+ * Placing the Hero outside/above the content layout grid ensures
+ * the static sidebar starts perfectly aligned below the Hero
+ * and never overlaps or invades its space.
+ */
+.moto-hero-outside {
+    width: 100%;
+    overflow: hidden;
+}
 
-/* Cover block specific adjustments to match Figma */
-.wp-block-cover.moto-hero-cover {
+.moto-hero-outside .wp-block-cover.moto-hero-cover {
+    width: 100% !important;
     min-height: 60vh !important;
     display: flex;
     align-items: flex-end;
 }
 
+/* Cover block specific adjustments to match Figma */
 .wp-block-cover.moto-hero-cover .wp-block-cover__inner-container {
     width: 100%;
-    max-width: 900px;
-    padding: 0 0 60px;
-    margin: 0;
+    max-width: 1200px;
+    padding: 0 24px 60px;
+    margin: 0 auto !important;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+@media (min-width: 1024px) {
+    .wp-block-cover.moto-hero-cover .wp-block-cover__inner-container {
+        padding: 0 48px 60px;
+    }
 }
 
 .wp-block-cover.moto-hero-cover .wp-block-cover__background {
