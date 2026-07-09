@@ -1,7 +1,9 @@
 <?php
 /**
  * Custom single post template — Moto na Prática
- * Matches the Figma React design (Post.tsx)
+ *
+ * This template uses a manual Hero (created via Gutenberg blocks)
+ * while maintaining a structured sidebar that doesn't overlap full-width elements.
  *
  * @package Blocksy
  */
@@ -11,58 +13,19 @@ if (have_posts()) {
 }
 
 $post_id = get_the_ID();
-
-// Read time calculation
-$content = get_post_field('post_content', $post_id);
-$word_count = str_word_count(strip_tags($content));
-$read_time = ceil($word_count / 200) . ' min';
-
-$feat_img = get_the_post_thumbnail_url($post_id, 'full') ?: 'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?q=80&w=2070&auto=format&fit=crop';
-$cat_label = moto_render_post_tag($post_id);
-
 ?>
 
 <div class="moto-single-post-container">
 
-    <!-- HERO SECTION (Full Width) -->
-    <div class="moto-hero-section" style="background-image: url('<?php echo esc_url($feat_img); ?>');">
-        <div class="moto-hero-overlay"></div>
-        <div class="moto-hero-inner">
-            <div class="moto-hero-back">
-                <a href="javascript:history.back()">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                    Voltar
-                </a>
-            </div>
-            <div class="moto-hero-meta">
-                <span class="moto-hero-badge"><?php echo esc_html($cat_label); ?></span>
-                <span class="moto-hero-read-time">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    <?php echo esc_html($read_time); ?> de leitura
-                </span>
-                <span class="moto-hero-date"><?php echo get_the_date('j M Y'); ?></span>
-            </div>
-            <h1 class="moto-hero-title"><?php the_title(); ?></h1>
-        </div>
-    </div>
+    <!-- MAIN GRID CONTAINER -->
+    <div class="moto-content-layout-grid">
 
-    <!-- MAIN CONTENT AREA (Two Column) -->
-    <div class="moto-content-area">
-        <div class="moto-main-column">
-
-            <div class="moto-post-content-wrap">
-                <?php if (has_excerpt()) : ?>
-                    <div class="moto-post-excerpt">
-                        <?php echo get_the_excerpt(); ?>
-                    </div>
-                <?php endif; ?>
-
-                <div class="moto-article-body">
-                    <?php the_content(); ?>
-                </div>
+        <main class="moto-main-column">
+            <div class="moto-post-content">
+                <?php the_content(); ?>
             </div>
 
-            <!-- Tags -->
+            <!-- Tags (Legacy support if not in blocks) -->
             <?php
             $post_tags = get_the_tags();
             if ($post_tags) :
@@ -143,66 +106,28 @@ $cat_label = moto_render_post_tag($post_id);
                     </div>
                 </div>
             <?php endif; ?>
-
-        </div><!-- .moto-main-column -->
+        </main>
 
         <aside class="moto-sidebar-column">
             <?php if (is_active_sidebar('moto-sidebar')) : ?>
                 <?php dynamic_sidebar('moto-sidebar'); ?>
             <?php else : ?>
+                <!-- Fallback content if sidebar is empty -->
                 <div class="moto-sidebar-card">
                     <div class="moto-sidebar-header">
                         <span class="moto-sidebar-bar"></span>
                         <h3 class="moto-sidebar-title">Sobre o blog</h3>
                     </div>
-                    <div class="moto-sidebar-about-img-wrap">
-                        <img src="https://images.unsplash.com/photo-1761000989410-3fa81f1b94cb?w=640&h=280&fit=crop&auto=format" alt="Na estrada" class="moto-sidebar-about-img" loading="lazy" />
-                    </div>
                     <p class="moto-sidebar-about-text">
-                        Motociclista por paixão, dono de uma Fazer 250 Solid Grey 2026. Escrevo sobre o que vivo na estrada — sem patrocinador, sem jabá.
+                        Motociclista por paixão, dono de uma Fazer 250 Solid Grey 2026. Escrevo sobre o que vivo na estrada.
                     </p>
-                    <a href="<?php echo esc_url(home_url('/sobre/')); ?>" class="moto-sidebar-about-link">
-                        Conhecer mais
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-                    </a>
-                </div>
-
-                <div class="moto-sidebar-card">
-                    <div class="moto-sidebar-header">
-                        <span class="moto-sidebar-bar"></span>
-                        <h3 class="moto-sidebar-title">Categorias</h3>
-                    </div>
-                    <ul class="moto-sidebar-categories-list">
-                        <?php
-                        $cats = get_categories(['hide_empty' => true, 'orderby' => 'count', 'order' => 'DESC']);
-                        foreach ($cats as $cat) :
-                        ?>
-                            <li>
-                                <a href="<?php echo esc_url(get_category_link($cat->term_id)); ?>" class="moto-sidebar-cat-link">
-                                    <span class="moto-sidebar-cat-name">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
-                                        <?php echo esc_html($cat->name); ?>
-                                    </span>
-                                    <span class="moto-sidebar-cat-count"><?php echo esc_html($cat->count); ?></span>
-                                </a>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                </div>
-
-                <div class="moto-sidebar-card moto-sidebar-newsletter">
-                    <h3 class="moto-newsletter-title">Receba novos posts</h3>
-                    <p class="moto-newsletter-text">Sem spam. Só artigo novo quando sai.</p>
-                    <form class="moto-newsletter-form" action="" method="POST">
-                        <input type="email" name="email" placeholder="seu@email.com" required class="moto-newsletter-input" />
-                        <button type="submit" class="moto-newsletter-submit-btn">Inscrever</button>
-                    </form>
                 </div>
             <?php endif; ?>
         </aside>
-    </div>
 
-</div>
+    </div><!-- .moto-content-layout-grid -->
+
+</div><!-- .moto-single-post-container -->
 
 <?php
 wp_reset_query();

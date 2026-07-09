@@ -2,16 +2,8 @@
  * Custom Single Post Styling — Moto na Prática
  * Matches the Figma React design (Post.tsx / Root.tsx)
  *
- * SECTIONS:
- *  1. Design tokens
- *  2. Global overrides (Blocksy wrappers)
- *  3. Scrollbar
- *  4. Main container
- *  5. Hero section (Full Width)
- *  6. Post content body (excerpt, paragraphs, headings)
- *  7. Tags section
- *  8. Related posts grid
- *  9. Sidebar widgets
+ * This version uses a Grid layout that allows "manual Hero" blocks
+ * to span the full width while keeping the sidebar correctly positioned below.
  */
 
 /* ===========================
@@ -46,44 +38,23 @@ body.single-post main {
     overflow-x: hidden !important;
 }
 
-/* Remove default Blocksy card background and borders */
+/* Clear Blocksy defaults */
 body.single-post article,
 body.single-post .post-wrapper,
 body.single-post .entry-content,
-body.single-post [data-layout],
 body.single-post .ct-container,
 body.single-post .ct-container-inner {
     background: transparent !important;
     box-shadow: none !important;
     border: none !important;
     padding: 0 !important;
-}
-
-/* Ensure dynamic widgets use Teko for titles */
-.moto-sidebar-card .widgettitle,
-.moto-sidebar-card .widget-title,
-.moto-sidebar-card h2,
-.moto-sidebar-card h3 {
-    font-family: var(--moto-font-teko) !important;
-    font-size: 20px !important;
-    font-weight: 600 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.05em !important;
-    margin: 0 !important;
-    color: var(--moto-fg) !important;
+    max-width: none !important;
 }
 
 /* ===========================
-   3. SCROLLBAR
+   3. MAIN LAYOUT (The "Teleport" Fix)
    =========================== */
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: #111111; }
-::-webkit-scrollbar-thumb { background: #252525; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: var(--moto-primary); }
 
-/* ===========================
-   4. MAIN CONTAINER
-   =========================== */
 .moto-single-post-container {
     font-family: var(--moto-font-barlow);
     background-color: var(--moto-bg);
@@ -91,154 +62,139 @@ body.single-post .ct-container-inner {
     min-height: 100vh;
 }
 
-.moto-single-post-container *,
-.moto-single-post-container *::before,
-.moto-single-post-container *::after {
-    box-sizing: border-box;
+/**
+ * We use a 2-column grid on the main container.
+ * 1fr for content, 300px for sidebar.
+ */
+.moto-content-layout-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 40px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+}
+
+@media (min-width: 1024px) {
+    .moto-content-layout-grid {
+        grid-template-columns: 1fr 300px;
+        padding: 0 48px 80px;
+        column-gap: 56px;
+    }
+}
+
+/**
+ * MAGIC TRICK:
+ * By setting 'display: contents' on the column wrappers, their direct
+ * children (the Gutenberg blocks) become direct children of the
+ * .moto-content-layout-grid.
+ */
+.moto-main-column,
+.moto-post-content {
+    display: contents;
+}
+
+/**
+ * DEFAULT BLOCK BEHAVIOR:
+ * Most blocks should stay in the first column (the content area).
+ */
+.moto-post-content > *:not(.alignfull),
+.moto-tags-section,
+.moto-related-section {
+    grid-column: 1;
+}
+
+/**
+ * FULL WIDTH BLOCK BEHAVIOR (The Hero):
+ * Blocks with 'alignfull' (like the Cover block used as Hero)
+ * will span both columns and the entire viewport.
+ */
+.moto-post-content > .alignfull {
+    grid-column: 1 / -1; /* Span both columns */
+    width: 100vw !important;
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw !important;
+    margin-right: -50vw !important;
+    margin-bottom: 60px;
+}
+
+/**
+ * SIDEBAR BEHAVIOR:
+ * The sidebar stays in the second column.
+ * It will naturally start below any block that spans both columns (the Hero).
+ */
+.moto-sidebar-column {
+    grid-column: 1; /* Mobile default */
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+
+@media (min-width: 1024px) {
+    .moto-sidebar-column {
+        grid-column: 2; /* Sidebar column */
+    }
 }
 
 /* ===========================
-   5. HERO SECTION
+   4. MANUAL HERO STYLING
    =========================== */
-.moto-hero-section {
-    position: relative;
-    width: 100vw;
-    height: 60vh;
-    min-height: 400px;
-    background-size: cover;
-    background-position: center;
+
+/* Cover block specific adjustments to match Figma */
+.wp-block-cover.moto-hero-cover {
+    min-height: 60vh !important;
     display: flex;
     align-items: flex-end;
-    overflow: hidden;
 }
 
-.moto-hero-overlay {
-    position: absolute;
-    inset: 0;
+.wp-block-cover.moto-hero-cover .wp-block-cover__inner-container {
+    width: 100%;
+    max-width: 900px;
+    padding: 0 0 60px;
+    margin: 0;
+}
+
+.wp-block-cover.moto-hero-cover .wp-block-cover__background {
     background: linear-gradient(
         to top,
         rgba(0,0,0,0.90) 0%,
         rgba(0,0,0,0.40) 55%,
         rgba(0,0,0,0.15) 100%
-    );
-    z-index: 1;
+    ) !important;
+    opacity: 1 !important;
 }
 
-.moto-hero-inner {
-    position: relative;
-    z-index: 2;
-    width: 100%;
-    max-width: 900px;
-    margin-left: max(0px, calc((100vw - 1200px) / 2));
-    padding: 0 24px 60px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.moto-hero-back a {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-family: var(--moto-font-barlow);
-    font-size: 12px;
-    color: var(--moto-muted-fg);
-    text-decoration: none !important;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    transition: color 0.2s ease;
-}
-
-.moto-hero-back a:hover { color: #FFFFFF; }
-
-.moto-hero-meta {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
-}
-
-.moto-hero-badge {
-    font-family: var(--moto-font-barlow);
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    padding: 4px 8px;
-    background-color: var(--moto-primary);
-    color: #FFFFFF;
-}
-
-.moto-hero-read-time {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 12px;
-    color: var(--moto-muted-fg);
-}
-
-.moto-hero-date {
-    font-size: 12px;
-    color: var(--moto-muted-fg);
-}
-
-.moto-hero-title {
-    font-family: var(--moto-font-teko);
-    font-size: 44px;
-    font-weight: 600;
-    line-height: 1.0;
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
-    color: #FFFFFF;
-    margin: 0;
+.wp-block-cover.moto-hero-cover .moto-hero-title,
+.wp-block-cover.moto-hero-cover h1 {
+    font-family: var(--moto-font-teko) !important;
+    font-size: 44px !important;
+    font-weight: 600 !important;
+    line-height: 1.0 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.02em !important;
+    color: #FFFFFF !important;
+    margin: 0 !important;
 }
 
 @media (min-width: 768px) {
-    .moto-hero-inner { padding-bottom: 60px; padding-left: 48px; }
-    .moto-hero-title { font-size: 64px; }
+    .wp-block-cover.moto-hero-cover h1 { font-size: 64px !important; }
 }
 
 /* ===========================
-   6. POST CONTENT BODY
+   5. CONTENT TYPOGRAPHY
    =========================== */
-.moto-content-area {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 64px 24px;
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 56px;
-}
-
-@media (min-width: 1024px) {
-    .moto-content-area {
-        grid-template-columns: 1fr 300px;
-        padding: 64px 48px;
-    }
-}
-
-.moto-main-column { min-width: 0; }
-
-.moto-post-excerpt {
-    font-size: 17px;
-    color: #BBBBBB;
-    line-height: 1.6;
-    border-left: 2px solid var(--moto-primary);
-    padding-left: 20px;
-    margin-bottom: 40px;
-}
-
-.moto-article-body {
-    font-family: var(--moto-font-barlow);
+.moto-post-content p {
     font-size: 15px;
     color: var(--moto-muted-fg);
     line-height: 1.7;
+    margin-bottom: 20px;
 }
 
-.moto-article-body p { margin-bottom: 20px; }
-.moto-article-body strong { color: var(--moto-fg); }
+.moto-post-content strong { color: var(--moto-fg); }
 
-.moto-article-body h2 {
+.moto-post-content h2 {
     font-family: var(--moto-font-teko);
     font-size: 28px;
     font-weight: 600;
@@ -252,7 +208,7 @@ body.single-post .ct-container-inner {
 }
 
 /* ===========================
-   7. TAGS SECTION
+   6. TAGS & RELATED
    =========================== */
 .moto-tags-section {
     margin-top: 40px;
@@ -261,19 +217,6 @@ body.single-post .ct-container-inner {
     display: flex;
     align-items: center;
     gap: 12px;
-    flex-wrap: wrap;
-}
-
-.moto-tags-label {
-    font-size: 12px;
-    color: var(--moto-muted-fg);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-}
-
-.moto-tags-list {
-    display: flex;
-    gap: 8px;
     flex-wrap: wrap;
 }
 
@@ -297,9 +240,6 @@ body.single-post .ct-container-inner {
     border-color: rgba(200, 16, 46, 0.4);
 }
 
-/* ===========================
-   8. RELATED POSTS
-   =========================== */
 .moto-related-section { margin-top: 48px; }
 
 .moto-section-header {
@@ -352,6 +292,7 @@ body.single-post .ct-container-inner {
 .moto-related-card-img-wrap {
     position: relative;
     height: 160px;
+    overflow: hidden;
 }
 
 .moto-related-card-img {
@@ -375,12 +316,6 @@ body.single-post .ct-container-inner {
     z-index: 2;
 }
 
-/* Category Specific Colors */
-.moto-tag-review { background-color: #C8102E; color: #FFFFFF; }
-.moto-tag-manutencao { background-color: #2A2A2A; color: #AAAAAA; }
-.moto-tag-rotas { background-color: #1A3A2A; color: #6EC49A; }
-.moto-tag-equipamentos { background-color: #1A2A3A; color: #6EAAC4; }
-
 .moto-related-card-body { padding: 16px; }
 
 .moto-related-card-title {
@@ -395,26 +330,21 @@ body.single-post .ct-container-inner {
 .moto-related-card-title a {
     color: var(--moto-fg);
     text-decoration: none !important;
-    transition: color 0.2s ease;
 }
 
 .moto-related-card:hover .moto-related-card-title a { color: var(--moto-primary); }
 
-.moto-related-card-meta {
-    font-size: 11px;
-    color: var(--moto-muted-fg);
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-}
-
 /* ===========================
-   9. SIDEBAR WIDGETS
+   7. SIDEBAR STYLING
    =========================== */
-.moto-sidebar-column {
-    display: flex;
-    flex-direction: column;
-    gap: 40px;
+
+/* Ensure the sidebar starts vertically aligned with the first content block
+   after a full-width hero, or at the top if no hero exists. */
+@media (min-width: 1024px) {
+    .moto-sidebar-column {
+        padding-top: 0;
+        margin-top: 0;
+    }
 }
 
 .moto-sidebar-card {
@@ -438,90 +368,22 @@ body.single-post .ct-container-inner {
 }
 
 .moto-sidebar-title {
-    font-family: var(--moto-font-teko);
-    font-size: 20px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin: 0;
-    color: var(--moto-fg);
-}
-
-.moto-sidebar-about-img-wrap {
-    height: 120px;
-    overflow: hidden;
-    margin-bottom: 20px;
-}
-
-.moto-sidebar-about-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    opacity: 0.8;
+    font-family: var(--moto-font-teko) !important;
+    font-size: 20px !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    margin: 0 !important;
+    color: var(--moto-fg) !important;
 }
 
 .moto-sidebar-about-text {
     font-size: 13px;
     color: var(--moto-muted-fg);
     line-height: 1.6;
-    margin: 0 0 16px;
 }
 
-.moto-sidebar-about-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--moto-primary);
-    text-decoration: none !important;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    transition: gap 0.2s ease;
-}
-
-.moto-sidebar-about-link:hover { gap: 8px; }
-
-/* Categories list */
-.moto-sidebar-categories-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.moto-sidebar-categories-list li { border-bottom: 1px solid var(--moto-border); }
-.moto-sidebar-categories-list li:last-child { border-bottom: none; }
-
-.moto-sidebar-cat-link {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 0;
-    font-size: 13px;
-    color: var(--moto-muted-fg);
-    text-decoration: none !important;
-    transition: color 0.2s ease;
-}
-
-.moto-sidebar-cat-link:hover { color: var(--moto-fg); }
-
-.moto-sidebar-cat-name {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.moto-sidebar-cat-name svg { color: var(--moto-primary); transition: transform 0.2s ease; }
-.moto-sidebar-cat-link:hover .moto-sidebar-cat-name svg { transform: translateX(2px); }
-
-.moto-sidebar-cat-count {
-    font-size: 11px;
-    background-color: var(--moto-secondary);
-    padding: 2px 6px;
-    color: var(--moto-secondary-fg);
-}
-
-/* Newsletter */
+/* Newsletter Sidebar Item */
 .moto-sidebar-newsletter {
     background-color: var(--moto-primary);
     border: none;
@@ -544,8 +406,6 @@ body.single-post .ct-container-inner {
     margin: 0 0 20px;
 }
 
-.moto-newsletter-form { display: flex; flex-direction: column; gap: 10px; }
-
 .moto-newsletter-input {
     width: 100%;
     background-color: rgba(255,255,255,0.1);
@@ -553,12 +413,9 @@ body.single-post .ct-container-inner {
     color: #FFFFFF;
     font-size: 13px;
     padding: 10px 12px;
+    margin-bottom: 10px;
     outline: none;
-    transition: border-color 0.2s ease;
 }
-
-.moto-newsletter-input::placeholder { color: rgba(255,255,255,0.4); }
-.moto-newsletter-input:focus { border-color: rgba(255,255,255,0.6); }
 
 .moto-newsletter-submit-btn {
     width: 100%;
@@ -567,12 +424,8 @@ body.single-post .ct-container-inner {
     color: #FFFFFF;
     font-family: var(--moto-font-teko);
     font-size: 18px;
-    font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     padding: 10px;
     cursor: pointer;
-    transition: background-color 0.2s ease;
 }
-
-.moto-newsletter-submit-btn:hover { background-color: #0A0A0A; }
