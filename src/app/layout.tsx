@@ -51,7 +51,7 @@ export default async function RootLayout({
 
     const posts = await prisma.post.findMany({
       take: 3,
-      orderBy: { date: "desc" },
+      orderBy: { updatedAt: "desc" },
       select: { id: true, title: true, slug: true },
     });
     recentPosts = posts;

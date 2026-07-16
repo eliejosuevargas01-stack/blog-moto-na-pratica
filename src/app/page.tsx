@@ -56,11 +56,11 @@ export default async function Home({ searchParams }: HomeProps) {
             { tag: { contains: searchQuery } }
           ]
         },
-        orderBy: { date: "desc" }
+        orderBy: { updatedAt: "desc" }
       });
     } else {
       posts = await prisma.post.findMany({
-        orderBy: { date: "desc" }
+        orderBy: { updatedAt: "desc" }
       });
     }
 

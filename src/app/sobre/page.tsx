@@ -76,7 +76,7 @@ export default async function Sobre() {
 
     recentPosts = await prisma.post.findMany({
       take: 3,
-      orderBy: { date: "desc" }
+      orderBy: { updatedAt: "desc" }
     });
   } catch (error) {
     console.warn("Sobre database query failed, using static fallback.", error);

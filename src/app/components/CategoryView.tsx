@@ -31,13 +31,13 @@ export default async function CategoryView({ tag, title, description, heroImg, i
   try {
     posts = await prisma.post.findMany({
       where: { tag },
-      orderBy: { date: "desc" }
+      orderBy: { updatedAt: "desc" }
     });
 
     allOthers = await prisma.post.findMany({
       where: { tag: { not: tag } },
       take: 3,
-      orderBy: { date: "desc" }
+      orderBy: { updatedAt: "desc" }
     });
   } catch (error) {
     console.warn("Category database query failed, using static fallback.", error);
