@@ -170,7 +170,9 @@ export async function savePageAction(data: {
       return { error: "Já existe uma página com esta URL (slug). Escolha outro." };
     }
 
-    if (data.id) {
+    const isFallbackId = data.id?.startsWith("fallback-");
+
+    if (data.id && !isFallbackId) {
       await prisma.page.update({
         where: { id: data.id },
         data: {

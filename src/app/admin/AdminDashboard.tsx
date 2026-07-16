@@ -6,6 +6,118 @@ import { savePostAction, deletePostAction, savePageAction, deletePageAction, log
 import { TEKO, BODY } from "../data";
 import { Plus, Trash2, Save, Upload, LogOut, FileText, Layout, ArrowLeft, Eye, Edit } from "lucide-react";
 
+const DEFAULT_FALLBACK_PAGES = [
+  {
+    id: "fallback-home",
+    slug: "home",
+    title: "Página Inicial",
+    isStatic: true,
+    content: {
+      heroTitle: "Fazer 250 Solid Grey 2026: 6 meses de uso real",
+      heroSubtitle: "Peguei a chave em janeiro e desde então rodei mais de 8.000 km. Aqui vai tudo que aprendi — o que é ótimo, o que incomoda e por que ainda não me arrependo.",
+      heroImage: "https://images.unsplash.com/photo-1571646036117-8015cc02547c?w=1400&h=780&fit=crop&auto=format",
+      heroFocalPoint: "center",
+      breakingText: "Michelin Pilot Street 2 na Fazer — diferença real ou papo de vendedor?",
+      breakingSlug: "michelin-pilot-street-2-fazer",
+      bannerTitle: "Yamaha FZ25 · Solid Grey 2026",
+      bannerSubtitle: "8.400 km rodados · Motor 249cc · Minha companheira diária",
+      bannerImage: "https://images.unsplash.com/photo-1571646059462-99317ec8d1bf?w=1400&h=500&fit=crop&auto=format",
+      bannerFocalPoint: "center"
+    },
+    seoTitle: "Moto na Prática - Blog de Motos, Dicas e Reviews",
+    seoDescription: "Blog de motociclista sobre a Yamaha Fazer 250 Solid Grey 2026. Reviews honestas de equipamentos, dicas de manutenção e relatos de rotas reais."
+  },
+  {
+    id: "fallback-sobre",
+    slug: "sobre",
+    title: "Sobre o Blog",
+    isStatic: true,
+    content: {
+      heroTitle: "O blog e o motociclista",
+      heroDescription: "Sem patrocínio, sem jabá. Só experiência real de quem usa moto todo dia.",
+      heroImage: "https://images.unsplash.com/photo-1625812184391-0359bf2344b9?w=1400&h=500&fit=crop&auto=format",
+      heroFocalPoint: "center",
+      stats: [
+        { value: "8.400 km", label: "Rodados na FZ25", iconName: "Gauge" },
+        { value: "Jan 2025", label: "Início com a moto", iconName: "Calendar" },
+        { value: "Belo Horizonte", label: "Base de operações", iconName: "MapPin" },
+        { value: "5", label: "Manutenções feitas em casa", iconName: "Wrench" }
+      ],
+      bioTitle: "Quem escreve aqui",
+      bioContentHtml: `<p class="mb-4">Me chamo Lucas, tenho 29 anos e moro em Belo Horizonte. Comecei a andar de moto em 2019 com uma CG 150 de entrega emprestada do meu tio — a partir daí não parei mais.</p>\n<p class="mb-4">Em janeiro de 2025 dei o salto para a Fazer 250 Solid Grey, a versão nova. Foi a maior compra que já fiz relacionada a moto e, com ela, veio a vontade de registrar tudo — as dúvidas, os erros, as descobertas.</p>\n<p class="mb-4">O <span class="text-foreground font-semibold">Moto na Prática</span> nasceu disso. Não sou mecânico, não sou piloto profissional, não tenho patrocínio. Sou apenas alguém que usa moto todo dia e quer compartilhar o que aprende.</p>\n<p class="mb-4">Aqui você vai encontrar reviews de coisas que comprei com o meu dinheiro, manutenções que fiz na garagem, rotas que percorri e dicas que aprendi na raça. Nada de conteúdo pago ou postagem encomendada.</p>`,
+      bioQuote: "Se você está pensando em comprar uma moto, já tem uma ou só curte o assunto — esse blog é pra você.",
+      riderImage: "https://images.unsplash.com/photo-1542351387-dde430deaaa7?w=800&h=900&fit=crop&auto=format",
+      riderFocalPoint: "center",
+      motoTitle: "Minha moto",
+      motoSpecsTitle: "Yamaha FZ25 Solid Grey 2026",
+      motoImage: "https://images.unsplash.com/photo-1571646059462-99317ec8d1bf?w=1200&h=700&fit=crop&auto=format",
+      motoFocalPoint: "center",
+      motoSpecs: [
+        { name: "Motor", value: "249cc, monocilíndrico, SOHC" },
+        { name: "Potência", value: "20,9 cv @ 8.000 rpm" },
+        { name: "Torque", value: "2,1 kgf.m @ 6.500 rpm" },
+        { name: "Tanque", value: "13 litros" },
+        { name: "Peso", value: "154 kg (abastecida)" },
+        { name: "Cor", value: "Solid Grey (exclusiva 2026)" }
+      ]
+    },
+    seoTitle: "Sobre o Lucas e a Fazer 250 - Moto na Prática",
+    seoDescription: "Conheça o Lucas, criador do Moto na Prática, e veja a ficha técnica detalhada da Yamaha FZ25 Solid Grey 2026 do blog."
+  },
+  {
+    id: "fallback-reviews",
+    slug: "reviews",
+    title: "Reviews",
+    isStatic: true,
+    content: {
+      description: "Reviews honestos de peças, acessórios e motos feitos por quem usa no dia a dia, sem patrocínio.",
+      heroImg: "https://images.unsplash.com/photo-1571646036117-8015cc02547c?w=1200&h=680&fit=crop&auto=format",
+      iconName: "Star"
+    },
+    seoTitle: "Reviews de Motos e Equipamentos - Moto na Prática",
+    seoDescription: "Opiniões sinceras e testes reais de longa duração com motos, pneus, peças e vestuário motociclístico."
+  },
+  {
+    id: "fallback-manutencao",
+    slug: "manutencao",
+    title: "Manutenção",
+    isStatic: true,
+    content: {
+      description: "Dicas passo a passo de manutenção preventiva, troca de componentes e cuidados essenciais com a moto.",
+      heroImg: "https://images.unsplash.com/photo-1625811508773-db54e54ac0d3?w=1200&h=680&fit=crop&auto=format",
+      iconName: "Wrench"
+    },
+    seoTitle: "Dicas de Manutenção de Motocicleta - Moto na Prática",
+    seoDescription: "Guia completo de como cuidar e fazer a manutenção preventiva na sua moto em casa e gastando pouco."
+  },
+  {
+    id: "fallback-rotas",
+    slug: "rotas",
+    title: "Rotas",
+    isStatic: true,
+    content: {
+      description: "Relatos de viagens, rotas para motociclistas, condições de estrada e pontos turísticos imperdíveis.",
+      heroImg: "https://images.unsplash.com/photo-1761000989410-3fa81f1b94cb?w=1200&h=680&fit=crop&auto=format",
+      iconName: "Navigation"
+    },
+    seoTitle: "Rotas de Moto e Viagens - Moto na Prática",
+    seoDescription: "As melhores estradas para rodar de moto, roteiros turísticos, motoviagem e relatos de rotas pelo Brasil."
+  },
+  {
+    id: "fallback-equipamentos",
+    slug: "equipamentos",
+    title: "Equipamentos",
+    isStatic: true,
+    content: {
+      description: "Avaliações detalhadas de jaquetas, capacetes, luvas e tudo que você precisa para rodar com segurança.",
+      heroImg: "https://images.unsplash.com/photo-1625812184391-0359bf2344b9?w=1200&h=680&fit=crop&auto=format",
+      iconName: "ShieldCheck"
+    },
+    seoTitle: "Equipamentos de Segurança para Motociclista - Moto na Prática",
+    seoDescription: "Reviews sinceros de capacetes, jaquetas, luvas, botas e proteção para o piloto no dia a dia ou viagens."
+  }
+];
+
 interface AdminDashboardProps {
   initialPosts: any[];
   initialPages: any[];
@@ -13,7 +125,7 @@ interface AdminDashboardProps {
 
 export default function AdminDashboard({ initialPosts, initialPages }: AdminDashboardProps) {
   const [posts, setPosts] = useState(initialPosts);
-  const [pages, setPages] = useState(initialPages);
+  const [pages, setPages] = useState(initialPages.length > 0 ? initialPages : DEFAULT_FALLBACK_PAGES);
   const [activeTab, setActiveTab] = useState<"posts" | "pages">("posts");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
