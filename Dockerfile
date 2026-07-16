@@ -41,6 +41,12 @@ RUN adduser --system --uid 1001 nextjs
 # Copiar arquivos estáticos públicos
 COPY --from=builder /app/public ./public
 
+# Criar pasta de uploads com permissões corretas para o usuário nextjs
+RUN mkdir -p ./public/uploads && chown -R nextjs:nodejs ./public/uploads
+
+# Volume persistente para uploads (mapear no painel do Coolify)
+VOLUME ["/app/public/uploads"]
+
 # Configurar permissões para o cache do Next.js
 RUN mkdir .next
 RUN chown nextjs:nodejs .next

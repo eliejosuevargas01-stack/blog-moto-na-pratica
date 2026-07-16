@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { writeFile } from "fs/promises";
+import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
 export async function POST(request: Request) {
@@ -37,6 +37,9 @@ export async function POST(request: Request) {
     const filename = `${Date.now()}-${Math.floor(Math.random() * 100000)}${originalExt}`;
     const uploadDir = path.join(process.cwd(), "public", "uploads");
     const filePath = path.join(uploadDir, filename);
+
+    // Garantir que o diretório existe (cria recursivamente se necessário)
+    await mkdir(uploadDir, { recursive: true });
 
     // Salvar o arquivo no diretório public/uploads
     await writeFile(filePath, buffer);
