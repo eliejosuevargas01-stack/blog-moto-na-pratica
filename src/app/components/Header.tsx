@@ -47,10 +47,10 @@ export default function Header({ customPages }: HeaderProps) {
     <>
       {/* TOP BAR */}
       <div className="bg-[#0A0A0A] border-b border-border px-4 py-1.5 flex items-center justify-between z-50">
-        <span className="text-[11px] text-muted-foreground tracking-widest uppercase">
+        <span className="text-[10px] sm:text-[11px] text-muted-foreground tracking-widest uppercase truncate whitespace-nowrap">
           Blog independente · experiência real na estrada
         </span>
-        <div className="flex items-center gap-4 text-muted-foreground">
+        <div className="hidden sm:flex items-center gap-4 text-muted-foreground">
           <a href="#" className="hover:text-primary transition-colors"><Instagram size={13} /></a>
           <a href="#" className="hover:text-primary transition-colors"><Youtube size={13} /></a>
           <a href="#" className="hover:text-primary transition-colors"><Facebook size={13} /></a>
