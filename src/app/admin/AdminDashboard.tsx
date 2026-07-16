@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { savePostAction, deletePostAction, savePageAction, deletePageAction, logoutAction } from "../actions";
 import { TEKO, BODY } from "../data";
 import { Plus, Trash2, Save, Upload, LogOut, FileText, Layout, ArrowLeft, Eye, Edit, Wrench, Sliders } from "lucide-react";
+import { plugins } from "../../plugins";
 
 interface FocalPointPickerProps {
   imageUrl: string;
@@ -248,41 +249,45 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  const [autoReadTime, setAutoReadTime] = useState<boolean>(() => {
+  const [activePlugins, setActivePlugins] = useState<Record<string, boolean>>(() => {
     const configPage = initialPages.find(p => p.slug === "config");
+    const activeMap: Record<string, boolean> = {};
+    
+    // Set defaults from registry
+    plugins.forEach(p => {
+      activeMap[p.id] = p.defaultActive;
+    });
+
     if (configPage && configPage.content) {
+      let contentObj: any = {};
       if (typeof configPage.content === "string") {
         try {
-          const parsed = JSON.parse(configPage.content);
-          return !!parsed.autoReadTime;
-        } catch (e) {
-          return false;
-        }
+          contentObj = JSON.parse(configPage.content);
+        } catch (e) {}
       } else if (typeof configPage.content === "object") {
-        return !!(configPage.content as any).autoReadTime;
+        contentObj = configPage.content;
+      }
+      
+      if (contentObj.activePlugins) {
+        Object.keys(contentObj.activePlugins).forEach(key => {
+          activeMap[key] = !!contentObj.activePlugins[key];
+        });
+      } else if (typeof contentObj.autoReadTime === "boolean") {
+        // Fallback for legacy database settings
+        activeMap["autoReadTime"] = contentObj.autoReadTime;
       }
     }
-    return false;
+    return activeMap;
   });
 
   const router = useRouter();
 
-  const calculateEstimatedReadTime = (blocks: any[], title: string, excerpt: string): string => {
-    let totalText = title + " " + excerpt;
-    if (Array.isArray(blocks)) {
-      blocks.forEach(b => {
-        totalText += " " + (b.text || "");
-      });
-    }
-    const cleanText = stripHtml(totalText);
-    const words = cleanText.trim().split(/\s+/).filter(w => w.length > 0).length;
-    const wpm = 200;
-    const minutes = Math.max(1, Math.ceil(words / wpm));
-    return `${minutes} min`;
-  };
-
-  const handleToggleAutoReadTime = async (checked: boolean) => {
-    setAutoReadTime(checked);
+  const handleTogglePlugin = async (pluginId: string, checked: boolean) => {
+    const updatedMap = {
+      ...activePlugins,
+      [pluginId]: checked
+    };
+    setActivePlugins(updatedMap);
     setLoading(true);
     setMessage(null);
     
@@ -297,7 +302,7 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
       ...existingConfigPage,
       content: {
         ...((typeof existingConfigPage.content === "object" ? existingConfigPage.content : {}) as any),
-        autoReadTime: checked
+        activePlugins: updatedMap
       }
     };
 
@@ -313,7 +318,7 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
           return [...prev, updatedConfigPage];
         }
       });
-      setMessage({ type: "success", text: `Função de tempo de leitura ${checked ? "ativada" : "desativada"} com sucesso!` });
+      setMessage({ type: "success", text: `Recurso atualizado com sucesso!` });
     } else {
       setMessage({ type: "error", text: "Erro ao salvar configuração: " + res.error });
     }
@@ -475,11 +480,14 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
     setMessage(null);
 
     const slug = postForm.slug.trim() || generateSlugFromTitle(postForm.title);
-    let readTime = postForm.readTime;
-    if (autoReadTime) {
-      readTime = calculateEstimatedReadTime(postForm.blocks, postForm.title, postForm.excerpt);
-    }
-    const postData = { ...postForm, slug, readTime };
+    let postData = { ...postForm, slug };
+    // Run hooks from registry plugins
+    plugins.forEach(plugin => {
+      const isActive = !!activePlugins[plugin.id];
+      if (plugin.onBeforeSavePost) {
+        postData = plugin.onBeforeSavePost(postData, isActive);
+      }
+    });
 
     const res = await savePostAction(postData);
     if (res.error) {
@@ -772,9 +780,16 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
 
             <div className="space-y-1.5">
               <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold">Tempo de Leitura</label>
-              {autoReadTime ? (
+              {activePlugins["autoReadTime"] ? (
                 <div className="w-full bg-[#1A1A1A] border border-border rounded-sm text-[14px] text-muted-foreground px-4 py-2.5 select-none font-medium">
-                  {calculateEstimatedReadTime(postForm.blocks, postForm.title, postForm.excerpt)} <span className="text-[11px] text-primary ml-1.5 uppercase font-bold">(Calculado Automaticamente)</span>
+                  {(() => {
+                    const plugin = plugins.find(p => p.id === "autoReadTime");
+                    if (plugin && plugin.onBeforeSavePost) {
+                      const tempPost = plugin.onBeforeSavePost(postForm, true);
+                      return tempPost.readTime;
+                    }
+                    return "Calculando...";
+                  })()} <span className="text-[11px] text-primary ml-1.5 uppercase font-bold">(Calculado Automaticamente)</span>
                 </div>
               ) : (
                 <input
@@ -1692,41 +1707,38 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
       {activeTab === "settings" && (
         <div className="space-y-6">
           <div className="border-b border-border pb-3">
-            <h2 style={TEKO} className="text-[26px] uppercase tracking-wide">Funções e Recursos Opcionais</h2>
-            <p className="text-[13px] text-muted-foreground">Ative ou desative recursos especiais do sistema com apenas um clique.</p>
+            <h2 style={TEKO} className="text-[26px] uppercase tracking-wide">Funções e Recursos Opcionais (Plugins)</h2>
+            <p className="text-[13px] text-muted-foreground">Ative ou desative recursos especiais do sistema de forma modular.</p>
           </div>
 
-          <div className="bg-card border border-border p-6 rounded-sm space-y-6">
-            <div className="flex items-start justify-between gap-6 pb-6 border-b border-border/60">
-              <div className="space-y-1">
-                <h3 style={TEKO} className="text-[20px] uppercase tracking-wide text-foreground">Tempo de Leitura Estimado Automático</h3>
-                <p className="text-[13px] text-muted-foreground max-w-[620px] leading-relaxed">
-                  Conta o número de palavras presentes em todos os blocos de texto do post (incluindo título e resumo) e calcula o tempo de leitura ideal estimado, assumindo uma velocidade média de leitura de 200 palavras por minuto.
-                </p>
-                <div className="text-[11px] text-primary/80 font-mono mt-1">
-                  Fórmula: X palavras / 200 = Y min.
+          <div className="space-y-6">
+            {plugins.map((plugin) => (
+              <div key={plugin.id} className="bg-card border border-border p-6 rounded-sm space-y-4">
+                <div className="flex items-start justify-between gap-6 pb-4 border-b border-border/60">
+                  <div className="space-y-1">
+                    <h3 style={TEKO} className="text-[20px] uppercase tracking-wide text-foreground">{plugin.name}</h3>
+                    <p className="text-[13px] text-muted-foreground max-w-[620px] leading-relaxed">
+                      {plugin.description}
+                    </p>
+                  </div>
+                  <div className="flex items-center pt-2">
+                    <label className="relative inline-flex items-center cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={!!activePlugins[plugin.id]}
+                        onChange={(e) => handleTogglePlugin(plugin.id, e.target.checked)}
+                        className="sr-only peer" 
+                      />
+                      <div className="w-11 h-6 bg-[#333333] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                    </label>
+                  </div>
                 </div>
+                
+                {plugin.detailedDescription && (
+                  <div className="text-[12px] text-muted-foreground bg-[#1A1A1A] p-4 border border-border/40 rounded-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: plugin.detailedDescription }} />
+                )}
               </div>
-              <div className="flex items-center pt-2">
-                <label className="relative inline-flex items-center cursor-pointer select-none">
-                  <input 
-                    type="checkbox" 
-                    checked={autoReadTime}
-                    onChange={(e) => handleToggleAutoReadTime(e.target.checked)}
-                    className="sr-only peer" 
-                  />
-                  <div className="w-11 h-6 bg-[#333333] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                </label>
-              </div>
-            </div>
-            
-            <div className="text-[12px] text-muted-foreground bg-[#1A1A1A] p-4 border border-border/40 rounded-sm leading-relaxed">
-              <strong>Como isso afeta a escrita de posts?</strong>
-              <ul className="list-disc pl-4 mt-2 space-y-1">
-                <li><strong>Ativado</strong>: O campo "Tempo de Leitura" no formulário de criação/edição de posts será desativado e exibirá em tempo real o cálculo matemático. Ao salvar, o valor calculado será persistido no banco de dados.</li>
-                <li><strong>Desativado</strong>: O formulário exibirá o campo de texto convencional para você digitar manualmente qualquer tempo ou descrição desejada (ex: "5 min", "Leitura Rápida", etc).</li>
-              </ul>
-            </div>
+            ))}
           </div>
         </div>
       )}
