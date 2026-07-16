@@ -51,9 +51,9 @@ export default function Header({ customPages }: HeaderProps) {
           Blog independente · experiência real na estrada
         </span>
         <div className="hidden sm:flex items-center gap-4 text-muted-foreground">
-          <a href="#" className="hover:text-primary transition-colors"><Instagram size={13} /></a>
-          <a href="#" className="hover:text-primary transition-colors"><Youtube size={13} /></a>
-          <a href="#" className="hover:text-primary transition-colors"><Facebook size={13} /></a>
+          <a href="#" aria-label="Instagram" className="hover:text-primary transition-colors"><Instagram size={13} /></a>
+          <a href="#" aria-label="YouTube" className="hover:text-primary transition-colors"><Youtube size={13} /></a>
+          <a href="#" aria-label="Facebook" className="hover:text-primary transition-colors"><Facebook size={13} /></a>
         </div>
       </div>
 

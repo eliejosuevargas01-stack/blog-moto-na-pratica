@@ -103,14 +103,14 @@ export default async function RootLayout({
                 Blog independente sobre motos. Experiência real, sem filtro e sem patrocínio.
               </p>
               <div className="flex items-center gap-4 mt-5">
-                <a href="#" className="text-muted-foreground hover:text-primary transition-colors"><Instagram size={16} /></a>
-                <a href="#" className="text-muted-foreground hover:text-primary transition-colors"><Youtube size={16} /></a>
-                <a href="#" className="text-muted-foreground hover:text-primary transition-colors"><Facebook size={16} /></a>
+                <a href="#" aria-label="Instagram" className="text-muted-foreground hover:text-primary transition-colors"><Instagram size={16} /></a>
+                <a href="#" aria-label="YouTube" className="text-muted-foreground hover:text-primary transition-colors"><Youtube size={16} /></a>
+                <a href="#" aria-label="Facebook" className="text-muted-foreground hover:text-primary transition-colors"><Facebook size={16} /></a>
               </div>
             </div>
             
             <div>
-              <h4 style={TEKO} className="text-[18px] font-semibold uppercase tracking-widest text-foreground mb-5">Seções</h4>
+              <h3 style={TEKO} className="text-[18px] font-semibold uppercase tracking-widest text-foreground mb-5">Seções</h3>
               <ul className="space-y-2.5">
                 {navLinks.map(({ label, path }) => (
                   <li key={path}>
@@ -123,7 +123,7 @@ export default async function RootLayout({
             </div>
 
             <div>
-              <h4 style={TEKO} className="text-[18px] font-semibold uppercase tracking-widest text-foreground mb-5">Posts recentes</h4>
+              <h3 style={TEKO} className="text-[18px] font-semibold uppercase tracking-widest text-foreground mb-5">Posts recentes</h3>
               <ul className="space-y-4">
                 {recentPosts.map((post) => (
                   <li key={post.id}>
