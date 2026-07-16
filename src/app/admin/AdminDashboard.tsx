@@ -6,6 +6,124 @@ import { savePostAction, deletePostAction, savePageAction, deletePageAction, log
 import { TEKO, BODY } from "../data";
 import { Plus, Trash2, Save, Upload, LogOut, FileText, Layout, ArrowLeft, Eye, Edit } from "lucide-react";
 
+interface FocalPointPickerProps {
+  imageUrl: string;
+  value: string;
+  onChange: (val: string) => void;
+}
+
+function FocalPointPicker({ imageUrl, value, onChange }: FocalPointPickerProps) {
+  let posX = 50;
+  let posY = 50;
+
+  if (value) {
+    if (value === "center") {
+      posX = 50;
+      posY = 50;
+    } else if (value === "top") {
+      posX = 50;
+      posY = 0;
+    } else if (value === "bottom") {
+      posX = 50;
+      posY = 100;
+    } else if (value === "left") {
+      posX = 0;
+      posY = 50;
+    } else if (value === "right") {
+      posX = 100;
+      posY = 50;
+    } else if (value.includes("%")) {
+      const parts = value.trim().split(/\s+/);
+      if (parts.length >= 2) {
+        posX = parseFloat(parts[0]);
+        posY = parseFloat(parts[1]);
+      } else if (parts.length === 1) {
+        posX = parseFloat(parts[0]);
+        posY = 50;
+      }
+    }
+  }
+
+  if (isNaN(posX)) posX = 50;
+  if (isNaN(posY)) posY = 50;
+
+  const handleImageClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = Math.max(0, Math.min(100, Math.round(((e.clientX - rect.left) / rect.width) * 100)));
+    const y = Math.max(0, Math.min(100, Math.round(((e.clientY - rect.top) / rect.height) * 100)));
+    onChange(`${x}% ${y}%`);
+  };
+
+  if (!imageUrl) {
+    return (
+      <div className="w-full h-32 border border-dashed border-border flex items-center justify-center text-[13px] text-muted-foreground bg-[#1A1A1A] rounded-sm">
+        Insira uma URL de imagem válida para definir o ponto focal
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="text-[11px] text-muted-foreground flex items-center justify-between">
+        <span>Clique na imagem abaixo para definir o ponto focal (X: {posX}%, Y: {posY}%)</span>
+        <button
+          type="button"
+          onClick={() => onChange("50% 50%")}
+          className="text-primary hover:underline text-[10px] uppercase font-bold"
+        >
+          Resetar ao Centro
+        </button>
+      </div>
+
+      <div 
+        onClick={handleImageClick}
+        className="relative w-full h-48 border border-border overflow-hidden bg-[#222222] rounded-sm cursor-crosshair group select-none"
+      >
+        <img
+          src={imageUrl}
+          alt="Ponto Focal Editor"
+          className="w-full h-full object-cover pointer-events-none opacity-90 transition-opacity group-hover:opacity-100"
+          style={{ objectPosition: `${posX}% ${posY}%` }}
+        />
+
+        {/* 3x3 Grid Overlay (Régua de terços) */}
+        <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 pointer-events-none border border-white/5 opacity-40 group-hover:opacity-80 transition-opacity">
+          <div className="border-r border-b border-dashed border-white/20"></div>
+          <div className="border-r border-b border-dashed border-white/20"></div>
+          <div className="border-b border-dashed border-white/20"></div>
+          <div className="border-r border-b border-dashed border-white/20"></div>
+          <div className="border-r border-b border-dashed border-white/20"></div>
+          <div className="border-b border-dashed border-white/20"></div>
+          <div className="border-r border-dashed border-white/20"></div>
+          <div className="border-r border-dashed border-white/20"></div>
+          <div></div>
+        </div>
+
+        <div className="absolute bottom-2 right-2 bg-black/60 px-1.5 py-0.5 rounded text-[10px] text-white/80 font-mono pointer-events-none">
+          {posX}% {posY}%
+        </div>
+
+        {/* Target Bullseye Marker */}
+        <div 
+          className="absolute w-8 h-8 -ml-4 -mt-4 pointer-events-none flex items-center justify-center transition-all duration-150"
+          style={{ left: `${posX}%`, top: `${posY}%` }}
+        >
+          <div className="w-6 h-6 border-2 border-primary rounded-full flex items-center justify-center animate-pulse">
+            <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+          </div>
+          <div className="absolute w-8 h-0.5 bg-primary/40"></div>
+          <div className="absolute h-8 w-0.5 bg-primary/40"></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function stripHtml(html: string): string {
+  if (!html) return "";
+  return html.replace(/<[^>]*>/g, "");
+}
+
 const DEFAULT_FALLBACK_PAGES = [
   {
     id: "fallback-home",
@@ -475,7 +593,7 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
                 <tbody className="divide-y divide-border">
                   {posts.map((post) => (
                     <tr key={post.id} className="hover:bg-white/[0.02] transition-colors">
-                      <td className="p-4 font-medium text-foreground">{post.title}</td>
+                      <td className="p-4 font-medium text-foreground">{stripHtml(post.title)}</td>
                       <td className="p-4 text-muted-foreground">{post.tag}</td>
                       <td className="p-4 text-muted-foreground">
                         {new Date(post.date).toLocaleDateString("pt-BR")}
@@ -632,30 +750,12 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
               </div>
 
               <div className="space-y-3">
-                <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold">Ponto Focal (object-position)</label>
-                <select
+                <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold">Ponto Focal da Imagem (Ajuste Visual)</label>
+                <FocalPointPicker
+                  imageUrl={postForm.img}
                   value={postForm.imgFocalPoint}
-                  onChange={(e) => setPostForm({ ...postForm, imgFocalPoint: e.target.value })}
-                  className="w-full bg-[#222222] border border-border rounded-sm text-[14px] text-foreground px-4 py-2.5 outline-none focus:border-primary/50"
-                >
-                  <option value="center">Centro (Padrão)</option>
-                  <option value="top">Topo (Focado em cima)</option>
-                  <option value="bottom">Fundo (Focado embaixo)</option>
-                  <option value="left">Esquerda</option>
-                  <option value="right">Direita</option>
-                  <option value="50% 30%">Esportiva (Levemente acima)</option>
-                </select>
-
-                {postForm.img && (
-                  <div className="relative w-full h-[100px] border border-border overflow-hidden bg-[#222222] rounded-sm">
-                    <img
-                      src={postForm.img}
-                      alt="Prévia Hero"
-                      className="w-full h-full object-cover"
-                      style={{ objectPosition: postForm.imgFocalPoint }}
-                    />
-                  </div>
-                )}
+                  onChange={(val) => setPostForm({ ...postForm, imgFocalPoint: val })}
+                />
               </div>
             </div>
           </div>
@@ -735,27 +835,12 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
 
                       {block.image && (
                         <div className="space-y-2 mt-2">
-                          <label className="text-[11px] text-muted-foreground block">Ponto Focal do Bloco</label>
-                          <select
+                          <label className="text-[11px] text-muted-foreground block">Ponto Focal do Bloco (Ajuste Visual)</label>
+                          <FocalPointPicker
+                            imageUrl={block.image}
                             value={block.focalPoint}
-                            onChange={(e) => handlePostBlockChange(idx, "focalPoint", e.target.value)}
-                            className="w-full bg-[#1a1a1a] border border-border rounded-sm text-[11px] text-foreground px-2 py-1.5"
-                          >
-                            <option value="center">Centro</option>
-                            <option value="top">Topo</option>
-                            <option value="bottom">Fundo</option>
-                            <option value="left">Esquerda</option>
-                            <option value="right">Direita</option>
-                          </select>
-
-                          <div className="relative w-full h-[80px] border border-border overflow-hidden bg-[#111111] rounded-sm">
-                            <img
-                              src={block.image}
-                              alt={`Prévia Bloco ${idx + 1}`}
-                              className="w-full h-full object-cover"
-                              style={{ objectPosition: block.focalPoint }}
-                            />
-                          </div>
+                            onChange={(val) => handlePostBlockChange(idx, "focalPoint", val)}
+                          />
                         </div>
                       )}
                     </div>
@@ -927,15 +1012,36 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
                   <label className="text-[11px] text-primary block uppercase font-bold tracking-widest">Promover Artigo no Hero</label>
                   <select
                     value={editingPage.content.heroPostId || ""}
-                    onChange={(e) => setEditingPage({
-                      ...editingPage,
-                      content: { ...editingPage.content, heroPostId: e.target.value }
-                    })}
+                    onChange={(e) => {
+                      const postId = e.target.value;
+                      const selectedPost = posts.find(p => p.id === postId);
+                      if (selectedPost) {
+                        setEditingPage({
+                          ...editingPage,
+                          content: {
+                            ...editingPage.content,
+                            heroPostId: postId,
+                            heroTitle: selectedPost.title,
+                            heroSubtitle: selectedPost.excerpt,
+                            heroImage: selectedPost.img,
+                            heroFocalPoint: selectedPost.imgFocalPoint || "center"
+                          }
+                        });
+                      } else {
+                        setEditingPage({
+                          ...editingPage,
+                          content: {
+                            ...editingPage.content,
+                            heroPostId: ""
+                          }
+                        });
+                      }
+                    }}
                     className="w-full bg-[#111111] border border-border rounded-sm text-[13px] px-3 py-2 outline-none focus:border-primary/50 text-foreground"
                   >
                     <option value="">-- Nenhum (Usar textos estáticos abaixo) --</option>
                     {posts.map((p) => (
-                      <option key={p.id} value={p.id}>{p.title}</option>
+                      <option key={p.id} value={p.id}>{stripHtml(p.title)}</option>
                     ))}
                   </select>
                   <p className="text-[11px] text-muted-foreground mt-1">
@@ -996,21 +1102,15 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[11px] text-muted-foreground block uppercase">Ponto Focal Hero</label>
-                      <select
+                      <label className="text-[11px] text-muted-foreground block uppercase">Ponto Focal Hero (Ajuste Visual)</label>
+                      <FocalPointPicker
+                        imageUrl={editingPage.content.heroImage || ""}
                         value={editingPage.content.heroFocalPoint || "center"}
-                        onChange={(e) => setEditingPage({
+                        onChange={(val) => setEditingPage({
                           ...editingPage,
-                          content: { ...editingPage.content, heroFocalPoint: e.target.value }
+                          content: { ...editingPage.content, heroFocalPoint: val }
                         })}
-                        className="w-full bg-[#222222] border border-border rounded-sm text-[13px] px-2 py-2"
-                      >
-                        <option value="center">Centro</option>
-                        <option value="top">Topo</option>
-                        <option value="bottom">Fundo</option>
-                        <option value="left">Esquerda</option>
-                        <option value="right">Direita</option>
-                      </select>
+                      />
                     </div>
                   </div>
                 </div>
@@ -1023,15 +1123,34 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
                   <label className="text-[11px] text-primary block uppercase font-bold tracking-widest">Promover Artigo na Breaking Bar</label>
                   <select
                     value={editingPage.content.breakingPostId || ""}
-                    onChange={(e) => setEditingPage({
-                      ...editingPage,
-                      content: { ...editingPage.content, breakingPostId: e.target.value }
-                    })}
+                    onChange={(e) => {
+                      const postId = e.target.value;
+                      const selectedPost = posts.find(p => p.id === postId);
+                      if (selectedPost) {
+                        setEditingPage({
+                          ...editingPage,
+                          content: {
+                            ...editingPage.content,
+                            breakingPostId: postId,
+                            breakingText: selectedPost.title,
+                            breakingSlug: selectedPost.slug
+                          }
+                        });
+                      } else {
+                        setEditingPage({
+                          ...editingPage,
+                          content: {
+                            ...editingPage.content,
+                            breakingPostId: ""
+                          }
+                        });
+                      }
+                    }}
                     className="w-full bg-[#111111] border border-border rounded-sm text-[13px] px-3 py-2 outline-none focus:border-primary/50 text-foreground"
                   >
                     <option value="">-- Nenhum (Usar textos estáticos abaixo) --</option>
                     {posts.map((p) => (
-                      <option key={p.id} value={p.id}>{p.title}</option>
+                      <option key={p.id} value={p.id}>{stripHtml(p.title)}</option>
                     ))}
                   </select>
                   <p className="text-[11px] text-muted-foreground mt-1">
@@ -1122,21 +1241,15 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[11px] text-muted-foreground block uppercase">Ponto Focal Banner</label>
-                    <select
-                      value={editingPage.content.bannerFocalPoint}
-                      onChange={(e) => setEditingPage({
+                    <label className="text-[11px] text-muted-foreground block uppercase">Ponto Focal Banner (Ajuste Visual)</label>
+                    <FocalPointPicker
+                      imageUrl={editingPage.content.bannerImage || ""}
+                      value={editingPage.content.bannerFocalPoint || "center"}
+                      onChange={(val) => setEditingPage({
                         ...editingPage,
-                        content: { ...editingPage.content, bannerFocalPoint: e.target.value }
+                        content: { ...editingPage.content, bannerFocalPoint: val }
                       })}
-                      className="w-full bg-[#222222] border border-border rounded-sm text-[13px] px-2 py-2"
-                    >
-                      <option value="center">Centro</option>
-                      <option value="top">Topo</option>
-                      <option value="bottom">Fundo</option>
-                      <option value="left">Esquerda</option>
-                      <option value="right">Direita</option>
-                    </select>
+                    />
                   </div>
                 </div>
               </div>
@@ -1203,21 +1316,15 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[11px] text-muted-foreground block uppercase">Ponto Focal Hero</label>
-                    <select
-                      value={editingPage.content.heroFocalPoint}
-                      onChange={(e) => setEditingPage({
+                    <label className="text-[11px] text-muted-foreground block uppercase">Ponto Focal Hero (Ajuste Visual)</label>
+                    <FocalPointPicker
+                      imageUrl={editingPage.content.heroImage || ""}
+                      value={editingPage.content.heroFocalPoint || "center"}
+                      onChange={(val) => setEditingPage({
                         ...editingPage,
-                        content: { ...editingPage.content, heroFocalPoint: e.target.value }
+                        content: { ...editingPage.content, heroFocalPoint: val }
                       })}
-                      className="w-full bg-[#222222] border border-border rounded-sm text-[13px] px-2 py-2"
-                    >
-                      <option value="center">Centro</option>
-                      <option value="top">Topo</option>
-                      <option value="bottom">Fundo</option>
-                      <option value="left">Esquerda</option>
-                      <option value="right">Direita</option>
-                    </select>
+                    />
                   </div>
                 </div>
               </div>
@@ -1322,19 +1429,15 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[11px] text-muted-foreground block uppercase">Ponto Focal Foto</label>
-                    <select
-                      value={editingPage.content.riderFocalPoint}
-                      onChange={(e) => setEditingPage({
+                    <label className="text-[11px] text-muted-foreground block uppercase">Ponto Focal Foto (Ajuste Visual)</label>
+                    <FocalPointPicker
+                      imageUrl={editingPage.content.riderImage || ""}
+                      value={editingPage.content.riderFocalPoint || "center"}
+                      onChange={(val) => setEditingPage({
                         ...editingPage,
-                        content: { ...editingPage.content, riderFocalPoint: e.target.value }
+                        content: { ...editingPage.content, riderFocalPoint: val }
                       })}
-                      className="w-full bg-[#222222] border border-border rounded-sm text-[13px] px-2 py-2"
-                    >
-                      <option value="center">Centro</option>
-                      <option value="top">Topo</option>
-                      <option value="bottom">Fundo</option>
-                    </select>
+                    />
                   </div>
                 </div>
               </div>

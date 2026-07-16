@@ -2,6 +2,10 @@ import { useState } from "react";
 import { Outlet, NavLink, useNavigate } from "react-router";
 import { Search, Menu, X, ChevronRight, Instagram, Youtube, Facebook } from "lucide-react";
 import { NAV_LINKS, POSTS, TEKO, BODY } from "./data";
+function stripHtml(html: string): string {
+  if (!html) return "";
+  return html.replace(/<[^>]*>/g, "");
+}
 
 export default function Root() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -141,7 +145,7 @@ export default function Root() {
                   <button onClick={() => navigate(`/post/${post.slug}`)} className="group flex items-start gap-2 text-left">
                     <span className="block w-0.5 shrink-0 bg-border group-hover:bg-primary transition-colors mt-1" style={{ minHeight: "14px" }} />
                     <span className="text-[12px] text-muted-foreground group-hover:text-foreground leading-snug transition-colors">
-                      {post.title}
+                      {stripHtml(post.title)}
                     </span>
                   </button>
                 </li>

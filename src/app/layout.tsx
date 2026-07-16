@@ -4,6 +4,10 @@ import { POSTS, TEKO, BODY } from "./data";
 import Header from "./components/Header";
 import Link from "next/link";
 import { ChevronRight, Instagram, Youtube, Facebook } from "lucide-react";
+function stripHtml(html: string): string {
+  if (!html) return "";
+  return html.replace(/<[^>]*>/g, "");
+}
 
 export const dynamic = "force-dynamic";
 
@@ -109,7 +113,7 @@ export default async function RootLayout({
                     <Link href={`/post/${post.slug}`} className="group flex items-start gap-2 text-left">
                       <span className="block w-0.5 shrink-0 bg-border group-hover:bg-primary transition-colors mt-1" style={{ minHeight: "14px" }} />
                       <span className="text-[12px] text-muted-foreground group-hover:text-foreground leading-snug transition-colors">
-                        {post.title}
+                        {stripHtml(post.title)}
                       </span>
                     </Link>
                   </li>
