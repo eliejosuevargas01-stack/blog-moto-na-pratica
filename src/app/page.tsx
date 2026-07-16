@@ -100,21 +100,21 @@ export default async function Home({ searchParams }: HomeProps) {
   // Determinar o post do Hero (Destaque principal)
   let heroPost = posts[0] || null;
   if (homeContent.heroPostId) {
-    const found = posts.find(p => p.id === homeContent.heroPostId);
+    const found = posts.find(p => String(p.id) === String(homeContent.heroPostId));
     if (found) heroPost = found;
   }
 
   // Determinar o post do Breaking Bar (Barra "Novo")
   let breakingPost = posts[1] || posts[0] || null;
   if (homeContent.breakingPostId) {
-    const found = posts.find(p => p.id === homeContent.breakingPostId);
+    const found = posts.find(p => String(p.id) === String(homeContent.breakingPostId));
     if (found) breakingPost = found;
   }
 
   // Filtrar os posts da listagem para evitar duplicados (se for uma listagem normal sem busca ativa)
   const remainingPosts = searchQuery
     ? posts
-    : posts.filter(p => p.id !== heroPost?.id);
+    : posts.filter(p => String(p.id) !== String(heroPost?.id));
 
   const featuredPost = remainingPosts[0] || null;
   const gridPosts = remainingPosts.slice(1, 5);
