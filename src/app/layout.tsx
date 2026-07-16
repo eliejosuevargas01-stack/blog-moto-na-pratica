@@ -57,7 +57,7 @@ export default async function RootLayout({
   return (
     <html lang="pt-BR" className="dark">
       <head>
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" type="image/png" href="/favicon.png" />
       </head>
       <body className="min-h-screen bg-background text-foreground flex flex-col" style={BODY}>
         {/* HEADER CLIENT SIDE COMPONENT */}

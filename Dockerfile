@@ -6,7 +6,7 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Instalar pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@9 --activate
 
 # Copiar arquivos de dependências
 COPY package.json pnpm-lock.yaml* ./
@@ -15,7 +15,7 @@ RUN pnpm install --frozen-lockfile
 # 2. Compilar o projeto
 FROM base AS builder
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@9 --activate
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
