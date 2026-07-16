@@ -81,9 +81,7 @@ export default async function RootLayout({
         <link rel="icon" type="image/png" href="/favicon.png" />
         <link rel="preconnect" href="https://images.unsplash.com" />
         <meta name="google-site-verification" content="fbASypBsg3iwxoSLbdAaR_U4bHoizv_FGbwhS9FBmqQ" />
-      </head>
-      <body className="min-h-screen bg-background text-foreground flex flex-col" style={BODY}>
-        {/* Google Analytics */}
+        {/* Google Analytics - must be in <head> for Search Console GA verification */}
         <Script 
           src="https://www.googletagmanager.com/gtag/js?id=G-WS2JW3944T" 
           strategy="afterInteractive" 
@@ -96,6 +94,8 @@ export default async function RootLayout({
             gtag('config', 'G-WS2JW3944T');
           `}
         </Script>
+      </head>
+      <body className="min-h-screen bg-background text-foreground flex flex-col" style={BODY}>
         {/* HEADER CLIENT SIDE COMPONENT */}
         <Header customPages={customPages} />
 
