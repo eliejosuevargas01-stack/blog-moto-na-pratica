@@ -179,3 +179,74 @@
     line-height: 1.5;
   }
 }
+
+/* --- ESTILOS DE TIPOGRAFIA GLOBAL PARA O CONTEÚDO DOS ARTIGOS (.prose) --- */
+.prose p {
+  font-size: 15px;
+  color: #BBBBBB;
+  line-height: 1.625;
+  margin-bottom: 1.25rem;
+}
+
+.prose p strong, .prose p b {
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+.prose h1, .prose h2, .prose h3, .prose h4 {
+  font-family: 'Teko', sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #FFFFFF;
+  line-height: 1.15;
+}
+
+.prose h1 {
+  font-size: 36px;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.prose h2 {
+  font-size: 28px;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  padding-top: 1rem;
+}
+
+.prose h3 {
+  font-size: 22px;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.prose ul {
+  list-style-type: disc;
+  padding-left: 1.25rem;
+  margin-bottom: 1.25rem;
+  color: #BBBBBB;
+}
+
+.prose ol {
+  list-style-type: decimal;
+  padding-left: 1.25rem;
+  margin-bottom: 1.25rem;
+  color: #BBBBBB;
+}
+
+.prose li {
+  margin-bottom: 0.375rem;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.prose blockquote {
+  border-left: 3px solid var(--primary);
+  padding-left: 1.25rem;
+  margin: 1.5rem 0;
+  font-style: italic;
+  color: #FFFFFF;
+}
+

@@ -101,9 +101,9 @@ export default async function PostPage({ params }: PostPageProps) {
     const paragraphs = (post.content ?? "").split("\n\n").filter(Boolean);
     const htmlParagraphs = paragraphs.map((p: string) => {
       if (p.startsWith("**") && p.endsWith("**")) {
-        return `<h2 class="text-[28px] style={TEKO} font-semibold uppercase tracking-wide text-foreground pt-4 border-t border-border mt-6 mb-3">${p.replace(/\*\*/g, "")}</h2>`;
+        return `<h2>${p.replace(/\*\*/g, "")}</h2>`;
       }
-      return `<p class="text-[15px] text-muted-foreground leading-relaxed mb-4">${p.replace(/\*\*(.+?)\*\*/g, '<strong class="text-foreground">$1</strong>')}</p>`;
+      return `<p>${p.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')}</p>`;
     });
 
     const size = Math.ceil(htmlParagraphs.length / 3);

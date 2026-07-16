@@ -198,29 +198,29 @@ function parseContentToBlocks(content: string): any[] {
   const paragraphs = content.split("\n\n").filter(Boolean);
   const blocks: any[] = [];
   
-  // Converter markdown simples para tags HTML
+  // Converter markdown simples para tags HTML puras (sem classes em linha)
   const htmlParagraphs = paragraphs.map((p) => {
     if (p.startsWith("**") && p.endsWith("**")) {
       const clean = p.replace(/\*\*/g, "");
-      return `<h2 class="text-[28px] font-semibold uppercase tracking-wide text-foreground pt-4 border-t border-border mt-6 mb-3">${clean}</h2>`;
+      return `<h2>${clean}</h2>`;
     }
     
     // Listagem simples
     if (p.includes("\n- ") || p.startsWith("- ")) {
       const items = p.split(/\n?- /).filter(Boolean);
-      const listItems = items.map(item => `<li class="mb-1.5">${item.trim()}</li>`).join("");
-      return `<ul class="list-disc pl-5 mb-4 text-[15px] text-muted-foreground leading-relaxed">${listItems}</ul>`;
+      const listItems = items.map(item => `<li>${item.trim()}</li>`).join("");
+      return `<ul>${listItems}</ul>`;
     }
 
     if (p.match(/^\d+\./)) {
       const items = p.split(/\n?\d+\.\s+/).filter(Boolean);
-      const listItems = items.map(item => `<li class="mb-1.5">${item.trim()}</li>`).join("");
-      return `<ol class="list-decimal pl-5 mb-4 text-[15px] text-muted-foreground leading-relaxed">${listItems}</ol>`;
+      const listItems = items.map(item => `<li>${item.trim()}</li>`).join("");
+      return `<ol>${listItems}</ol>`;
     }
 
     // Negrito inline
-    const boldFormatted = p.replace(/\*\*(.+?)\*\*/g, '<strong class="text-foreground">$1</strong>');
-    return `<p class="text-[15px] text-muted-foreground leading-relaxed mb-4">${boldFormatted}</p>`;
+    const boldFormatted = p.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    return `<p>${boldFormatted}</p>`;
   });
 
   // Dividir igualmente os parágrafos em 3 blocos
