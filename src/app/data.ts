@@ -11,7 +11,7 @@ export const NAV_LINKS = [
 ];
 
 export const TAG_COLORS: Record<string, string> = {
-  Review: "bg-[#C8102E] text-white",
+  Review: "bg-[#FF6A00] text-white",
   Manutenção: "bg-[#2A2A2A] text-[#AAAAAA]",
   Rotas: "bg-[#1A3A2A] text-[#6EC49A]",
   Equipamentos: "bg-[#1A2A3A] text-[#6EAAC4]",
