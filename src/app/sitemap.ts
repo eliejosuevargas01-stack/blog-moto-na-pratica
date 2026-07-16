@@ -4,7 +4,10 @@ import { prisma } from "../lib/db";
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://motonapratica.dominuslabs.online";
+  let baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://motonapratica.dominuslabs.online";
+  if (baseUrl.includes("motonapratica.com.br")) {
+    baseUrl = "https://motonapratica.dominuslabs.online";
+  }
 
   // Páginas estáticas nativas
   const routes = [
