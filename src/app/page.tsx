@@ -64,6 +64,20 @@ export default async function Home({ searchParams }: HomeProps) {
       });
     }
 
+    // Filtrar posts de exemplo do banco de dados se houver posts reais
+    const fallbackSlugs = [
+      "fazer-250-solid-grey-2026-6-meses",
+      "troca-oleo-fz25-passo-a-passo",
+      "serra-da-canastra-de-moto",
+      "hjc-rpha-11-pro-review-1-ano",
+      "michelin-pilot-street-2-fazer",
+      "kit-relampago-manutencao-preventiva"
+    ];
+    const realPosts = posts.filter(p => !fallbackSlugs.includes(p.slug));
+    if (realPosts.length > 0) {
+      posts = realPosts;
+    }
+
     // Contagem de categorias dinâmicas
     const grouped = await prisma.post.groupBy({
       by: ["tag"],
@@ -164,7 +178,7 @@ export default async function Home({ searchParams }: HomeProps) {
       {/* BREAKING BAR */}
       <div className="bg-[#151515] border-y border-border h-10 px-6 flex items-center gap-3 overflow-hidden z-20 relative">
         <span style={TEKO} className="text-white text-[15px] font-semibold uppercase tracking-widest shrink-0 bg-[#E31E24] px-2 py-0.5">Novo</span>
-        <span className="text-white text-[14px] truncate">{breakingText}</span>
+        <span className="text-white text-[14px] truncate" dangerouslySetInnerHTML={{ __html: breakingText }} />
         <Link
           href={`/post/${breakingSlug}`}
           className="text-white/80 hover:text-white text-[13px] font-semibold uppercase ml-auto shrink-0 flex items-center gap-1"
