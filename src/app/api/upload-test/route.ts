@@ -4,37 +4,33 @@ import path from "path";
 
 export async function GET() {
   try {
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
     const cwd = process.cwd();
+    const appContents = fs.readdirSync(cwd);
     
-    let exists = false;
-    let files: { name: string; size: number; writable: boolean }[] = [];
+    let publicContents: string[] = [];
+    let publicExists = false;
     
-    if (fs.existsSync(uploadDir)) {
-      exists = true;
-      const fileNames = fs.readdirSync(uploadDir);
-      files = fileNames.map(name => {
-        const filePath = path.join(uploadDir, name);
-        const stats = fs.statSync(filePath);
-        let writable = false;
-        try {
-          fs.accessSync(filePath, fs.constants.W_OK);
-          writable = true;
-        } catch(e) {}
-        
-        return {
-          name,
-          size: stats.size,
-          writable
-        };
-      });
+    const publicPath = path.join(cwd, "public");
+    if (fs.existsSync(publicPath)) {
+      publicExists = true;
+      publicContents = fs.readdirSync(publicPath);
+    }
+    
+    let uploadsPath = path.join(publicPath, "uploads");
+    let uploadsExists = false;
+    let uploadsContents: string[] = [];
+    if (fs.existsSync(uploadsPath)) {
+      uploadsExists = true;
+      uploadsContents = fs.readdirSync(uploadsPath);
     }
 
     return NextResponse.json({
       cwd,
-      uploadDir,
-      uploadDirExists: exists,
-      files
+      appContents,
+      publicExists,
+      publicContents,
+      uploadsExists,
+      uploadsContents
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
