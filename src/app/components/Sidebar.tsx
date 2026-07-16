@@ -3,8 +3,40 @@ import { CATEGORIES, TEKO } from "../data";
 import Link from "next/link";
 import { ChevronRight, ArrowRight, Tag } from "lucide-react";
 
-export default async function Sidebar() {
+interface SidebarProps {
+  postTags?: string[];
+}
+
+export default async function Sidebar({ postTags }: SidebarProps = {}) {
   let categoryCounts: Record<string, number> = {};
+  let tagsList: string[] = [];
+
+  if (postTags && postTags.length > 0) {
+    tagsList = postTags;
+  } else {
+    try {
+      const posts = await prisma.post.findMany({
+        select: { tag: true, seoKeywords: true }
+      });
+      const uniqueTags = new Set<string>();
+      posts.forEach(p => {
+        if (p.tag) uniqueTags.add(p.tag);
+        if (p.seoKeywords) {
+          p.seoKeywords.split(",").forEach(k => {
+            const trimmed = k.trim();
+            if (trimmed) uniqueTags.add(trimmed);
+          });
+        }
+      });
+      if (uniqueTags.size === 0) {
+        tagsList = ["Fazer250", "FZ25", "Yamaha", "Review", "Manutenção", "Naked", "Pilotagem", "Segurança", "Rota", "Pneu", "2026"];
+      } else {
+        tagsList = Array.from(uniqueTags);
+      }
+    } catch (e) {
+      tagsList = ["Fazer250", "FZ25", "Yamaha", "Review", "Manutenção", "Naked", "Pilotagem", "Segurança", "Rota", "Pneu", "2026"];
+    }
+  }
 
   try {
     const grouped = await prisma.post.groupBy({
@@ -79,7 +111,7 @@ export default async function Sidebar() {
           <h3 style={TEKO} className="text-[20px] font-semibold uppercase tracking-wide">Tags</h3>
         </div>
         <div className="flex flex-wrap gap-2">
-          {["Fazer250", "FZ25", "Yamaha", "Review", "Manutenção", "Naked", "Pilotagem", "Segurança", "Rota", "Pneu", "2026"].map((tag) => (
+          {tagsList.map((tag) => (
             <Link key={tag} href={`/?search=${tag}`} className="flex items-center gap-1 px-2.5 py-1 bg-secondary border border-border text-[11px] text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors uppercase tracking-wide">
               <Tag size={9} />{tag}
             </Link>

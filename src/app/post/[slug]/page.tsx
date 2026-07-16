@@ -239,7 +239,18 @@ export default async function PostPage({ params }: PostPageProps) {
         </div>
 
         {/* SIDEBAR */}
-        <Sidebar />
+        {(() => {
+          const postTags = [post.tag];
+          if (post.seoKeywords) {
+            post.seoKeywords.split(",").forEach((k: string) => {
+              const trimmed = k.trim();
+              if (trimmed && !postTags.includes(trimmed)) {
+                postTags.push(trimmed);
+              }
+            });
+          }
+          return <Sidebar postTags={postTags} />;
+        })()}
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { savePostAction, deletePostAction, savePageAction, deletePageAction, logoutAction } from "../actions";
 import { TEKO, BODY } from "../data";
-import { Plus, Trash2, Save, Upload, LogOut, FileText, Layout, ArrowLeft, Eye, Edit } from "lucide-react";
+import { Plus, Trash2, Save, Upload, LogOut, FileText, Layout, ArrowLeft, Eye, Edit, Wrench, Sliders } from "lucide-react";
 
 interface FocalPointPickerProps {
   imageUrl: string;
@@ -244,11 +244,81 @@ interface AdminDashboardProps {
 export default function AdminDashboard({ initialPosts, initialPages }: AdminDashboardProps) {
   const [posts, setPosts] = useState(initialPosts);
   const [pages, setPages] = useState(initialPages.length > 0 ? initialPages : DEFAULT_FALLBACK_PAGES);
-  const [activeTab, setActiveTab] = useState<"posts" | "pages">("posts");
+  const [activeTab, setActiveTab] = useState<"posts" | "pages" | "settings">("posts");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  const [autoReadTime, setAutoReadTime] = useState<boolean>(() => {
+    const configPage = initialPages.find(p => p.slug === "config");
+    if (configPage && configPage.content) {
+      if (typeof configPage.content === "string") {
+        try {
+          const parsed = JSON.parse(configPage.content);
+          return !!parsed.autoReadTime;
+        } catch (e) {
+          return false;
+        }
+      } else if (typeof configPage.content === "object") {
+        return !!(configPage.content as any).autoReadTime;
+      }
+    }
+    return false;
+  });
+
   const router = useRouter();
+
+  const calculateEstimatedReadTime = (blocks: any[], title: string, excerpt: string): string => {
+    let totalText = title + " " + excerpt;
+    if (Array.isArray(blocks)) {
+      blocks.forEach(b => {
+        totalText += " " + (b.text || "");
+      });
+    }
+    const cleanText = stripHtml(totalText);
+    const words = cleanText.trim().split(/\s+/).filter(w => w.length > 0).length;
+    const wpm = 200;
+    const minutes = Math.max(1, Math.ceil(words / wpm));
+    return `${minutes} min`;
+  };
+
+  const handleToggleAutoReadTime = async (checked: boolean) => {
+    setAutoReadTime(checked);
+    setLoading(true);
+    setMessage(null);
+    
+    const existingConfigPage = pages.find(p => p.slug === "config") || {
+      slug: "config",
+      title: "Configurações do Sistema",
+      isStatic: true,
+      content: {}
+    };
+
+    const updatedConfigPage = {
+      ...existingConfigPage,
+      content: {
+        ...((typeof existingConfigPage.content === "object" ? existingConfigPage.content : {}) as any),
+        autoReadTime: checked
+      }
+    };
+
+    const res = await savePageAction(updatedConfigPage);
+    if (!res.error) {
+      setPages(prev => {
+        const idx = prev.findIndex(p => p.slug === "config");
+        if (idx !== -1) {
+          const copy = [...prev];
+          copy[idx] = updatedConfigPage;
+          return copy;
+        } else {
+          return [...prev, updatedConfigPage];
+        }
+      });
+      setMessage({ type: "success", text: `Função de tempo de leitura ${checked ? "ativada" : "desativada"} com sucesso!` });
+    } else {
+      setMessage({ type: "error", text: "Erro ao salvar configuração: " + res.error });
+    }
+    setLoading(false);
+  };
 
   // --- CONTROLE DE POSTS ---
   const [editingPost, setEditingPost] = useState<any | null>(null); // null significa listagem, {} significa novo post
@@ -389,7 +459,8 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
   };
 
   const generateSlugFromTitle = (titleStr: string) => {
-    return titleStr
+    const cleanTitle = stripHtml(titleStr);
+    return cleanTitle
       .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
@@ -404,7 +475,11 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
     setMessage(null);
 
     const slug = postForm.slug.trim() || generateSlugFromTitle(postForm.title);
-    const postData = { ...postForm, slug };
+    let readTime = postForm.readTime;
+    if (autoReadTime) {
+      readTime = calculateEstimatedReadTime(postForm.blocks, postForm.title, postForm.excerpt);
+    }
+    const postData = { ...postForm, slug, readTime };
 
     const res = await savePostAction(postData);
     if (res.error) {
@@ -563,6 +638,17 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
           >
             <span className="flex items-center gap-2"><Layout size={16} /> Editar Páginas</span>
           </button>
+          <button
+            onClick={() => setActiveTab("settings")}
+            style={TEKO}
+            className={`px-6 py-2.5 text-[20px] font-medium uppercase tracking-wider border-b-2 transition-colors ${
+              activeTab === "settings" 
+                ? "border-primary text-primary" 
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <span className="flex items-center gap-2"><Sliders size={16} /> Funções</span>
+          </button>
         </div>
       )}
 
@@ -686,14 +772,20 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
 
             <div className="space-y-1.5">
               <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold">Tempo de Leitura</label>
-              <input
-                required
-                type="text"
-                value={postForm.readTime}
-                onChange={(e) => setPostForm({ ...postForm, readTime: e.target.value })}
-                placeholder="Ex: 8 min"
-                className="w-full bg-[#222222] border border-border rounded-sm text-[14px] text-foreground px-4 py-2.5 outline-none focus:border-primary/50"
-              />
+              {autoReadTime ? (
+                <div className="w-full bg-[#1A1A1A] border border-border rounded-sm text-[14px] text-muted-foreground px-4 py-2.5 select-none font-medium">
+                  {calculateEstimatedReadTime(postForm.blocks, postForm.title, postForm.excerpt)} <span className="text-[11px] text-primary ml-1.5 uppercase font-bold">(Calculado Automaticamente)</span>
+                </div>
+              ) : (
+                <input
+                  required
+                  type="text"
+                  value={postForm.readTime}
+                  onChange={(e) => setPostForm({ ...postForm, readTime: e.target.value })}
+                  placeholder="Ex: 8 min"
+                  className="w-full bg-[#222222] border border-border rounded-sm text-[14px] text-foreground px-4 py-2.5 outline-none focus:border-primary/50"
+                />
+              )}
             </div>
           </div>
 
@@ -1594,6 +1686,49 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
             </button>
           </div>
         </form>
+      )}
+
+      {/* --- ABA 3: FUNÇÕES (CONFIGURAÇÕES DO SISTEMA) --- */}
+      {activeTab === "settings" && (
+        <div className="space-y-6">
+          <div className="border-b border-border pb-3">
+            <h2 style={TEKO} className="text-[26px] uppercase tracking-wide">Funções e Recursos Opcionais</h2>
+            <p className="text-[13px] text-muted-foreground">Ative ou desative recursos especiais do sistema com apenas um clique.</p>
+          </div>
+
+          <div className="bg-card border border-border p-6 rounded-sm space-y-6">
+            <div className="flex items-start justify-between gap-6 pb-6 border-b border-border/60">
+              <div className="space-y-1">
+                <h3 style={TEKO} className="text-[20px] uppercase tracking-wide text-foreground">Tempo de Leitura Estimado Automático</h3>
+                <p className="text-[13px] text-muted-foreground max-w-[620px] leading-relaxed">
+                  Conta o número de palavras presentes em todos os blocos de texto do post (incluindo título e resumo) e calcula o tempo de leitura ideal estimado, assumindo uma velocidade média de leitura de 200 palavras por minuto.
+                </p>
+                <div className="text-[11px] text-primary/80 font-mono mt-1">
+                  Fórmula: X palavras / 200 = Y min.
+                </div>
+              </div>
+              <div className="flex items-center pt-2">
+                <label className="relative inline-flex items-center cursor-pointer select-none">
+                  <input 
+                    type="checkbox" 
+                    checked={autoReadTime}
+                    onChange={(e) => handleToggleAutoReadTime(e.target.checked)}
+                    className="sr-only peer" 
+                  />
+                  <div className="w-11 h-6 bg-[#333333] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                </label>
+              </div>
+            </div>
+            
+            <div className="text-[12px] text-muted-foreground bg-[#1A1A1A] p-4 border border-border/40 rounded-sm leading-relaxed">
+              <strong>Como isso afeta a escrita de posts?</strong>
+              <ul className="list-disc pl-4 mt-2 space-y-1">
+                <li><strong>Ativado</strong>: O campo "Tempo de Leitura" no formulário de criação/edição de posts será desativado e exibirá em tempo real o cálculo matemático. Ao salvar, o valor calculado será persistido no banco de dados.</li>
+                <li><strong>Desativado</strong>: O formulário exibirá o campo de texto convencional para você digitar manualmente qualquer tempo ou descrição desejada (ex: "5 min", "Leitura Rápida", etc).</li>
+              </ul>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>

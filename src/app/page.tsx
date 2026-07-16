@@ -3,6 +3,7 @@ import { POSTS, CATEGORIES, TAG_COLORS, TEKO, BODY } from "./data";
 import Link from "next/link";
 import { Clock, Tag, ChevronRight, ArrowRight, Star, Calendar, MapPin, Wrench } from "lucide-react";
 import Image from "next/image";
+import Sidebar from "./components/Sidebar";
 
 export const dynamic = "force-dynamic";
 
@@ -271,64 +272,7 @@ export default async function Home({ searchParams }: HomeProps) {
         </div>
 
         {/* SIDEBAR */}
-        <aside className="space-y-10">
-          {/* About Section */}
-          <div className="bg-card border border-border p-6">
-            <div className="flex items-center gap-3 mb-5">
-              <span className="block w-1 h-5 bg-primary" />
-              <h3 style={TEKO} className="text-[20px] font-semibold uppercase tracking-wide">Sobre o blog</h3>
-            </div>
-            <div className="overflow-hidden mb-5 relative" style={{ height: "120px" }}>
-              <img 
-                src="https://images.unsplash.com/photo-1761000989410-3fa81f1b94cb?w=640&h=280&fit=crop&auto=format" 
-                alt="Na estrada" 
-                className="w-full h-full object-cover opacity-80" 
-              />
-            </div>
-            <p className="text-[13px] text-muted-foreground leading-relaxed">
-              Motociclista por paixão, dono de uma Fazer 250 Solid Grey 2026. Escrevo sobre o que vivo na estrada — sem patrocinador, sem jabá.
-            </p>
-            <Link href="/sobre" className="mt-4 inline-flex items-center gap-1 text-[12px] font-bold text-primary uppercase tracking-wider hover:gap-2 transition-all">
-              Conhecer mais <ArrowRight size={12} />
-            </Link>
-          </div>
-
-          {/* Categories Section */}
-          <div className="bg-card border border-border p-6">
-            <div className="flex items-center gap-3 mb-5">
-              <span className="block w-1 h-5 bg-primary" />
-              <h3 style={TEKO} className="text-[20px] font-semibold uppercase tracking-wide">Categorias</h3>
-            </div>
-            <ul>
-              {finalCategories.map((cat) => (
-                <li key={cat.label}>
-                  <Link href={cat.path} className="group flex items-center justify-between w-full py-2.5 border-b border-border text-[13px] text-muted-foreground hover:text-foreground transition-colors">
-                    <span className="flex items-center gap-2">
-                      <ChevronRight size={11} className="text-primary group-hover:translate-x-0.5 transition-transform" />
-                      {cat.label}
-                    </span>
-                    <span className="text-[11px] bg-secondary px-1.5 py-0.5">{cat.count}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Tags Section */}
-          <div className="bg-card border border-border p-6">
-            <div className="flex items-center gap-3 mb-5">
-              <span className="block w-1 h-5 bg-primary" />
-              <h3 style={TEKO} className="text-[20px] font-semibold uppercase tracking-wide">Tags</h3>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {["Fazer250", "FZ25", "Yamaha", "Review", "Manutenção", "Naked", "Pilotagem", "Segurança", "Rota", "Pneu", "2026"].map((tag) => (
-                <Link key={tag} href={`/?search=${tag}`} className="flex items-center gap-1 px-2.5 py-1 bg-secondary border border-border text-[11px] text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors uppercase tracking-wide">
-                  <Tag size={9} />{tag}
-                </Link>
-              ))}
-            </div>
-          </div>
-        </aside>
+        <Sidebar />
       </div>
 
       {/* BANNER MOTO */}
