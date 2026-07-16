@@ -47,7 +47,7 @@ export default async function CategoryView({ tag, title, description, heroImg, i
     <div>
       {/* CATEGORY HERO */}
       <div className="relative overflow-hidden border-b border-border" style={{ height: "280px" }}>
-        <img src={heroImg} alt={title} className="w-full h-full object-cover object-center" />
+        <img src={heroImg} alt={title} className="w-full h-full object-cover object-center" fetchPriority="high" />
         <div className="absolute inset-0" style={{ background: "linear-gradient(to right, rgba(0,0,0,.88) 0%, rgba(0,0,0,.55) 60%, rgba(0,0,0,.15) 100%)" }} />
         <div className="absolute inset-0 flex flex-col justify-center px-8 md:px-16 max-w-[800px] z-10">
           <div className="flex items-center gap-3 mb-3">

@@ -92,6 +92,7 @@ export default async function Sobre() {
           alt={content.heroTitle} 
           className="w-full h-full object-cover object-center" 
           style={{ objectPosition: content.heroFocalPoint || "center" }}
+          fetchPriority="high"
         />
         <div className="absolute inset-0" style={{ background: "linear-gradient(to right, rgba(0,0,0,.90) 0%, rgba(0,0,0,.55) 60%, rgba(0,0,0,.15) 100%)" }} />
         <div className="absolute inset-0 flex flex-col justify-center px-8 md:px-16 max-w-[720px] z-10">

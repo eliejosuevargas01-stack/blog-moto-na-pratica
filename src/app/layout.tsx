@@ -62,6 +62,9 @@ export default async function RootLayout({
     <html lang="pt-BR" className="dark">
       <head>
         <link rel="icon" type="image/png" href="/favicon.png" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Teko:wght@400;500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet" />
       </head>
       <body className="min-h-screen bg-background text-foreground flex flex-col" style={BODY}>
         {/* HEADER CLIENT SIDE COMPONENT */}

@@ -129,6 +129,7 @@ export default async function PostPage({ params }: PostPageProps) {
           alt={post.title} 
           className="w-full h-full object-cover object-center" 
           style={{ objectPosition: post.imgFocalPoint || "center" }}
+          fetchPriority="high"
         />
         <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,.90) 0%, rgba(0,0,0,.40) 55%, rgba(0,0,0,.15) 100%)" }} />
         <div className="absolute inset-0 flex flex-col justify-end px-6 pb-10 md:px-12 max-w-[900px] z-10">

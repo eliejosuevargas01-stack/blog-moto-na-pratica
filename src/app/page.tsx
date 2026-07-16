@@ -131,6 +131,7 @@ export default async function Home({ searchParams }: HomeProps) {
           alt={heroTitle} 
           className="w-full h-full object-cover" 
           style={{ objectPosition: heroFocalPoint }}
+          fetchPriority="high"
         />
         <div className="absolute inset-0" style={{ background: "linear-gradient(to right, rgba(0,0,0,.82) 0%, rgba(0,0,0,.45) 55%, rgba(0,0,0,.10) 100%)" }} />
         <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,.75) 0%, rgba(0,0,0,.35) 50%, transparent 100%)" }} />
