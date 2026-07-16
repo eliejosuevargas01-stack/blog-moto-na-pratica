@@ -12,7 +12,7 @@ export async function GET(
     const { filename } = params;
     
     // Resolve the path to the uploads folder
-    const filePath = path.join(process.cwd(), "public", "uploads", filename);
+    const filePath = path.join(process.cwd(), "uploads", filename);
 
     // Verify if the file exists on the filesystem
     if (!fs.existsSync(filePath)) {

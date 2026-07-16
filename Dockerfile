@@ -39,10 +39,10 @@ ENV NEXT_TELEMETRY_DISABLED 1
 COPY --from=builder /app/public ./public
 
 # Criar pasta de uploads com permissões corretas
-RUN mkdir -p ./public/uploads
+RUN mkdir -p ./uploads
 
 # Volume persistente para uploads (mapear no painel do Coolify)
-VOLUME ["/app/public/uploads"]
+VOLUME ["/app/uploads"]
 
 # Configurar permissões para o cache do Next.js
 RUN mkdir -p .next

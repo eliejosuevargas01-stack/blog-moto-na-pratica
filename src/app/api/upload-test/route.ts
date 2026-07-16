@@ -18,7 +18,7 @@ export async function GET() {
       publicContents = fs.readdirSync(publicPath);
     }
     
-    let uploadsPath = path.join(publicPath, "uploads");
+    let uploadsPath = path.join(cwd, "uploads");
     let uploadsExists = false;
     let uploadsContents: string[] = [];
     if (fs.existsSync(uploadsPath)) {

@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     // Gerar um nome de arquivo seguro e aleatório
     const originalExt = path.extname(file.name) || ".jpg";
     const filename = `${Date.now()}-${Math.floor(Math.random() * 100000)}${originalExt}`;
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
+    const uploadDir = path.join(process.cwd(), "uploads");
     const filePath = path.join(uploadDir, filename);
 
     // Garantir que o diretório existe (cria recursivamente se necessário)
