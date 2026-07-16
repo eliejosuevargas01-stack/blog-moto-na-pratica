@@ -5,6 +5,7 @@ import { signToken, checkCredentials } from "../lib/auth";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { notifyGoogleIndexing } from "../lib/google-indexing";
 
 // --- AUTENTICAÇÃO ---
 
@@ -118,6 +119,31 @@ export async function savePostAction(data: {
     revalidatePath("/equipamentos");
     revalidatePath(`/post/${data.slug}`);
     revalidatePath("/sitemap.xml");
+
+    // Indexação automática via Google Indexing API
+    try {
+      const configPage = await prisma.page.findUnique({ where: { slug: "config" } });
+      let activePlugins: Record<string, boolean> = {};
+      if (configPage && configPage.content) {
+        const contentObj = typeof configPage.content === "string" 
+          ? JSON.parse(configPage.content) 
+          : configPage.content;
+        activePlugins = contentObj.activePlugins || {};
+      }
+      if (activePlugins["googleIndexing"]) {
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://motonapratica.dominuslabs.online";
+        const postUrl = `${baseUrl}/post/${data.slug}`;
+        notifyGoogleIndexing(postUrl).then((res) => {
+          if (res.success) {
+            console.log(`[Google Indexing] URL ${postUrl} enviada com sucesso para indexação instantânea.`);
+          } else {
+            console.warn(`[Google Indexing] Falha ao indexar URL ${postUrl}:`, res.message);
+          }
+        });
+      }
+    } catch (e) {
+      console.error("Erro ao rodar plugin de indexação do Google:", e);
+    }
 
     return { success: true };
   } catch (error: any) {

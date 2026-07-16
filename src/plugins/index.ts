@@ -55,10 +55,30 @@ const autoReadTimePlugin: Plugin = {
 };
 
 /**
+ * 2. Google Instant Indexing Plugin
+ */
+const googleIndexingPlugin: Plugin = {
+  id: "googleIndexing",
+  name: "Indexação Instantânea do Google",
+  description: "Notifica automaticamente a API de Indexação do Google (Google Indexing API) toda vez que um post for salvo ou atualizado, forçando o Googlebot a indexar a página em segundos.",
+  detailedDescription: `
+    <strong>Instruções de Configuração:</strong>
+    <ol class="list-decimal pl-4 mt-2 space-y-1">
+      <li>Crie uma conta de serviço no Google Cloud Console e ative a <strong>Web Search Indexing API</strong>.</li>
+      <li>Gere uma chave em formato JSON para esta conta de serviço.</li>
+      <li>Salve o arquivo da chave com o nome <strong>google-credentials.json</strong> na pasta raiz do seu projeto (ou configure as variáveis de ambiente <code>GOOGLE_CLIENT_EMAIL</code> e <code>GOOGLE_PRIVATE_KEY</code> no seu painel de hospedagem).</li>
+      <li>Adicione o e-mail da conta de serviço como <strong>Proprietário Delegado</strong> da sua propriedade do site no Google Search Console.</li>
+    </ol>
+  `,
+  defaultActive: false,
+};
+
+/**
  * Registry of all available plugins in the system.
  * To register a new plugin in the future (e.g. newsletter, n8n automations, etc.),
  * simply define it above and add it to this array.
  */
 export const plugins: Plugin[] = [
   autoReadTimePlugin,
+  googleIndexingPlugin,
 ];

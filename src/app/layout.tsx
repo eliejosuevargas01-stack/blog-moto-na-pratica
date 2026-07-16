@@ -5,6 +5,7 @@ import Header from "./components/Header";
 import Link from "next/link";
 import { ChevronRight, Instagram, Youtube, Facebook } from "lucide-react";
 import { Teko as TekoFont, Barlow as BarlowFont } from "next/font/google";
+import Script from "next/script";
 
 const tekoFont = TekoFont({
   subsets: ["latin"],
@@ -79,8 +80,22 @@ export default async function RootLayout({
       <head>
         <link rel="icon" type="image/png" href="/favicon.png" />
         <link rel="preconnect" href="https://images.unsplash.com" />
+        <meta name="google-site-verification" content="fbASypBsg3iwxoSLbdAaR_U4bHoizv_FGbwhS9FBmqQ" />
       </head>
       <body className="min-h-screen bg-background text-foreground flex flex-col" style={BODY}>
+        {/* Google Analytics */}
+        <Script 
+          src="https://www.googletagmanager.com/gtag/js?id=G-WS2JW3944T" 
+          strategy="afterInteractive" 
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-WS2JW3944T');
+          `}
+        </Script>
         {/* HEADER CLIENT SIDE COMPONENT */}
         <Header customPages={customPages} />
 
