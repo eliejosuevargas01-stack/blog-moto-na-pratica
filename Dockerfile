@@ -35,28 +35,22 @@ WORKDIR /app
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
 # Copiar arquivos estáticos públicos
 COPY --from=builder /app/public ./public
 
-# Criar pasta de uploads com permissões corretas para o usuário nextjs
-RUN mkdir -p ./public/uploads && chown -R nextjs:nodejs ./public/uploads
+# Criar pasta de uploads com permissões corretas
+RUN mkdir -p ./public/uploads
 
 # Volume persistente para uploads (mapear no painel do Coolify)
 VOLUME ["/app/public/uploads"]
 
 # Configurar permissões para o cache do Next.js
-RUN mkdir .next
-RUN chown nextjs:nodejs .next
+RUN mkdir -p .next
 
 # Copiar o build standalone otimizado
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
-
-USER nextjs
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/prisma ./prisma
 
 EXPOSE 3000
 
