@@ -202,7 +202,7 @@ export default async function Home({ searchParams }: HomeProps) {
                   <Link href={`/post/${featuredPost.slug}`} className="block">
                     <div className="relative overflow-hidden w-full h-[280px]">
                       <img 
-                        src={optimizeUnsplashUrl(featuredPost.img, 800, 450)} 
+                        src={optimizeUnsplashUrl(featuredPost.img, 700, 390)} 
                         alt={featuredPost.title} 
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                         style={{ objectPosition: featuredPost.imgFocalPoint || "center" }}

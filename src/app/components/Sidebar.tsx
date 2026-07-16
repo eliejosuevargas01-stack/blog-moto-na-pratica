@@ -1,5 +1,5 @@
 import { prisma } from "../../lib/db";
-import { CATEGORIES, TEKO } from "../data";
+import { CATEGORIES, TEKO, optimizeUnsplashUrl } from "../data";
 import Link from "next/link";
 import { ChevronRight, ArrowRight, Tag } from "lucide-react";
 
@@ -62,7 +62,7 @@ export default async function Sidebar({ postTags }: SidebarProps = {}) {
     count: categoryCounts[cat.tag] || 0
   }));
 
-  const SIDEBAR_IMG = "https://images.unsplash.com/photo-1761000989410-3fa81f1b94cb?w=640&h=280&fit=crop&auto=format";
+  const SIDEBAR_IMG = optimizeUnsplashUrl("https://images.unsplash.com/photo-1761000989410-3fa81f1b94cb", 300, 130);
 
   return (
     <aside className="space-y-10">
