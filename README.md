@@ -1,6 +1,6 @@
 # Moto na Prática - Blog SSR & CMS
 
-O **Moto na Prática** é um blog de alto desempenho focado em motociclismo, desenvolvido com **Next.js (App Router)** para renderização dinâmica no servidor (SSR) e SEO orgânico de alta indexação, conectado a um banco de dados **MariaDB** e com um painel de controle administrativo (**CMS**) integrado.
+O **Moto na Prática** é um blog de alto desempenho focado em motociclismo, desenvolvido com **Next.js (App Router)** para renderização dinâmica no servidor (SSR) e SEO orgânico de alta indexação, conectado a um banco de dados **PostgreSQL (Supabase)** e com um painel de controle administrativo (**CMS**) integrado.
 
 ---
 
@@ -32,7 +32,11 @@ Ao configurar o deploy no painel do Coolify, declare as seguintes variáveis nas
 
 | Variável | Descrição | Exemplo |
 | :--- | :--- | :--- |
-| `DATABASE_URL` | String de conexão com o banco MariaDB / MySQL. | `mysql://user:pass@72.60.247.157:2500/blog_motos` |
+| `DATABASE_URL` | String de conexão com o banco PostgreSQL (Supabase). | `postgresql://postgres:senha@db.exemplo.supabase.co:5432/postgres` |
+| `NEXT_PUBLIC_SUPABASE_URL` | URL pública da sua API do Supabase. | `https://sua-id.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Chave pública anônima do Supabase. | `sb_publishable_...` |
+| `SUPABASE_SECRET_KEY` | Chave secreta de serviço do Supabase. | `sb_secret_...` |
+| `SUPABASE_JWKS_URL` | URL do arquivo JWKS para verificação de chaves JWT. | `https://sua-id.supabase.co/auth/v1/.well-known/jwks.json` |
 | `ADMIN_USERNAME` | Nome de usuário para acesso à rota `/admin`. | `seu_usuario` |
 | `ADMIN_PASSWORD` | Senha de acesso para a área administrativa. | `sua_senha_secreta` |
 | `JWT_SECRET` | Chave secreta de segurança para assinatura do token de sessão. | `qualquer-frase-longa-e-aleatoria` |
