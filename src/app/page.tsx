@@ -64,19 +64,6 @@ export default async function Home({ searchParams }: HomeProps) {
       });
     }
 
-    // Filtrar posts de exemplo do banco de dados se houver posts reais
-    const fallbackSlugs = [
-      "fazer-250-solid-grey-2026-6-meses",
-      "troca-oleo-fz25-passo-a-passo",
-      "serra-da-canastra-de-moto",
-      "hjc-rpha-11-pro-review-1-ano",
-      "michelin-pilot-street-2-fazer",
-      "kit-relampago-manutencao-preventiva"
-    ];
-    const realPosts = posts.filter(p => !fallbackSlugs.includes(p.slug));
-    if (realPosts.length > 0) {
-      posts = realPosts;
-    }
 
     // Contagem de categorias dinâmicas
     const grouped = await prisma.post.groupBy({
