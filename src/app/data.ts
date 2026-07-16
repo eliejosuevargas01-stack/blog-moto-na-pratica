@@ -1,5 +1,5 @@
-export const TEKO: React.CSSProperties = { fontFamily: "'Teko', sans-serif" };
-export const BODY: React.CSSProperties = { fontFamily: "'Barlow', sans-serif" };
+export const TEKO: React.CSSProperties = { fontFamily: "var(--font-teko), 'Teko', sans-serif" };
+export const BODY: React.CSSProperties = { fontFamily: "var(--font-barlow), 'Barlow', sans-serif" };
 
 export const NAV_LINKS = [
   { label: "Home", path: "/" },
