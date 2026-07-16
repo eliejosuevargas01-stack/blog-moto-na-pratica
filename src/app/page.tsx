@@ -155,8 +155,8 @@ export default async function Home({ searchParams }: HomeProps) {
       </section>
 
       {/* BREAKING BAR */}
-      <div className="bg-primary py-2 px-6 flex items-center gap-3 overflow-hidden z-20 relative">
-        <span style={TEKO} className="text-white text-[15px] font-semibold uppercase tracking-widest shrink-0 bg-[#E05300] px-2 py-0.5">Novo</span>
+      <div className="bg-[#151515] border-y border-border py-2 px-6 flex items-center gap-3 overflow-hidden z-20 relative">
+        <span style={TEKO} className="text-white text-[15px] font-semibold uppercase tracking-widest shrink-0 bg-[#E31E24] px-2 py-0.5">Novo</span>
         <span className="text-white text-[14px] truncate">{breakingText}</span>
         <Link
           href={`/post/${breakingSlug}`}
