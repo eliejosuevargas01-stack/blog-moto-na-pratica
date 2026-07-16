@@ -1,5 +1,5 @@
 import { prisma } from "../../lib/db";
-import { POSTS, TAG_COLORS, TEKO, BODY } from "../data";
+import { POSTS, TAG_COLORS, TEKO, BODY, optimizeUnsplashUrl } from "../data";
 import Sidebar from "./Sidebar";
 import Link from "next/link";
 import { Clock, ArrowRight, ChevronRight, Star, Wrench, Navigation, ShieldCheck } from "lucide-react";
@@ -90,12 +90,12 @@ export default async function CategoryView({ tag, title, description, heroImg, i
                 <article className="group bg-card border border-border overflow-hidden flex flex-col sm:flex-row transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                   <Link href={`/post/${firstPost.slug}`} className="flex flex-col sm:flex-row flex-1">
                     <div className="relative overflow-hidden shrink-0 sm:w-[280px]" style={{ height: "200px" }}>
-                      <img 
-                        src={firstPost.img} 
-                        alt={firstPost.title} 
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                        style={{ objectPosition: firstPost.imgFocalPoint || "center" }}
-                      />
+                       <img 
+                         src={optimizeUnsplashUrl(firstPost.img, 800, 450)} 
+                         alt={firstPost.title} 
+                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                         style={{ objectPosition: firstPost.imgFocalPoint || "center" }}
+                       />
                       <span className={`absolute top-2 left-2 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 ${TAG_COLORS[firstPost.tag] || "bg-[#252525]"}`}>{firstPost.tag}</span>
                     </div>
                     <div className="p-6 flex flex-col justify-center flex-1">
@@ -123,12 +123,12 @@ export default async function CategoryView({ tag, title, description, heroImg, i
                     <article key={post.id} className="group bg-card border border-border overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                       <Link href={`/post/${post.slug}`} className="flex flex-col flex-1">
                         <div className="relative overflow-hidden" style={{ height: "180px" }}>
-                          <img 
-                            src={post.img} 
-                            alt={post.title} 
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                            style={{ objectPosition: post.imgFocalPoint || "center" }}
-                          />
+                           <img 
+                             src={optimizeUnsplashUrl(post.img, 600, 340)} 
+                             alt={post.title} 
+                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                             style={{ objectPosition: post.imgFocalPoint || "center" }}
+                           />
                           <span className={`absolute top-2 left-2 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 ${TAG_COLORS[post.tag] || "bg-[#252525]"}`}>{post.tag}</span>
                         </div>
                         <div className="p-5 flex flex-col flex-1">
@@ -176,7 +176,7 @@ export default async function CategoryView({ tag, title, description, heroImg, i
                     <Link href={`/post/${post.slug}`}>
                       <div className="relative overflow-hidden" style={{ height: "130px" }}>
                         <img 
-                          src={post.img} 
+                          src={optimizeUnsplashUrl(post.img, 450, 260)} 
                           alt={post.title} 
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                           style={{ objectPosition: post.imgFocalPoint || "center" }}

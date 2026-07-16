@@ -230,3 +230,20 @@ export const CATEGORIES = [
   { label: "Dicas", count: 6, path: "/" },
   { label: "Customização", count: 4, path: "/" },
 ];
+
+export function optimizeUnsplashUrl(url: string, width: number, height?: number): string {
+  if (!url || !url.includes("images.unsplash.com")) return url;
+  try {
+    const urlObj = new URL(url);
+    urlObj.searchParams.set("w", width.toString());
+    if (height) {
+      urlObj.searchParams.set("h", height.toString());
+      urlObj.searchParams.set("fit", "crop");
+    }
+    urlObj.searchParams.set("auto", "format");
+    urlObj.searchParams.set("q", "75");
+    return urlObj.toString();
+  } catch (e) {
+    return url;
+  }
+}

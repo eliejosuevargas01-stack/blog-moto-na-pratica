@@ -1,5 +1,5 @@
 import { prisma } from "../../../lib/db";
-import { POSTS, TAG_COLORS, TEKO, BODY } from "../../data";
+import { POSTS, TAG_COLORS, TEKO, BODY, optimizeUnsplashUrl } from "../../data";
 import Sidebar from "../../components/Sidebar";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -125,7 +125,7 @@ export default async function PostPage({ params }: PostPageProps) {
       {/* POST HERO */}
       <div className="relative w-full overflow-hidden" style={{ height: "60vh", minHeight: "360px" }}>
         <img 
-          src={post.img} 
+          src={optimizeUnsplashUrl(post.img, 1200, 680)} 
           alt={post.title} 
           className="w-full h-full object-cover object-center" 
           style={{ objectPosition: post.imgFocalPoint || "center" }}
@@ -214,7 +214,7 @@ export default async function PostPage({ params }: PostPageProps) {
                     <Link href={`/post/${p.slug}`} className="block">
                       <div className="relative overflow-hidden" style={{ height: "160px" }}>
                         <img 
-                          src={p.img} 
+                          src={optimizeUnsplashUrl(p.img, 600, 340)} 
                           alt={p.title} 
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                           style={{ objectPosition: p.imgFocalPoint || "center" }}

@@ -1,5 +1,5 @@
 import { prisma } from "../lib/db";
-import { POSTS, CATEGORIES, TAG_COLORS, TEKO, BODY } from "./data";
+import { POSTS, CATEGORIES, TAG_COLORS, TEKO, BODY, optimizeUnsplashUrl } from "./data";
 import Link from "next/link";
 import { Clock, Tag, ChevronRight, ArrowRight, Star, Calendar, MapPin, Wrench } from "lucide-react";
 import Image from "next/image";
@@ -127,7 +127,7 @@ export default async function Home({ searchParams }: HomeProps) {
       {/* HERO */}
       <section className="relative w-full overflow-hidden" style={{ height: "75vh", minHeight: "420px" }}>
         <img 
-          src={heroImage} 
+          src={optimizeUnsplashUrl(heroImage, 1200, 600)} 
           alt={heroTitle} 
           className="w-full h-full object-cover" 
           style={{ objectPosition: heroFocalPoint }}
@@ -202,7 +202,7 @@ export default async function Home({ searchParams }: HomeProps) {
                   <Link href={`/post/${featuredPost.slug}`} className="block">
                     <div className="relative overflow-hidden w-full h-[280px]">
                       <img 
-                        src={featuredPost.img} 
+                        src={optimizeUnsplashUrl(featuredPost.img, 800, 450)} 
                         alt={featuredPost.title} 
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                         style={{ objectPosition: featuredPost.imgFocalPoint || "center" }}
@@ -241,7 +241,7 @@ export default async function Home({ searchParams }: HomeProps) {
                       <Link href={`/post/${post.slug}`} className="flex flex-col flex-1">
                         <div className="relative overflow-hidden w-full h-[185px]">
                           <img 
-                            src={post.img} 
+                            src={optimizeUnsplashUrl(post.img, 600, 340)} 
                             alt={post.title} 
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                             style={{ objectPosition: post.imgFocalPoint || "center" }}
@@ -279,7 +279,7 @@ export default async function Home({ searchParams }: HomeProps) {
       {/* BANNER MOTO */}
       <section className="relative overflow-hidden border-t border-b border-border" style={{ height: "220px" }}>
         <img 
-          src={homeContent.bannerImage} 
+          src={optimizeUnsplashUrl(homeContent.bannerImage, 1200, 400)} 
           alt={homeContent.bannerTitle} 
           className="w-full h-full object-cover" 
           style={{ objectPosition: homeContent.bannerFocalPoint || "center" }}
