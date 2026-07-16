@@ -137,9 +137,11 @@ export default async function Home({ searchParams }: HomeProps) {
           <div className="flex items-center gap-3 mb-4">
             <span className="bg-primary text-white text-[11px] font-bold uppercase tracking-widest px-2 py-1">Destaque</span>
           </div>
-          <h1 style={TEKO} className="text-[52px] md:text-[72px] font-semibold leading-none uppercase tracking-wide text-foreground mb-4 whitespace-pre-line">
-            {heroTitle}
-          </h1>
+          <h1 
+            style={TEKO} 
+            className="text-[52px] md:text-[72px] font-semibold leading-none uppercase tracking-wide text-foreground mb-4 whitespace-pre-line"
+            dangerouslySetInnerHTML={{ __html: heroTitle }}
+          />
           <p className="text-[15px] text-[#BBBBBB] max-w-[520px] leading-relaxed mb-7">
             {heroSubtitle}
           </p>
@@ -208,9 +210,11 @@ export default async function Home({ searchParams }: HomeProps) {
                       </span>
                     </div>
                     <div className="p-6">
-                      <h3 style={TEKO} className="text-[32px] font-semibold uppercase leading-tight text-foreground mb-3 group-hover:text-primary transition-colors">
-                        {featuredPost.title}
-                      </h3>
+                      <h3 
+                        style={TEKO} 
+                        className="text-[32px] font-semibold uppercase leading-tight text-foreground mb-3 group-hover:text-primary transition-colors"
+                        dangerouslySetInnerHTML={{ __html: featuredPost.title }}
+                      />
                       <p className="text-[14px] text-muted-foreground leading-relaxed mb-5">
                         {featuredPost.excerpt}
                       </p>
@@ -245,9 +249,11 @@ export default async function Home({ searchParams }: HomeProps) {
                           </span>
                         </div>
                         <div className="p-5 flex flex-col flex-1">
-                          <h3 style={TEKO} className="text-[22px] font-semibold uppercase leading-tight text-foreground mb-2 group-hover:text-primary transition-colors">
-                            {post.title}
-                          </h3>
+                          <h3 
+                            style={TEKO} 
+                            className="text-[22px] font-semibold uppercase leading-tight text-foreground mb-2 group-hover:text-primary transition-colors"
+                            dangerouslySetInnerHTML={{ __html: post.title }}
+                          />
                           <p className="text-[13px] text-muted-foreground leading-relaxed mb-4 flex-1">
                             {post.excerpt}
                           </p>

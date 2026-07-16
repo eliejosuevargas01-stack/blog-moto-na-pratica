@@ -145,9 +145,11 @@ export default async function PostPage({ params }: PostPageProps) {
             <span className="flex items-center gap-1 text-[12px] text-muted-foreground"><Clock size={11} /> {post.readTime} de leitura</span>
             <span className="text-[12px] text-muted-foreground">{formattedDate}</span>
           </div>
-          <h1 style={TEKO} className="text-[48px] md:text-[64px] font-semibold leading-none uppercase tracking-wide text-white">
-            {post.title}
-          </h1>
+          <h1 
+            style={TEKO} 
+            className="text-[48px] md:text-[64px] font-semibold leading-none uppercase tracking-wide text-white"
+            dangerouslySetInnerHTML={{ __html: post.title }}
+          />
         </div>
       </div>
 

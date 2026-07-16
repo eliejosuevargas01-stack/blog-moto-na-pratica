@@ -99,7 +99,11 @@ export default async function CategoryView({ tag, title, description, heroImg, i
                       <span className={`absolute top-2 left-2 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 ${TAG_COLORS[firstPost.tag] || "bg-[#252525]"}`}>{firstPost.tag}</span>
                     </div>
                     <div className="p-6 flex flex-col justify-center flex-1">
-                      <h3 style={TEKO} className="text-[28px] font-semibold uppercase leading-tight text-foreground mb-2 group-hover:text-primary transition-colors">{firstPost.title}</h3>
+                      <h3 
+                        style={TEKO} 
+                        className="text-[28px] font-semibold uppercase leading-tight text-foreground mb-2 group-hover:text-primary transition-colors"
+                        dangerouslySetInnerHTML={{ __html: firstPost.title }}
+                      />
                       <p className="text-[13px] text-muted-foreground leading-relaxed mb-4">{firstPost.excerpt}</p>
                       <div className="flex items-center justify-between">
                         <span className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
@@ -128,7 +132,11 @@ export default async function CategoryView({ tag, title, description, heroImg, i
                           <span className={`absolute top-2 left-2 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 ${TAG_COLORS[post.tag] || "bg-[#252525]"}`}>{post.tag}</span>
                         </div>
                         <div className="p-5 flex flex-col flex-1">
-                          <h3 style={TEKO} className="text-[22px] font-semibold uppercase leading-tight text-foreground mb-2 group-hover:text-primary transition-colors">{post.title}</h3>
+                          <h3 
+                            style={TEKO} 
+                            className="text-[22px] font-semibold uppercase leading-tight text-foreground mb-2 group-hover:text-primary transition-colors"
+                            dangerouslySetInnerHTML={{ __html: post.title }}
+                          />
                           <p className="text-[13px] text-muted-foreground leading-relaxed mb-4 flex-1">{post.excerpt}</p>
                           <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                             <Clock size={10} /> {post.readTime} · {post.date instanceof Date ? post.date.toLocaleDateString("pt-BR", { day: '2-digit', month: 'short', year: 'numeric' }) : post.date}
@@ -176,7 +184,11 @@ export default async function CategoryView({ tag, title, description, heroImg, i
                         <span className={`absolute top-2 left-2 text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 ${TAG_COLORS[post.tag] || "bg-[#252525]"}`}>{post.tag}</span>
                       </div>
                       <div className="p-3">
-                        <h4 style={TEKO} className="text-[17px] font-semibold uppercase leading-tight text-foreground group-hover:text-primary transition-colors">{post.title}</h4>
+                        <h4 
+                          style={TEKO} 
+                          className="text-[17px] font-semibold uppercase leading-tight text-foreground group-hover:text-primary transition-colors"
+                          dangerouslySetInnerHTML={{ __html: post.title }}
+                        />
                       </div>
                     </Link>
                   </article>
