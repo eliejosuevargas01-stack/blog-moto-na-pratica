@@ -7,6 +7,11 @@ import { Clock, ChevronLeft, Tag } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
+function stripHtml(html: string): string {
+  if (!html) return "";
+  return html.replace(/<[^>]*>/g, "");
+}
+
 interface PostPageProps {
   params: {
     slug: string;
@@ -22,11 +27,11 @@ export async function generateMetadata({ params }: PostPageProps) {
     });
     if (!post) return { title: "Post Não Encontrado" };
     return {
-      title: `${post.seoTitle || post.title} · Moto na Prática`,
+      title: `${stripHtml(post.seoTitle || post.title)} · Moto na Prática`,
       description: post.seoDescription || post.excerpt,
       keywords: post.seoKeywords || `${post.tag}, Fazer 250, Moto`,
       openGraph: {
-        title: post.title,
+        title: stripHtml(post.title),
         description: post.excerpt,
         images: [{ url: post.img }],
         type: "article",
@@ -126,7 +131,7 @@ export default async function PostPage({ params }: PostPageProps) {
       <div className="relative w-full overflow-hidden" style={{ height: "60vh", minHeight: "360px" }}>
         <img 
           src={optimizeUnsplashUrl(post.img, 1200, 680)} 
-          alt={post.title} 
+          alt={stripHtml(post.title)} 
           className="w-full h-full object-cover object-center" 
           style={{ objectPosition: post.imgFocalPoint || "center" }}
           fetchPriority="high"

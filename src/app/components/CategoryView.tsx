@@ -4,6 +4,11 @@ import Sidebar from "./Sidebar";
 import Link from "next/link";
 import { Clock, ArrowRight, ChevronRight, Star, Wrench, Navigation, ShieldCheck } from "lucide-react";
 
+function stripHtml(html: string): string {
+  if (!html) return "";
+  return html.replace(/<[^>]*>/g, "");
+}
+
 interface CategoryViewProps {
   tag: string;
   title: string;
@@ -125,7 +130,7 @@ export default async function CategoryView({ tag, title, description, heroImg, i
                         <div className="relative overflow-hidden" style={{ height: "180px" }}>
                            <img 
                              src={optimizeUnsplashUrl(post.img, 600, 340)} 
-                             alt={post.title} 
+                             alt={stripHtml(post.title)} 
                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                              style={{ objectPosition: post.imgFocalPoint || "center" }}
                            />
@@ -177,7 +182,7 @@ export default async function CategoryView({ tag, title, description, heroImg, i
                       <div className="relative overflow-hidden" style={{ height: "130px" }}>
                         <img 
                           src={optimizeUnsplashUrl(post.img, 450, 260)} 
-                          alt={post.title} 
+                          alt={stripHtml(post.title)} 
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                           style={{ objectPosition: post.imgFocalPoint || "center" }}
                         />

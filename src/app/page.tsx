@@ -7,6 +7,11 @@ import Sidebar from "./components/Sidebar";
 
 export const dynamic = "force-dynamic";
 
+function stripHtml(html: string): string {
+  if (!html) return "";
+  return html.replace(/<[^>]*>/g, "");
+}
+
 interface HomeProps {
   searchParams: {
     search?: string;
@@ -203,7 +208,7 @@ export default async function Home({ searchParams }: HomeProps) {
                     <div className="relative overflow-hidden w-full h-[280px]">
                       <img 
                         src={optimizeUnsplashUrl(featuredPost.img, 700, 390)} 
-                        alt={featuredPost.title} 
+                        alt={stripHtml(featuredPost.title)} 
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                         style={{ objectPosition: featuredPost.imgFocalPoint || "center" }}
                       />
@@ -242,7 +247,7 @@ export default async function Home({ searchParams }: HomeProps) {
                         <div className="relative overflow-hidden w-full h-[185px]">
                           <img 
                             src={optimizeUnsplashUrl(post.img, 600, 340)} 
-                            alt={post.title} 
+                            alt={stripHtml(post.title)} 
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                             style={{ objectPosition: post.imgFocalPoint || "center" }}
                           />

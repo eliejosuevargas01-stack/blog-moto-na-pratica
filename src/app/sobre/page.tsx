@@ -19,13 +19,13 @@ export async function generateMetadata() {
       where: { slug: "sobre" }
     });
     return {
-      title: page?.seoTitle || "Sobre o Blog e Lucas · Moto na Prática",
-      description: page?.seoDescription || "Lucas, piloto diário de BH e dono de uma Fazer 250 Solid Grey 2026, conta sua história na estrada sem filtros.",
+      title: page?.seoTitle || "Sobre o Blog e Eliezer Gaspar · Moto na Prática",
+      description: page?.seoDescription || "Eliezer Gaspar, piloto diário de BH e dono de uma Fazer 250 Solid Grey 2026, conta sua história na estrada sem filtros.",
     };
   } catch (e) {
     return {
       title: "Sobre o Blog · Moto na Prática",
-      description: "Lucas, piloto diário de BH e dono de uma Fazer 250 Solid Grey 2026, conta sua história na estrada sem filtros."
+      description: "Eliezer Gaspar, piloto diário de BH e dono de uma Fazer 250 Solid Grey 2026, conta sua história na estrada sem filtros."
     };
   }
 }
@@ -43,7 +43,7 @@ export default async function Sobre() {
       { value: "5", label: "Manutenções feitas em casa", iconName: "Wrench" }
     ],
     bioTitle: "Quem escreve aqui",
-    bioContentHtml: `<p class="mb-4">Me chamo Lucas, tenho 29 anos e moro em Belo Horizonte. Comecei a andar de moto in 2019 com uma CG 150 de entrega emprestada do meu tio — a partir daí não parei mais.</p>
+    bioContentHtml: `<p class="mb-4">Me chamo Eliezer Gaspar, moro em Belo Horizonte. Comecei a andar de moto e a partir daí não parei mais.</p>
 <p class="mb-4">Em janeiro de 2025 dei o salto para a Fazer 250 Solid Grey, a versão nova. Foi a maior compra que já fiz relacionada a moto e, com ela, veio a vontade de registrar tudo — as dúvidas, os erros, os descobertas.</p>
 <p class="mb-4">O <span class="text-foreground font-semibold font-bold">Moto na Prática</span> nasceu disso. Não sou mecânico, não sou piloto profissional, não tenho patrocínio. Sou apenas alguém que usa moto todo dia e quer compartilhar o que aprende.</p>
 <p class="mb-4">Aqui você vai encontrar reviews de coisas que comprei com o meu dinheiro, manutenções que fiz na garagem, rotas que percorri e dicas que aprendi na raça. Nada de conteúdo pago ou postagem encomendada.</p>`,
@@ -144,13 +144,13 @@ export default async function Sobre() {
             <div className="overflow-hidden" style={{ height: "420px" }}>
               <img 
                 src={content.riderImage} 
-                alt="Lucas na estrada" 
+                alt="Eliezer Gaspar na estrada" 
                 className="w-full h-full object-cover" 
                 style={{ objectPosition: content.riderFocalPoint || "center" }}
               />
             </div>
             <div className="absolute bottom-0 left-0 right-0 bg-[#111111]/90 p-4 border-t border-border z-10">
-              <p style={TEKO} className="text-[18px] font-semibold uppercase text-foreground">Lucas · BH</p>
+              <p style={TEKO} className="text-[18px] font-semibold uppercase text-foreground">Eliezer Gaspar · BH</p>
               <p className="text-[12px] text-muted-foreground">Fazer 250 Solid Grey 2026</p>
             </div>
           </div>
@@ -206,7 +206,7 @@ export default async function Sobre() {
                   <div className="relative overflow-hidden" style={{ height: "160px" }}>
                     <img 
                       src={post.img} 
-                      alt={post.title} 
+                      alt={post.title.replace(/<[^>]*>/g, "")} 
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                       style={{ objectPosition: post.imgFocalPoint || "center" }}
                     />
@@ -215,9 +215,9 @@ export default async function Sobre() {
                     </span>
                   </div>
                   <div className="p-4 flex-1 flex flex-col justify-between">
-                    <h3 style={TEKO} className="text-[20px] font-semibold uppercase leading-tight text-foreground mb-1 group-hover:text-primary transition-colors">
-                      {post.title}
-                    </h3>
+                    <h3 style={TEKO} className="text-[20px] font-semibold uppercase leading-tight text-foreground mb-1 group-hover:text-primary transition-colors"
+                      dangerouslySetInnerHTML={{ __html: post.title }}
+                    />
                     <span className="text-[11px] text-muted-foreground flex items-center gap-1">
                       <Clock size={10} /> {post.readTime}
                     </span>
