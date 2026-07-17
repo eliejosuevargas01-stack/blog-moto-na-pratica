@@ -35,6 +35,7 @@ export async function POST(request: Request) {
 
     // Processar imagem com sharp: redimensionar para max 1400px de largura e converter para WebP
     const optimizedBuffer = await sharp(inputBuffer)
+      .rotate() // Corrigir orientação EXIF automaticamente
       .resize({ width: 1400, withoutEnlargement: true }) // Nunca aumenta o tamanho original
       .webp({ quality: 82 })
       .toBuffer();

@@ -30,6 +30,7 @@ export async function GET(
       if (!fs.existsSync(webpPath)) {
         const inputBuffer = fs.readFileSync(filePath);
         const webpBuffer = await sharp(inputBuffer)
+          .rotate() // Corrigir orientação EXIF automaticamente
           .resize({ width: 1400, withoutEnlargement: true })
           .webp({ quality: 82 })
           .toBuffer();
