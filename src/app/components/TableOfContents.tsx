@@ -2,20 +2,12 @@
 
 import React, { useState, useEffect } from "react";
 import { List, ChevronDown, ChevronUp } from "lucide-react";
-import { TEKO } from "../data";
+import { TEKO, slugify } from "../data";
 
 interface Heading {
   id: string;
   text: string;
   level: number; // 2 for h2, 3 for h3
-}
-
-export function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/<[^>]*>/g, "") // strip HTML tags
-    .replace(/[^a-z0-9\u00C0-\u00FF]+/gi, "-") // preserve accented characters but replace spaces/symbols
-    .replace(/^-+|-+$/g, "");
 }
 
 interface TableOfContentsProps {

@@ -259,3 +259,11 @@ export function optimizeImageUrl(url: string, width: number, height?: number): s
   }
   return url;
 }
+
+export function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/<[^>]*>/g, "") // strip HTML tags
+    .replace(/[^a-z0-9\u00C0-\u00FF]+/gi, "-") // preserve accented characters but replace spaces/symbols
+    .replace(/^-+|-+$/g, "");
+}

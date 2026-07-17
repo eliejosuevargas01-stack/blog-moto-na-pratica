@@ -1,11 +1,11 @@
 import { prisma } from "../../../lib/db";
-import { POSTS, TAG_COLORS, TEKO, BODY, optimizeImageUrl } from "../../data";
+import { POSTS, TAG_COLORS, TEKO, BODY, optimizeImageUrl, slugify } from "../../data";
 import Sidebar from "../../components/Sidebar";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Clock, ChevronLeft, Tag } from "lucide-react";
-import TableOfContents, { slugify } from "../../components/TableOfContents";
+import TableOfContents from "../../components/TableOfContents";
 import CommentsSection from "../../components/CommentsSection";
 
 export const dynamic = "force-dynamic";
