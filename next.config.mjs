@@ -7,6 +7,14 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'images.unsplash.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'motonapratica.dominuslabs.online',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
     ],
   },
   // Desabilita avisos de lint ou typescript no build caso precise pular validação

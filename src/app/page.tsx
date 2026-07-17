@@ -132,12 +132,14 @@ export default async function Home({ searchParams }: HomeProps) {
     <>
       {/* HERO */}
       <section className="relative w-full overflow-hidden" style={{ height: "75vh", minHeight: "420px" }}>
-        <img 
-          src={optimizeUnsplashUrl(heroImage, 1200, 600)} 
-          alt={heroTitle} 
-          className="w-full h-full object-cover" 
+        <Image 
+          src={optimizeUnsplashUrl(heroImage, 1400, 700)} 
+          alt={stripHtml(heroTitle)}
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover" 
           style={{ objectPosition: heroFocalPoint }}
-          fetchPriority="high"
         />
         <div className="absolute inset-0" style={{ background: "linear-gradient(to right, rgba(0,0,0,.82) 0%, rgba(0,0,0,.45) 55%, rgba(0,0,0,.10) 100%)" }} />
         <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,.75) 0%, rgba(0,0,0,.35) 50%, transparent 100%)" }} />
