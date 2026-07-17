@@ -11,14 +11,6 @@
     "prisma:db:push": "prisma db push",
     "prisma:seed": "prisma db seed"
   },
-  "browserslist": [
-    "> 0.5%",
-    "last 2 Chrome versions",
-    "last 2 Firefox versions",
-    "last 2 Safari versions",
-    "not dead",
-    "not IE 11"
-  ],
   "dependencies": {
     "@emotion/react": "11.14.0",
     "@emotion/styled": "11.14.1",
