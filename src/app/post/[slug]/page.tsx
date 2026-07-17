@@ -2,6 +2,7 @@ import { prisma } from "../../../lib/db";
 import { POSTS, TAG_COLORS, TEKO, BODY, optimizeUnsplashUrl } from "../../data";
 import Sidebar from "../../components/Sidebar";
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Clock, ChevronLeft, Tag } from "lucide-react";
 
@@ -129,12 +130,14 @@ export default async function PostPage({ params }: PostPageProps) {
     <div>
       {/* POST HERO */}
       <div className="relative w-full overflow-hidden" style={{ height: "60vh", minHeight: "360px" }}>
-        <img 
-          src={optimizeUnsplashUrl(post.img, 1200, 680)} 
-          alt={stripHtml(post.title)} 
-          className="w-full h-full object-cover object-center" 
+        <Image 
+          src={optimizeUnsplashUrl(post.img, 1400, 700)} 
+          alt={stripHtml(post.title)}
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover"
           style={{ objectPosition: post.imgFocalPoint || "center" }}
-          fetchPriority="high"
         />
         <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,.90) 0%, rgba(0,0,0,.40) 55%, rgba(0,0,0,.15) 100%)" }} />
         <div className="absolute inset-0 flex flex-col justify-end px-6 pb-10 md:px-12 max-w-[900px] z-10">
@@ -173,7 +176,7 @@ export default async function PostPage({ params }: PostPageProps) {
               <div key={i} className="flex flex-col gap-6">
                 {/* Texto HTML-Safe */}
                 <div 
-                  className="prose prose-invert max-w-none text-muted-foreground text-[15px] leading-relaxed"
+                  className="prose prose-invert max-w-none text-muted-foreground text-[15px] leading-relaxed [&_a]:text-primary [&_a]:underline [&_a:hover]:text-primary/80 [&_a]:transition-colors"
                   dangerouslySetInnerHTML={{ __html: block.text }}
                 />
                 
