@@ -111,10 +111,8 @@ export default async function Home({ searchParams }: HomeProps) {
     if (found) breakingPost = found;
   }
 
-  // Filtrar os posts da listagem para evitar duplicados (se for uma listagem normal sem busca ativa)
-  const remainingPosts = searchQuery
-    ? posts
-    : posts.filter(p => String(p.id) !== String(heroPost?.id));
+  // Não filtrar o post do hero da listagem — ele deve aparecer nos "Últimos Posts" também
+  const remainingPosts = posts;
 
   const featuredPost = remainingPosts[0] || null;
   const gridPosts = remainingPosts.slice(1, 5);
