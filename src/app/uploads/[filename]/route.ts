@@ -23,7 +23,7 @@ export async function GET(
 
     // Para JPEG/PNG: converter para WebP automaticamente (com cache em disco)
     if (ext === ".jpg" || ext === ".jpeg" || ext === ".png") {
-      const webpFilename = filename.replace(/\.(jpe?g|png)$/i, ".webp");
+      const webpFilename = filename.replace(/\.(jpe?g|png)$/i, ".v2.webp");
       const webpPath = path.join(UPLOADS_DIR, webpFilename);
 
       // Checar se já existe versão WebP em cache no disco
