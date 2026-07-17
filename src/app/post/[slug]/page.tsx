@@ -5,12 +5,24 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { Clock, ChevronLeft, Tag } from "lucide-react";
+import TableOfContents, { slugify } from "../../components/TableOfContents";
+import CommentsSection from "../../components/CommentsSection";
 
 export const dynamic = "force-dynamic";
 
 function stripHtml(html: string): string {
   if (!html) return "";
   return html.replace(/<[^>]*>/g, "");
+}
+
+function injectHeadingIds(html: string): string {
+  if (!html) return "";
+  return html.replace(/<(h[23])\b([^>]*)>(.*?)<\/\1>/gi, (match, tag, attrs, content) => {
+    if (attrs.includes('id=')) return match;
+    const cleanText = content.replace(/<[^>]*>/g, "");
+    const id = slugify(cleanText);
+    return `<${tag}${attrs} id="${id}">${content}</${tag}>`;
+  });
 }
 
 interface PostPageProps {
@@ -174,14 +186,17 @@ export default async function PostPage({ params }: PostPageProps) {
             {post.excerpt}
           </p>
 
+          {/* Índice (TOC) */}
+          <TableOfContents blocks={blocks} />
+
           {/* Article body with Dynamic HTML Blocks */}
           <div className="space-y-8" style={BODY}>
             {blocks.map((block: any, i: number) => (
               <div key={i} className="flex flex-col gap-6">
-                {/* Texto HTML-Safe */}
+                {/* Texto HTML-Safe com IDs injetados */}
                 <div 
                   className="prose prose-invert max-w-none text-muted-foreground text-[15px] leading-relaxed [&_a]:text-primary [&_a]:underline [&_a:hover]:text-primary/80 [&_a]:transition-colors"
-                  dangerouslySetInnerHTML={{ __html: block.text }}
+                  dangerouslySetInnerHTML={{ __html: injectHeadingIds(block.text) }}
                 />
                 
                 {/* Imagem do bloco com Ponto Focal */}
@@ -249,6 +264,9 @@ export default async function PostPage({ params }: PostPageProps) {
               </div>
             </div>
           )}
+
+          {/* Seção de Comentários */}
+          <CommentsSection postId={post.id} />
         </div>
 
         {/* SIDEBAR */}

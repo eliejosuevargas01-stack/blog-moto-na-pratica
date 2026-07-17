@@ -65,7 +65,7 @@ export default async function Sidebar({ postTags }: SidebarProps = {}) {
   const SIDEBAR_IMG = optimizeUnsplashUrl("https://images.unsplash.com/photo-1761000989410-3fa81f1b94cb", 300, 130);
 
   return (
-    <aside className="space-y-10">
+    <aside className="space-y-10 lg:sticky lg:top-8">
       {/* About Box */}
       <div className="bg-card border border-border p-6">
         <div className="flex items-center gap-3 mb-5">
