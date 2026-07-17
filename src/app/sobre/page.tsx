@@ -19,13 +19,13 @@ export async function generateMetadata() {
       where: { slug: "sobre" }
     });
     return {
-      title: page?.seoTitle || "Sobre o Blog e Eliezer Gaspar · Moto na Prática",
-      description: page?.seoDescription || "Eliezer Gaspar, piloto diário de BH e dono de uma Fazer 250 Solid Grey 2026, conta sua história na estrada sem filtros.",
+      title: page?.seoTitle || "Sobre o Blog e Eliezer · Moto na Prática",
+      description: page?.seoDescription || "Eliezer, piloto de Fazer 250 Solid Grey 2026 em Gaspar - SC, conta sua história na estrada sem filtros.",
     };
   } catch (e) {
     return {
       title: "Sobre o Blog · Moto na Prática",
-      description: "Eliezer Gaspar, piloto diário de BH e dono de uma Fazer 250 Solid Grey 2026, conta sua história na estrada sem filtros."
+      description: "Eliezer, piloto de Fazer 250 Solid Grey 2026 em Gaspar - SC, conta sua história na estrada sem filtros."
     };
   }
 }
@@ -37,14 +37,14 @@ export default async function Sobre() {
     heroImage: "https://images.unsplash.com/photo-1625812184391-0359bf2344b9?w=1400&h=500&fit=crop&auto=format",
     heroFocalPoint: "center",
     stats: [
-      { value: "8.400 km", label: "Rodados na FZ25", iconName: "Gauge" },
-      { value: "Jan 2025", label: "Início com a moto", iconName: "Calendar" },
-      { value: "Belo Horizonte", label: "Base de operações", iconName: "MapPin" },
+      { value: "3.500 km", label: "Rodados na FZ25", iconName: "Gauge" },
+      { value: "Jan 2026", label: "Início com a moto", iconName: "Calendar" },
+      { value: "Gaspar - SC", label: "Base de operações", iconName: "MapPin" },
       { value: "5", label: "Manutenções feitas em casa", iconName: "Wrench" }
     ],
     bioTitle: "Quem escreve aqui",
-    bioContentHtml: `<p class="mb-4">Me chamo Eliezer Gaspar, moro em Belo Horizonte. Comecei a andar de moto e a partir daí não parei mais.</p>
-<p class="mb-4">Em janeiro de 2025 dei o salto para a Fazer 250 Solid Grey, a versão nova. Foi a maior compra que já fiz relacionada a moto e, com ela, veio a vontade de registrar tudo — as dúvidas, os erros, os descobertas.</p>
+    bioContentHtml: `<p class="mb-4">Me chamo Eliezer, moro em Gaspar, Santa Catarina (Vale do Itajaí). Comecei a andar de moto recentemente e a partir daí não parei mais.</p>
+<p class="mb-4">No início de 2026 dei o salto para a Fazer 250 Solid Grey, a versão nova. Foi a maior compra que já fiz relacionada a moto e, com ela, veio a vontade de registrar tudo — as dúvidas, os erros, as descobertas.</p>
 <p class="mb-4">O <span class="text-foreground font-semibold font-bold">Moto na Prática</span> nasceu disso. Não sou mecânico, não sou piloto profissional, não tenho patrocínio. Sou apenas alguém que usa moto todo dia e quer compartilhar o que aprende.</p>
 <p class="mb-4">Aqui você vai encontrar reviews de coisas que comprei com o meu dinheiro, manutenções que fiz na garagem, rotas que percorri e dicas que aprendi na raça. Nada de conteúdo pago ou postagem encomendada.</p>`,
     bioQuote: "Se você está pensando em comprar uma moto, já tem uma ou só curte o assunto — esse blog é pra você.",
@@ -144,14 +144,14 @@ export default async function Sobre() {
             <div className="overflow-hidden" style={{ height: "420px" }}>
               <img 
                 src={optimizeImageUrl(content.riderImage, 500)} 
-                alt="Eliezer Gaspar na estrada" 
+                alt="Eliezer na estrada" 
                 className="w-full h-full object-cover" 
                 style={{ objectPosition: content.riderFocalPoint || "center" }}
                 loading="lazy"
               />
             </div>
             <div className="absolute bottom-0 left-0 right-0 bg-[#111111]/90 p-4 border-t border-border z-10">
-              <p style={TEKO} className="text-[18px] font-semibold uppercase text-foreground">Eliezer Gaspar · BH</p>
+              <p style={TEKO} className="text-[18px] font-semibold uppercase text-foreground">Eliezer · Gaspar - SC</p>
               <p className="text-[12px] text-muted-foreground">Fazer 250 Solid Grey 2026</p>
             </div>
           </div>

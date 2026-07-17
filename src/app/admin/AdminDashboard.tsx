@@ -139,7 +139,7 @@ const DEFAULT_FALLBACK_PAGES = [
       breakingText: "Michelin Pilot Street 2 na Fazer — diferença real ou papo de vendedor?",
       breakingSlug: "michelin-pilot-street-2-fazer",
       bannerTitle: "Yamaha FZ25 · Solid Grey 2026",
-      bannerSubtitle: "8.400 km rodados · Motor 249cc · Minha companheira diária",
+      bannerSubtitle: "3.500 km rodados · Motor 249cc · Minha companheira diária",
       bannerImage: "https://images.unsplash.com/photo-1571646059462-99317ec8d1bf?w=1400&h=500&fit=crop&auto=format",
       bannerFocalPoint: "center"
     },
@@ -157,13 +157,13 @@ const DEFAULT_FALLBACK_PAGES = [
       heroImage: "https://images.unsplash.com/photo-1625812184391-0359bf2344b9?w=1400&h=500&fit=crop&auto=format",
       heroFocalPoint: "center",
       stats: [
-        { value: "8.400 km", label: "Rodados na FZ25", iconName: "Gauge" },
-        { value: "Jan 2025", label: "Início com a moto", iconName: "Calendar" },
-        { value: "Belo Horizonte", label: "Base de operações", iconName: "MapPin" },
+        { value: "3.500 km", label: "Rodados na FZ25", iconName: "Gauge" },
+        { value: "Jan 2026", label: "Início com a moto", iconName: "Calendar" },
+        { value: "Gaspar - SC", label: "Base de operações", iconName: "MapPin" },
         { value: "5", label: "Manutenções feitas em casa", iconName: "Wrench" }
       ],
       bioTitle: "Quem escreve aqui",
-      bioContentHtml: `<p class="mb-4">Me chamo Eliezer Gaspar, moro em Belo Horizonte. Comecei a andar de moto e a partir daí não parei mais.</p>\n<p class="mb-4">Em janeiro de 2025 dei o salto para a Fazer 250 Solid Grey, a versão nova. Foi a maior compra que já fiz relacionada a moto e, com ela, veio a vontade de registrar tudo — as dúvidas, os erros, as descobertas.</p>\n<p class="mb-4">O <span class="text-foreground font-semibold">Moto na Prática</span> nasceu disso. Não sou mecânico, não sou piloto profissional, não tenho patrocínio. Sou apenas alguém que usa moto todo dia e quer compartilhar o que aprende.</p>\n<p class="mb-4">Aqui você vai encontrar reviews de coisas que comprei com o meu dinheiro, manutenções que fiz na garagem, rotas que percorri e dicas que aprendi na raça. Nada de conteúdo pago ou postagem encomendada.</p>`,
+      bioContentHtml: `<p class="mb-4">Me chamo Eliezer, moro em Gaspar - SC. Comecei a andar de moto e a partir daí não parei mais.</p>\n<p class="mb-4">Em janeiro de 2025 dei o salto para a Fazer 250 Solid Grey, a versão nova. Foi a maior compra que já fiz relacionada a moto e, com ela, veio a vontade de registrar tudo — as dúvidas, os erros, as descobertas.</p>\n<p class="mb-4">O <span class="text-foreground font-semibold">Moto na Prática</span> nasceu disso. Não sou mecânico, não sou piloto profissional, não tenho patrocínio. Sou apenas alguém que usa moto todo dia e quer compartilhar o que aprende.</p>\n<p class="mb-4">Aqui você vai encontrar reviews de coisas que comprei com o meu dinheiro, manutenções que fiz na garagem, rotas que percorri e dicas que aprendi na raça. Nada de conteúdo pago ou postagem encomendada.</p>`,
       bioQuote: "Se você está pensando em comprar uma moto, já tem uma ou só curte o assunto — esse blog é pra você.",
       riderImage: "https://images.unsplash.com/photo-1542351387-dde430deaaa7?w=800&h=900&fit=crop&auto=format",
       riderFocalPoint: "center",
@@ -180,8 +180,8 @@ const DEFAULT_FALLBACK_PAGES = [
         { name: "Cor", value: "Solid Grey (exclusiva 2026)" }
       ]
     },
-    seoTitle: "Sobre o Eliezer Gaspar e a Fazer 250 - Moto na Prática",
-    seoDescription: "Conheça o Eliezer Gaspar, criador do Moto na Prática, e veja a ficha técnica detalhada da Yamaha FZ25 Solid Grey 2026 do blog."
+    seoTitle: "Sobre o Eliezer e a Fazer 250 - Moto na Prática",
+    seoDescription: "Conheça o Eliezer, criador do Moto na Prática, e veja a ficha técnica detalhada da Yamaha FZ25 Solid Grey 2026 do blog."
   },
   {
     id: "fallback-reviews",
@@ -1445,7 +1445,7 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
                       <span className="text-[11px] text-primary font-bold">Item {idx + 1}</span>
                       <input
                         type="text"
-                        placeholder="Valor (ex: 8.400 km)"
+                        placeholder="Valor (ex: 3.500 km)"
                         value={s.value}
                         onChange={(e) => {
                           const statsCopy = [...editingPage.content.stats];
@@ -1511,7 +1511,7 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[11px] text-muted-foreground block uppercase">Foto do Autor (Eliezer Gaspar)</label>
+                    <label className="text-[11px] text-muted-foreground block uppercase">Foto do Autor (Eliezer)</label>
                     <div className="flex gap-2">
                       <input
                         type="file"
