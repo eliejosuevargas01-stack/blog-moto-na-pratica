@@ -1,5 +1,5 @@
 import { prisma } from "../lib/db";
-import { POSTS, CATEGORIES, TAG_COLORS, TEKO, BODY, optimizeUnsplashUrl } from "./data";
+import { POSTS, CATEGORIES, TAG_COLORS, TEKO, BODY, optimizeImageUrl } from "./data";
 import Link from "next/link";
 import { Clock, Tag, ChevronRight, ArrowRight, Star, Calendar, MapPin, Wrench } from "lucide-react";
 import Image from "next/image";
@@ -131,13 +131,14 @@ export default async function Home({ searchParams }: HomeProps) {
       {/* HERO */}
       <section className="relative w-full overflow-hidden" style={{ height: "75vh", minHeight: "420px" }}>
         <Image 
-          src={optimizeUnsplashUrl(heroImage, 1400, 700)} 
+          src={optimizeImageUrl(heroImage, 1200)} 
           alt={stripHtml(heroTitle)}
           fill
           priority
           sizes="100vw"
           className="object-cover" 
           style={{ objectPosition: heroFocalPoint }}
+          unoptimized={heroImage.startsWith("/uploads")}
         />
         <div className="absolute inset-0" style={{ background: "linear-gradient(to right, rgba(0,0,0,.82) 0%, rgba(0,0,0,.45) 55%, rgba(0,0,0,.10) 100%)" }} />
         <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,.75) 0%, rgba(0,0,0,.35) 50%, transparent 100%)" }} />
@@ -208,10 +209,11 @@ export default async function Home({ searchParams }: HomeProps) {
                   <Link href={`/post/${featuredPost.slug}`} className="block">
                     <div className="relative overflow-hidden w-full h-[280px]">
                       <img 
-                        src={optimizeUnsplashUrl(featuredPost.img, 700, 390)} 
+                        src={optimizeImageUrl(featuredPost.img, 750, 420)} 
                         alt={stripHtml(featuredPost.title)} 
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                         style={{ objectPosition: featuredPost.imgFocalPoint || "center" }}
+                        loading="lazy"
                       />
                       <span className={`absolute top-3 left-3 text-[11px] font-bold uppercase tracking-widest px-2 py-1 ${TAG_COLORS[featuredPost.tag] || "bg-[#252525] text-white"}`}>
                         {featuredPost.tag}
@@ -247,10 +249,11 @@ export default async function Home({ searchParams }: HomeProps) {
                       <Link href={`/post/${post.slug}`} className="flex flex-col flex-1">
                         <div className="relative overflow-hidden w-full h-[185px]">
                           <img 
-                            src={optimizeUnsplashUrl(post.img, 600, 340)} 
+                            src={optimizeImageUrl(post.img, 450, 260)} 
                             alt={stripHtml(post.title)} 
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                             style={{ objectPosition: post.imgFocalPoint || "center" }}
+                            loading="lazy"
                           />
                           <span className={`absolute top-2 left-2 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 ${TAG_COLORS[post.tag] || "bg-[#252525] text-white"}`}>
                             {post.tag}
@@ -285,10 +288,11 @@ export default async function Home({ searchParams }: HomeProps) {
       {/* BANNER MOTO */}
       <section className="relative overflow-hidden border-t border-b border-border" style={{ height: "220px" }}>
         <img 
-          src={optimizeUnsplashUrl(homeContent.bannerImage, 1200, 400)} 
+          src={optimizeImageUrl(homeContent.bannerImage, 1200, 400)} 
           alt={homeContent.bannerTitle} 
           className="w-full h-full object-cover" 
           style={{ objectPosition: homeContent.bannerFocalPoint || "center" }}
+          loading="lazy"
         />
         <div className="absolute inset-0" style={{ background: "linear-gradient(rgba(0,0,0,.75), rgba(0,0,0,.35))" }} />
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 z-10">

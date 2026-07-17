@@ -1,5 +1,5 @@
 import { prisma } from "../../lib/db";
-import { POSTS, TAG_COLORS, TEKO, BODY } from "../data";
+import { POSTS, TAG_COLORS, TEKO, BODY, optimizeImageUrl } from "../data";
 import Sidebar from "../components/Sidebar";
 import Link from "next/link";
 import { Clock, ArrowRight, Gauge, Calendar, MapPin, Wrench } from "lucide-react";
@@ -88,7 +88,7 @@ export default async function Sobre() {
       {/* HERO */}
       <div className="relative overflow-hidden border-b border-border" style={{ height: "320px" }}>
         <img 
-          src={content.heroImage} 
+          src={optimizeImageUrl(content.heroImage, 1200)} 
           alt={content.heroTitle} 
           className="w-full h-full object-cover object-center" 
           style={{ objectPosition: content.heroFocalPoint || "center" }}
@@ -143,10 +143,11 @@ export default async function Sobre() {
           <div className="relative">
             <div className="overflow-hidden" style={{ height: "420px" }}>
               <img 
-                src={content.riderImage} 
+                src={optimizeImageUrl(content.riderImage, 500)} 
                 alt="Eliezer Gaspar na estrada" 
                 className="w-full h-full object-cover" 
                 style={{ objectPosition: content.riderFocalPoint || "center" }}
+                loading="lazy"
               />
             </div>
             <div className="absolute bottom-0 left-0 right-0 bg-[#111111]/90 p-4 border-t border-border z-10">
@@ -165,10 +166,11 @@ export default async function Sobre() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 bg-card border border-border overflow-hidden">
             <div className="overflow-hidden" style={{ height: "300px" }}>
               <img 
-                src={content.motoImage} 
+                src={optimizeImageUrl(content.motoImage, 800)} 
                 alt={content.motoSpecsTitle} 
                 className="w-full h-full object-cover" 
                 style={{ objectPosition: content.motoFocalPoint || "center" }}
+                loading="lazy"
               />
             </div>
             <div className="p-8 flex flex-col justify-center" style={BODY}>
@@ -205,10 +207,11 @@ export default async function Sobre() {
                 <Link href={`/post/${post.slug}`} className="flex flex-col flex-1">
                   <div className="relative overflow-hidden" style={{ height: "160px" }}>
                     <img 
-                      src={post.img} 
+                      src={optimizeImageUrl(post.img, 450, 260)} 
                       alt={post.title.replace(/<[^>]*>/g, "")} 
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                       style={{ objectPosition: post.imgFocalPoint || "center" }}
+                      loading="lazy"
                     />
                     <span className={`absolute top-2 left-2 text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 ${TAG_COLORS[post.tag] || "bg-[#252525] text-white"}`}>
                       {post.tag}

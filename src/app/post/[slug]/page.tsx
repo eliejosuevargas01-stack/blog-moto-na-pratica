@@ -1,5 +1,5 @@
 import { prisma } from "../../../lib/db";
-import { POSTS, TAG_COLORS, TEKO, BODY, optimizeUnsplashUrl } from "../../data";
+import { POSTS, TAG_COLORS, TEKO, BODY, optimizeImageUrl } from "../../data";
 import Sidebar from "../../components/Sidebar";
 import Link from "next/link";
 import Image from "next/image";
@@ -147,13 +147,14 @@ export default async function PostPage({ params }: PostPageProps) {
       {/* POST HERO */}
       <div className="relative w-full overflow-hidden" style={{ height: "60vh", minHeight: "360px" }}>
         <Image 
-          src={optimizeUnsplashUrl(post.img, 1400, 700)} 
+          src={optimizeImageUrl(post.img, 1200)} 
           alt={stripHtml(post.title)}
           fill
           priority
           sizes="100vw"
           className="object-cover"
           style={{ objectPosition: post.imgFocalPoint || "center" }}
+          unoptimized={post.img.startsWith("/uploads")}
         />
         <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,.90) 0%, rgba(0,0,0,.40) 55%, rgba(0,0,0,.15) 100%)" }} />
         <div className="absolute inset-0 flex flex-col justify-end px-6 pb-10 md:px-12 max-w-[900px] z-10">
@@ -203,10 +204,11 @@ export default async function PostPage({ params }: PostPageProps) {
                 {block.image && (
                   <div className="relative overflow-hidden w-full h-[360px] border border-border rounded-sm">
                     <img
-                      src={block.image}
+                      src={optimizeImageUrl(block.image, 800)}
                       alt={`Ilustração do bloco ${i + 1}`}
                       className="w-full h-full object-cover"
                       style={{ objectPosition: block.focalPoint || "center" }}
+                      loading="lazy"
                     />
                   </div>
                 )}
@@ -241,10 +243,11 @@ export default async function PostPage({ params }: PostPageProps) {
                     <Link href={`/post/${p.slug}`} className="block">
                       <div className="relative overflow-hidden" style={{ height: "160px" }}>
                         <img 
-                          src={optimizeUnsplashUrl(p.img, 600, 340)} 
+                          src={optimizeImageUrl(p.img, 450, 260)} 
                           alt={p.title} 
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                           style={{ objectPosition: p.imgFocalPoint || "center" }}
+                          loading="lazy"
                         />
                         <span className={`absolute top-2 left-2 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 ${TAG_COLORS[p.tag] || "bg-[#252525] text-white"}`}>
                           {p.tag}

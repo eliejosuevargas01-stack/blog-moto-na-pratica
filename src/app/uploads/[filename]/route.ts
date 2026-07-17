@@ -21,23 +21,35 @@ export async function GET(
       return new Response("Arquivo não encontrado", { status: 404 });
     }
 
-    // Para JPEG/PNG: converter para WebP automaticamente (com cache em disco)
-    if (ext === ".jpg" || ext === ".jpeg" || ext === ".png") {
-      const webpFilename = filename.replace(/\.(jpe?g|png)$/i, ".v2.webp");
-      const webpPath = path.join(UPLOADS_DIR, webpFilename);
+    // Obter parâmetro de largura ?w=
+    const { searchParams } = new URL(request.url);
+    const wParam = searchParams.get("w");
+    let targetWidth = 1400; // Largura padrão
+    if (wParam) {
+      const parsedWidth = parseInt(wParam, 10);
+      if (!isNaN(parsedWidth) && parsedWidth > 0 && parsedWidth <= 2500) {
+        targetWidth = parsedWidth;
+      }
+    }
 
-      // Checar se já existe versão WebP em cache no disco
-      if (!fs.existsSync(webpPath)) {
+    // Suportar conversão e redimensionamento para formatos de imagem comuns
+    if (ext === ".jpg" || ext === ".jpeg" || ext === ".png" || ext === ".webp") {
+      // Nome do arquivo em cache ex: foto-123.w600.webp
+      const cacheFilename = filename.replace(/\.(jpe?g|png|webp)$/i, "") + `.w${targetWidth}.webp`;
+      const cachePath = path.join(UPLOADS_DIR, cacheFilename);
+
+      // Checar se já existe versão correspondente em cache no disco
+      if (!fs.existsSync(cachePath)) {
         const inputBuffer = fs.readFileSync(filePath);
         const webpBuffer = await sharp(inputBuffer)
           .rotate() // Corrigir orientação EXIF automaticamente
-          .resize({ width: 1400, withoutEnlargement: true })
+          .resize({ width: targetWidth, withoutEnlargement: true })
           .webp({ quality: 82 })
           .toBuffer();
-        fs.writeFileSync(webpPath, webpBuffer);
+        fs.writeFileSync(cachePath, webpBuffer);
       }
 
-      const webpBuffer = fs.readFileSync(webpPath);
+      const webpBuffer = fs.readFileSync(cachePath);
       return new Response(webpBuffer, {
         headers: {
           "Content-Type": "image/webp",
@@ -46,11 +58,10 @@ export async function GET(
       });
     }
 
-    // Para WebP e outros formatos: servir diretamente
+    // Para outros formatos (ex: gif, svg): servir diretamente
     const fileBuffer = fs.readFileSync(filePath);
     let contentType = "application/octet-stream";
-    if (ext === ".webp") contentType = "image/webp";
-    else if (ext === ".gif") contentType = "image/gif";
+    if (ext === ".gif") contentType = "image/gif";
     else if (ext === ".svg") contentType = "image/svg+xml";
     else if (ext === ".avif") contentType = "image/avif";
 
