@@ -88,7 +88,8 @@ export async function savePostAction(data: {
           blocks: data.blocks as any,
           seoTitle: data.seoTitle || data.title,
           seoDescription: data.seoDescription || data.excerpt,
-          seoKeywords: data.seoKeywords || ""
+          seoKeywords: data.seoKeywords || "",
+          date: new Date() // Atualizar data ao editar
         }
       });
     } else {

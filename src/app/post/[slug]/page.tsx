@@ -122,8 +122,12 @@ export default async function PostPage({ params }: PostPageProps) {
     }
   }
 
-  const formattedDate = post.date instanceof Date 
-    ? post.date.toLocaleDateString("pt-BR", { day: '2-digit', month: 'short', year: 'numeric' })
+  // Usar a data mais recente: data de edição (updatedAt) ou data de publicação (date)
+  const displayDate = post.updatedAt && post.date
+    ? (new Date(post.updatedAt) > new Date(post.date) ? post.updatedAt : post.date)
+    : (post.updatedAt || post.date);
+  const formattedDate = displayDate instanceof Date || typeof displayDate === "string"
+    ? new Date(displayDate).toLocaleDateString("pt-BR", { day: '2-digit', month: 'short', year: 'numeric' })
     : String(post.date);
 
   return (
