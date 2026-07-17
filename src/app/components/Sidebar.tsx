@@ -111,7 +111,7 @@ export default async function Sidebar({ postTags }: SidebarProps = {}) {
           <h3 style={TEKO} className="text-[20px] font-semibold uppercase tracking-wide">Tags</h3>
         </div>
         <div className="flex flex-wrap gap-2">
-          {tagsList.map((tag) => (
+          {tagsList.slice(0, 12).map((tag) => (
             <Link key={tag} href={`/?search=${tag}`} className="flex items-center gap-1 px-2.5 py-1 bg-secondary border border-border text-[11px] text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors uppercase tracking-wide">
               <Tag size={9} />{tag}
             </Link>
