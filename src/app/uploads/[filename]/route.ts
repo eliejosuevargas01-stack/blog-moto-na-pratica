@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
+import sharp from "sharp";
 
 export const dynamic = "force-dynamic";
+
+const UPLOADS_DIR = path.join(process.cwd(), "uploads");
 
 export async function GET(
   request: Request,
@@ -10,28 +13,46 @@ export async function GET(
 ) {
   try {
     const { filename } = params;
-    
-    // Resolve the path to the uploads folder
-    const filePath = path.join(process.cwd(), "uploads", filename);
+    const ext = path.extname(filename).toLowerCase();
+    const filePath = path.join(UPLOADS_DIR, filename);
 
-    // Verify if the file exists on the filesystem
+    // Verificar se o arquivo original existe
     if (!fs.existsSync(filePath)) {
       return new Response("Arquivo não encontrado", { status: 404 });
     }
 
-    // Read the file buffer
-    const fileBuffer = fs.readFileSync(filePath);
+    // Para JPEG/PNG: converter para WebP automaticamente (com cache em disco)
+    if (ext === ".jpg" || ext === ".jpeg" || ext === ".png") {
+      const webpFilename = filename.replace(/\.(jpe?g|png)$/i, ".webp");
+      const webpPath = path.join(UPLOADS_DIR, webpFilename);
 
-    // Determine the appropriate MIME type based on the file extension
-    const ext = path.extname(filename).toLowerCase();
+      // Checar se já existe versão WebP em cache no disco
+      if (!fs.existsSync(webpPath)) {
+        const inputBuffer = fs.readFileSync(filePath);
+        const webpBuffer = await sharp(inputBuffer)
+          .resize({ width: 1400, withoutEnlargement: true })
+          .webp({ quality: 82 })
+          .toBuffer();
+        fs.writeFileSync(webpPath, webpBuffer);
+      }
+
+      const webpBuffer = fs.readFileSync(webpPath);
+      return new Response(webpBuffer, {
+        headers: {
+          "Content-Type": "image/webp",
+          "Cache-Control": "public, max-age=31536000, immutable",
+        },
+      });
+    }
+
+    // Para WebP e outros formatos: servir diretamente
+    const fileBuffer = fs.readFileSync(filePath);
     let contentType = "application/octet-stream";
-    if (ext === ".jpg" || ext === ".jpeg") contentType = "image/jpeg";
-    else if (ext === ".png") contentType = "image/png";
-    else if (ext === ".webp") contentType = "image/webp";
+    if (ext === ".webp") contentType = "image/webp";
     else if (ext === ".gif") contentType = "image/gif";
     else if (ext === ".svg") contentType = "image/svg+xml";
+    else if (ext === ".avif") contentType = "image/avif";
 
-    // Return the file stream with cache headers
     return new Response(fileBuffer, {
       headers: {
         "Content-Type": contentType,
