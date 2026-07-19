@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import { Clock, ChevronLeft, Tag } from "lucide-react";
 import TableOfContents from "../../components/TableOfContents";
 import CommentsSection from "../../components/CommentsSection";
+import SafeHtml from "../../components/SafeHtml";
 
 export const dynamic = "force-dynamic";
 
@@ -254,9 +255,11 @@ export default async function PostPage({ params }: PostPageProps) {
                         </span>
                       </div>
                       <div className="p-4">
-                        <h4 style={TEKO} className="text-[20px] font-semibold uppercase leading-tight text-foreground mb-1 group-hover:text-primary transition-colors">
-                          {p.title}
-                        </h4>
+                        <SafeHtml
+                          html={p.title}
+                          tag="h4"
+                          className="text-[20px] font-semibold uppercase leading-tight text-foreground mb-1 group-hover:text-primary transition-colors"
+                        />
                         <span className="text-[11px] text-muted-foreground flex items-center gap-1">
                           <Clock size={10} /> {p.readTime}
                         </span>

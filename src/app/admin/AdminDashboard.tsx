@@ -6,6 +6,7 @@ import { savePostAction, deletePostAction, savePageAction, deletePageAction, log
 import { TEKO, BODY } from "../data";
 import { Plus, Trash2, Save, Upload, LogOut, FileText, Layout, ArrowLeft, Eye, Edit, Wrench, Sliders } from "lucide-react";
 import { plugins } from "../../plugins";
+import { useEffect } from "react";
 
 interface FocalPointPickerProps {
   imageUrl: string;
@@ -445,6 +446,111 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
     updatedBlocks[index] = { ...updatedBlocks[index], [field]: value };
     setPostForm({ ...postForm, blocks: updatedBlocks });
   };
+function BlockLinkMapper({
+  text,
+  blockIndex,
+}: {
+  text: string;
+  blockIndex: number;
+}) {
+  const [links, setLinks] = useState<{ text: string; href: string }[]>([]);
+  const [tick, setTick] = useState(0);
+  const [selectedSlugs, setSelectedSlugs] = useState<string[]>([]);
+
+  useEffect(() => {
+    let mounted = true;
+    const id = setTimeout(() => {
+      try {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text || "", "text/html");
+        const nodeList = Array.from(doc.querySelectorAll("a"));
+        const parsed = nodeList.map((a) => ({ text: a.textContent || "", href: a.getAttribute("href") || "" }));
+        if (mounted) {
+          setLinks(parsed);
+          const init = parsed.map((pl) => {
+            const match = posts.find((p) => `/post/${p.slug}` === pl.href || p.slug === pl.href);
+            return match ? match.slug : "";
+          });
+          setSelectedSlugs(init);
+        }
+      } catch (e) {
+        const re = /<a\b[^>]*href=["']([^"']+)["'][^>]*>(.*?)<\/a>/gi;
+        const parsed: { text: string; href: string }[] = [];
+        let m: RegExpExecArray | null;
+        while ((m = re.exec(text || "")) !== null) {
+          parsed.push({ href: m[1], text: m[2].replace(/<[^>]*>/g, "") });
+        }
+        if (mounted) {
+          setLinks(parsed);
+          const init = parsed.map((pl) => {
+            const match = posts.find((p) => `/post/${p.slug}` === pl.href || p.slug === pl.href);
+            return match ? match.slug : "";
+          });
+          setSelectedSlugs(init);
+        }
+      }
+    }, 300);
+    return () => {
+      mounted = false;
+      clearTimeout(id);
+    };
+  }, [text, tick]);
+
+  if (!links || links.length === 0) return null;
+
+  const handleSelectChange = (linkIdx: number, val: string) => {
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(text || "", "text/html");
+      const nodeList = Array.from(doc.querySelectorAll("a"));
+      const target = nodeList[linkIdx];
+      if (!target) return;
+      if (!val) {
+        // mantém original
+      } else {
+        target.setAttribute("href", `/post/${val}`);
+      }
+      const newHtml = doc.body.innerHTML;
+      handlePostBlockChange(blockIndex, "text", newHtml);
+      setSelectedSlugs((prev) => {
+        const copy = [...prev];
+        copy[linkIdx] = val;
+        return copy;
+      });
+      setTick((t) => t + 1);
+    } catch (e) {
+      // noop
+    }
+  };
+
+  return (
+    <div className="mt-3 bg-[#0F0F0F] border border-border/30 p-3 rounded-sm">
+      <div className="text-[12px] text-muted-foreground uppercase font-bold mb-2">Links encontrados neste bloco</div>
+      <div className="space-y-3">
+        {links.map((l, i) => (
+          <div key={i} className="grid grid-cols-[1fr_220px] gap-3 items-center">
+            <div>
+              <div className="text-[13px] text-foreground font-semibold break-words">{l.text || "(sem texto)"}</div>
+              <div className="text-[12px] text-muted-foreground font-mono break-words">{l.href}</div>
+            </div>
+            <div className="flex justify-end">
+              <select
+                value={selectedSlugs[i] || ""}
+                onChange={(e) => handleSelectChange(i, e.target.value)}
+                className="w-full bg-[#111111] border border-border rounded-sm text-[12px] text-foreground px-3 py-2"
+              >
+                <option value="">Manter link padrão/original</option>
+                {posts.map((p) => (
+                  <option key={p.id} value={p.slug}>{stripHtml(p.title)}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
   const addBlock = () => {
     setPostForm({
@@ -454,8 +560,8 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
   };
 
   const removeBlock = (index: number) => {
-    if (postForm.blocks.length <= 1) {
-      alert("O post deve conter pelo menos 1 bloco de conteúdo.");
+    if (postForm.blocks.length <= 3) {
+      alert("O post deve conter pelo menos 3 blocos de conteúdo.");
       return;
     }
     const updatedBlocks = [...postForm.blocks];
@@ -598,7 +704,7 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
       <div className="flex items-center justify-between border-b border-border pb-6 mb-10">
         <div>
           <h1 style={TEKO} className="text-[44px] font-semibold uppercase leading-none tracking-wide text-foreground">
-            Painel <span className="text-primary">CMS</span>
+            <span className="text-primary">Palien</span> CMS
           </h1>
           <p className="text-[12px] text-muted-foreground uppercase tracking-widest mt-1.5">Gerencie posts, imagens e páginas</p>
         </div>
@@ -633,7 +739,7 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
-            <span className="flex items-center gap-2"><FileText size={16} /> Gerenciar Posts</span>
+            <span className="flex items-center gap-2"><FileText size={16} /> Gerar Posts</span>
           </button>
           <button
             onClick={() => setActiveTab("pages")}
@@ -669,7 +775,7 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
               onClick={startNewPost}
               className="flex items-center gap-2 bg-primary hover:bg-[#E05300] text-white text-[13px] font-bold uppercase tracking-wider px-4 py-2.5 rounded-sm transition-colors"
             >
-              <Plus size={15} /> Escrever Novo Post
+              <Plus size={15} /> Novo Artigo
             </button>
           </div>
 
@@ -713,7 +819,7 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
                   {posts.length === 0 && (
                     <tr>
                       <td colSpan={4} className="p-8 text-center text-muted-foreground">
-                        Nenhum post cadastrado. Clique em "Escrever Novo Post" para começar!
+                        Nenhum post cadastrado. Clique em "Novo Artigo" para começar!
                       </td>
                     </tr>
                   )}
@@ -736,7 +842,7 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
               <ArrowLeft size={16} />
             </button>
             <h2 style={TEKO} className="text-[26px] uppercase tracking-wide">
-              {postForm.id ? "Editar Artigo" : "Escrever Novo Artigo"}
+              {postForm.id ? "Editar Artigo" : "Novo Artigo"}
             </h2>
           </div>
 
@@ -805,7 +911,7 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold">Resumo / Excerpt (SEO e Cards)</label>
+            <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold">Resumo / Excerpt</label>
             <textarea
               required
               rows={2}
@@ -819,7 +925,7 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
           {/* HERO IMAGE + FOCAL POINT */}
           <div className="border border-border p-5 bg-[#181818] rounded-sm space-y-4">
             <h3 style={TEKO} className="text-[19px] uppercase tracking-wide border-b border-border pb-2 text-foreground">
-              Imagem de Destaque (Hero)
+              Imagem de Destaque / Hero
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -871,7 +977,7 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
           <div className="space-y-6">
             <div className="flex items-center justify-between border-b border-border pb-3">
               <h3 style={TEKO} className="text-[22px] uppercase tracking-wide text-foreground">
-                Blocos de Conteúdo do Post
+                Blocos de Conteúdo
               </h3>
               <button
                 type="button"
@@ -902,16 +1008,18 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2 space-y-2">
                       <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold">
-                        Texto (Aceita tags HTML: H2, p, strong, etc.)
+                        Conteúdo HTML
                       </label>
                       <textarea
                         required
                         rows={6}
                         value={block.text}
                         onChange={(e) => handlePostBlockChange(idx, "text", e.target.value)}
-                        placeholder="Insira o texto aqui. Use tags HTML se quiser títulos internos: <h2>Subtítulo</h2> ou parágrafos <p>Texto</p>."
+                        placeholder="Cole aqui o HTML do bloco: <h2>, <p>, <figure>, <a> etc."
                         className="w-full bg-[#222222] border border-border rounded-sm text-[13px] text-foreground p-3 outline-none focus:border-primary/50"
                       />
+                      {/* Seletor dinâmico de links encontrado neste bloco */}
+                      <BlockLinkMapper text={block.text} blockIndex={idx} />
                     </div>
 
                     <div className="space-y-3 bg-[#202020] p-4 border border-border/40 rounded-sm">
@@ -1707,7 +1815,7 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
       {activeTab === "settings" && (
         <div className="space-y-6">
           <div className="border-b border-border pb-3">
-            <h2 style={TEKO} className="text-[26px] uppercase tracking-wide">Funções e Recursos Opcionais (Plugins)</h2>
+            <h2 style={TEKO} className="text-[26px] uppercase tracking-wide">Funções</h2>
             <p className="text-[13px] text-muted-foreground">Ative ou desative recursos especiais do sistema de forma modular.</p>
           </div>
 

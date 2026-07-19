@@ -5,6 +5,12 @@ import { verifyToken } from "./lib/auth";
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Normalizar admin sem prefixo de idioma
+  if (pathname === "/pt/admin" || pathname.startsWith("/pt/admin/")) {
+    const cleanPath = pathname.replace(/^\/pt/, "");
+    return NextResponse.redirect(new URL(cleanPath, request.url));
+  }
+
   // Se o usuário está tentando acessar alguma rota administrativa (/admin...)
   if (pathname.startsWith("/admin")) {
     // Pular a tela de login para evitar loops
@@ -34,5 +40,5 @@ export async function middleware(request: NextRequest) {
 
 // Executar o middleware em todas as rotas de /admin
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/pt/admin/:path*"],
 };
