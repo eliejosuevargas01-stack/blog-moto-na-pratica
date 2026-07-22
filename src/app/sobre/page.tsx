@@ -1,6 +1,7 @@
 import { prisma } from "../../lib/db";
 import { POSTS, TAG_COLORS, TEKO, BODY, optimizeImageUrl } from "../data";
 import Sidebar from "../components/Sidebar";
+import SocialLinks from "../components/SocialLinks";
 import Link from "next/link";
 import { Clock, ArrowRight, Gauge, Calendar, MapPin, Wrench } from "lucide-react";
 
@@ -150,9 +151,12 @@ export default async function Sobre() {
                 loading="lazy"
               />
             </div>
-            <div className="absolute bottom-0 left-0 right-0 bg-[#111111]/90 p-4 border-t border-border z-10">
-              <p style={TEKO} className="text-[18px] font-semibold uppercase text-foreground">Eliezer · Gaspar - SC</p>
-              <p className="text-[12px] text-muted-foreground">Fazer 250 Solid Grey 2026</p>
+            <div className="absolute bottom-0 left-0 right-0 bg-[#111111]/90 p-4 border-t border-border z-10 flex items-center justify-between">
+              <div>
+                <p style={TEKO} className="text-[18px] font-semibold uppercase text-foreground">Eliezer · Gaspar - SC</p>
+                <p className="text-[12px] text-muted-foreground">Fazer 250 Solid Grey 2026</p>
+              </div>
+              <SocialLinks iconSize={15} />
             </div>
           </div>
         </div>

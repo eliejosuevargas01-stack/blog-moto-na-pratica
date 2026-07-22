@@ -161,7 +161,7 @@ export default async function CategoryView({ tag, title, description, heroImg, i
               <p className="text-[13px] text-muted-foreground mt-2">Ainda estou escrevendo sobre {title.toLowerCase()}. Volte em breve!</p>
               <Link
                 href="/"
-                className="mt-6 inline-flex items-center gap-2 bg-primary text-white text-[13px] font-bold uppercase tracking-wider px-5 py-2.5 transition-colors mx-auto hover:bg-[#E05300]"
+                className="mt-6 inline-flex items-center gap-2 bg-primary text-white text-[13px] font-bold uppercase tracking-wider px-5 py-2.5 transition-colors mx-auto hover:bg-[#A00B22]"
               >
                 Ver todos os posts <ArrowRight size={14} />
               </Link>

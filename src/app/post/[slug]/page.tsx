@@ -4,10 +4,13 @@ import Sidebar from "../../components/Sidebar";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { Clock, ChevronLeft, Tag } from "lucide-react";
+import { Clock, ChevronLeft, Tag, Eye } from "lucide-react";
 import TableOfContents from "../../components/TableOfContents";
 import CommentsSection from "../../components/CommentsSection";
 import SafeHtml from "../../components/SafeHtml";
+import PostVoiceReader from "../../components/PostVoiceReader";
+import PostActionsBar from "../../components/PostActionsBar";
+import PostViewTracker from "../../components/PostViewTracker";
 
 export const dynamic = "force-dynamic";
 
@@ -85,7 +88,7 @@ export default async function PostPage({ params }: PostPageProps) {
         id: { not: post.id }
       },
       take: 2,
-      orderBy: { date: "desc" }
+      orderBy: { createdAt: "desc" }
     });
   } catch (error) {
     // Fallback estático
@@ -98,7 +101,7 @@ export default async function PostPage({ params }: PostPageProps) {
       related = await prisma.post.findMany({
         where: { id: { not: post.id } },
         take: 2,
-        orderBy: { date: "desc" }
+        orderBy: { createdAt: "desc" }
       });
     } catch (error) {
       related = POSTS.filter(p => p.slug !== post.slug).slice(0, 2);
@@ -135,16 +138,30 @@ export default async function PostPage({ params }: PostPageProps) {
     }
   }
 
-  // Usar a data mais recente: data de edição (updatedAt) ou data de publicação (date)
-  const displayDate = post.updatedAt && post.date
-    ? (new Date(post.updatedAt) > new Date(post.date) ? post.updatedAt : post.date)
-    : (post.updatedAt || post.date);
-  const formattedDate = displayDate instanceof Date || typeof displayDate === "string"
-    ? new Date(displayDate).toLocaleDateString("pt-BR", { day: '2-digit', month: 'short', year: 'numeric' })
-    : String(post.date);
+  // Extrair tags dinâmicas do próprio post
+  const dynamicPostTags: string[] = [post.tag];
+  if (post.seoKeywords) {
+    post.seoKeywords.split(",").forEach((k: string) => {
+      const trimmed = k.trim();
+      if (trimmed && !dynamicPostTags.includes(trimmed)) {
+        dynamicPostTags.push(trimmed);
+      }
+    });
+  }
+
+  // Tratamento de datas
+  const createdDate = post.createdAt ? new Date(post.createdAt) : (post.date ? new Date(post.date) : new Date());
+  const updatedDate = post.updatedAt ? new Date(post.updatedAt) : null;
+  const isUpdated = updatedDate && (updatedDate.getTime() - createdDate.getTime() > 24 * 60 * 60 * 1000);
+
+  const formattedCreated = createdDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
+  const formattedUpdated = updatedDate ? updatedDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" }) : "";
 
   return (
     <div>
+      {/* Rastrear visualização assíncrona descartando acessos do Admin */}
+      <PostViewTracker postId={post.id} />
+
       {/* POST HERO */}
       <div className="relative w-full overflow-hidden" style={{ height: "60vh", minHeight: "360px" }}>
         <Image 
@@ -165,12 +182,18 @@ export default async function PostPage({ params }: PostPageProps) {
           >
             <ChevronLeft size={14} /> Voltar para Home
           </Link>
-          <div className="flex items-center gap-3 mb-3">
+          <div className="flex flex-wrap items-center gap-3 mb-3">
             <span className={`text-[11px] font-bold uppercase tracking-widest px-2 py-1 ${TAG_COLORS[post.tag] ?? "bg-secondary text-muted-foreground"}`}>
               {post.tag}
             </span>
             <span className="flex items-center gap-1 text-[12px] text-muted-foreground"><Clock size={11} /> {post.readTime} de leitura</span>
-            <span className="text-[12px] text-muted-foreground">{formattedDate}</span>
+            <span className="flex items-center gap-1 text-[12px] text-muted-foreground"><Eye size={11} /> {post.views || 0} visualizações</span>
+            <span className="text-[12px] text-muted-foreground">{formattedCreated}</span>
+            {isUpdated && (
+              <span className="text-[11px] text-primary/80 italic">
+                (Atualizado em {formattedUpdated})
+              </span>
+            )}
           </div>
           <h1 
             style={TEKO} 
@@ -188,8 +211,12 @@ export default async function PostPage({ params }: PostPageProps) {
             {post.excerpt}
           </p>
 
-          {/* Índice (TOC) */}
+          {/* Bar de Curtir e Compartilhar */}
+          <PostActionsBar postId={post.id} postTitle={stripHtml(post.title)} initialLikes={post.likes || 0} />
+
+          {/* Índice de Tópicos do Artigo (Table of Contents) */}
           <TableOfContents blocks={blocks} />
+
 
           {/* Article body with Dynamic HTML Blocks */}
           <div className="space-y-8" style={BODY}>
@@ -217,13 +244,13 @@ export default async function PostPage({ params }: PostPageProps) {
             ))}
           </div>
 
-          {/* Tags */}
+          {/* Dynamic Post Tags */}
           <div className="mt-10 pt-8 border-t border-border flex items-center gap-3 flex-wrap">
-            <span className="text-[12px] text-muted-foreground uppercase tracking-wider">Tags:</span>
-            {["Fazer250", "FZ25", post.tag, "2026"].map((tag) => (
+            <span className="text-[12px] text-muted-foreground uppercase tracking-wider">Tags do Post:</span>
+            {dynamicPostTags.map((tag) => (
               <Link 
                 key={tag} 
-                href={`/?search=${tag}`}
+                href={`/tag/${encodeURIComponent(tag)}`}
                 className="flex items-center gap-1 px-2.5 py-1 bg-secondary border border-border text-[11px] text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors uppercase tracking-wide"
               >
                 <Tag size={9} />{tag}
@@ -276,19 +303,9 @@ export default async function PostPage({ params }: PostPageProps) {
         </div>
 
         {/* SIDEBAR */}
-        {(() => {
-          const postTags = [post.tag];
-          if (post.seoKeywords) {
-            post.seoKeywords.split(",").forEach((k: string) => {
-              const trimmed = k.trim();
-              if (trimmed && !postTags.includes(trimmed)) {
-                postTags.push(trimmed);
-              }
-            });
-          }
-          return <Sidebar postTags={postTags} />;
-        })()}
+        <Sidebar postTags={dynamicPostTags} />
       </div>
     </div>
   );
 }
+

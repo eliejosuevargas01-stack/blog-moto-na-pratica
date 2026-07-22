@@ -2,12 +2,16 @@ import { prisma } from "../../lib/db";
 import { CATEGORIES, TEKO, optimizeUnsplashUrl } from "../data";
 import Link from "next/link";
 import { ChevronRight, ArrowRight, Tag } from "lucide-react";
+import type { ReactNode } from "react";
+import SocialLinks from "./SocialLinks";
+import NewsletterBox from "./NewsletterBox";
 
 interface SidebarProps {
   postTags?: string[];
+  tableOfContents?: ReactNode;
 }
 
-export default async function Sidebar({ postTags }: SidebarProps = {}) {
+export default async function Sidebar({ postTags, tableOfContents }: SidebarProps = {}) {
   let categoryCounts: Record<string, number> = {};
   let tagsList: string[] = [];
 
@@ -29,12 +33,12 @@ export default async function Sidebar({ postTags }: SidebarProps = {}) {
         }
       });
       if (uniqueTags.size === 0) {
-        tagsList = ["Fazer250", "FZ25", "Yamaha", "Review", "Manutenção", "Naked", "Pilotagem", "Segurança", "Rota", "Pneu", "2026"];
+        tagsList = ["Fazer250", "FZ25", "Yamaha", "Review", "Manutenção", "Naked", "Pilotagem", "Segurança", "Rota", "Pneu", "Eventos"];
       } else {
         tagsList = Array.from(uniqueTags);
       }
     } catch (e) {
-      tagsList = ["Fazer250", "FZ25", "Yamaha", "Review", "Manutenção", "Naked", "Pilotagem", "Segurança", "Rota", "Pneu", "2026"];
+      tagsList = ["Fazer250", "FZ25", "Yamaha", "Review", "Manutenção", "Naked", "Pilotagem", "Segurança", "Rota", "Pneu", "Eventos"];
     }
   }
 
@@ -56,7 +60,8 @@ export default async function Sidebar({ postTags }: SidebarProps = {}) {
     { label: "Reviews", tag: "Review", path: "/reviews" },
     { label: "Manutenção", tag: "Manutenção", path: "/manutencao" },
     { label: "Rotas", tag: "Rotas", path: "/rotas" },
-    { label: "Equipamentos", tag: "Equipamentos", path: "/equipamentos" }
+    { label: "Equipamentos", tag: "Equipamentos", path: "/equipamentos" },
+    { label: "Eventos", tag: "Eventos", path: "/eventos" }
   ].map(cat => ({
     ...cat,
     count: categoryCounts[cat.tag] || 0
@@ -66,22 +71,14 @@ export default async function Sidebar({ postTags }: SidebarProps = {}) {
 
   return (
     <aside className="space-y-10 lg:sticky lg:top-8">
-      {/* About Box */}
-      <div className="bg-card border border-border p-6">
-        <div className="flex items-center gap-3 mb-5">
-          <span className="block w-1 h-5 bg-primary" />
-          <h3 style={TEKO} className="text-[20px] font-semibold uppercase tracking-wide">Sobre o blog</h3>
+      {tableOfContents && (
+        <div className="bg-card border border-border p-4">
+          {tableOfContents}
         </div>
-        <div className="overflow-hidden mb-5" style={{ height: "120px" }}>
-          <img src={SIDEBAR_IMG} alt="Na estrada" className="w-full h-full object-cover opacity-80" />
-        </div>
-        <p className="text-[13px] text-muted-foreground leading-relaxed">
-          Motociclista por paixão, dono de uma Fazer 250 Solid Grey 2026. Escrevo sobre o que vivo na estrada — sem patrocinador, sem jabá.
-        </p>
-        <Link href="/sobre" className="mt-4 inline-flex items-center gap-1 text-[12px] font-bold text-primary uppercase tracking-wider hover:gap-2 transition-all">
-          Conhecer mais <ArrowRight size={12} />
-        </Link>
-      </div>
+      )}
+
+      {/* Newsletter Widget */}
+      <NewsletterBox variant="compact" />
 
       {/* Dynamic Categories */}
       <div className="bg-card border border-border p-6">
@@ -104,6 +101,29 @@ export default async function Sidebar({ postTags }: SidebarProps = {}) {
         </ul>
       </div>
 
+      {/* About Box */}
+      <div className="bg-card border border-border p-6">
+        <div className="flex items-center gap-3 mb-5">
+          <span className="block w-1 h-5 bg-primary" />
+          <h3 style={TEKO} className="text-[20px] font-semibold uppercase tracking-wide">Sobre o blog</h3>
+        </div>
+        <div className="overflow-hidden mb-4" style={{ height: "120px" }}>
+          <img src={SIDEBAR_IMG} alt="Na estrada" className="w-full h-full object-cover opacity-80" />
+        </div>
+        <p className="text-[13px] text-muted-foreground leading-relaxed mb-4">
+          Motociclista por paixão, dono de uma Fazer 250 Solid Grey 2026. Escrevo sobre o que vivo na estrada — sem patrocinador, sem jabá.
+        </p>
+
+        {/* Social Networks Links */}
+        <div className="border-t border-border/60 pt-3 mb-4">
+          <SocialLinks iconSize={15} />
+        </div>
+
+        <Link href="/sobre" className="inline-flex items-center gap-1 text-[12px] font-bold text-primary uppercase tracking-wider hover:gap-2 transition-all">
+          Conhecer mais <ArrowRight size={12} />
+        </Link>
+      </div>
+
       {/* Tags */}
       <div className="bg-card border border-border p-6">
         <div className="flex items-center gap-3 mb-5">
@@ -112,7 +132,7 @@ export default async function Sidebar({ postTags }: SidebarProps = {}) {
         </div>
         <div className="flex flex-wrap gap-2">
           {tagsList.slice(0, 12).map((tag) => (
-            <Link key={tag} href={`/?search=${tag}`} className="flex items-center gap-1 px-2.5 py-1 bg-secondary border border-border text-[11px] text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors uppercase tracking-wide">
+            <Link key={tag} href={`/tag/${encodeURIComponent(tag)}`} className="flex items-center gap-1 px-2.5 py-1 bg-secondary border border-border text-[11px] text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors uppercase tracking-wide">
               <Tag size={9} />{tag}
             </Link>
           ))}
@@ -121,3 +141,4 @@ export default async function Sidebar({ postTags }: SidebarProps = {}) {
     </aside>
   );
 }
+

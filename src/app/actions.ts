@@ -146,6 +146,16 @@ export async function savePostAction(data: {
       console.error("Erro ao rodar plugin de indexação do Google:", e);
     }
 
+    // Disparar Webhook do n8n (caso haja leitores inscritos e webhook ativo)
+    try {
+      const savedPost = await prisma.post.findUnique({ where: { slug: data.slug } });
+      if (savedPost) {
+        await triggerN8nWebhook(savedPost);
+      }
+    } catch (e) {
+      console.warn("Falha ao disparar webhook n8n:", e);
+    }
+
     return { success: true };
   } catch (error: any) {
     console.error("Erro ao salvar post:", error);
@@ -170,6 +180,82 @@ export async function deletePostAction(id: string) {
   } catch (error) {
     console.error("Erro ao deletar post:", error);
     return { error: "Erro ao deletar post." };
+  }
+}
+
+// --- INTEGRAÇÃO COM N8N & NOTIFICAÇÕES ---
+
+export async function triggerN8nWebhook(post: any) {
+  try {
+    const configPage = await prisma.page.findUnique({ where: { slug: "config" } });
+    let webhookUrl = process.env.N8N_WEBHOOK_URL || "";
+    
+    if (configPage && configPage.content) {
+      const content = typeof configPage.content === "string" ? JSON.parse(configPage.content) : configPage.content;
+      if (content.n8nWebhookUrl) {
+        webhookUrl = content.n8nWebhookUrl;
+      }
+    }
+
+    if (!webhookUrl) return;
+
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://motonapratica.online";
+    
+    await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        event: "new_post_published",
+        post: {
+          id: post.id,
+          title: post.title,
+          excerpt: post.excerpt,
+          slug: post.slug,
+          tag: post.tag,
+          category: post.category,
+          img: post.img,
+          url: `${baseUrl}/post/${post.slug}`,
+          createdAt: post.createdAt || post.date,
+        },
+      }),
+    });
+  } catch (e) {
+    console.warn("Erro no disparo do webhook para n8n:", e);
+  }
+}
+
+export async function getNotificationsAction() {
+  try {
+    const notifications = await prisma.notification.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    });
+    return { success: true, notifications };
+  } catch (error) {
+    return { success: false, notifications: [] };
+  }
+}
+
+export async function getSubscribersAction() {
+  try {
+    const subscribers = await prisma.subscriber.findMany({
+      orderBy: { createdAt: "desc" },
+    });
+    return { success: true, subscribers };
+  } catch (error) {
+    return { success: false, subscribers: [] };
+  }
+}
+
+export async function markNotificationAsReadAction(id: string) {
+  try {
+    await prisma.notification.update({
+      where: { id },
+      data: { read: true },
+    });
+    return { success: true };
+  } catch (error) {
+    return { success: false };
   }
 }
 
@@ -255,3 +341,4 @@ export async function deletePageAction(id: string) {
     return { error: "Erro ao deletar página." };
   }
 }
+

@@ -3,8 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Search, Menu, X, ChevronRight, Instagram, Youtube, Facebook } from "lucide-react";
+import { Search, Menu, X, ChevronRight } from "lucide-react";
 import { TEKO } from "../data";
+import SocialLinks from "./SocialLinks";
 
 interface HeaderProps {
   customPages: { title: string; slug: string }[];
@@ -23,6 +24,7 @@ export default function Header({ customPages }: HeaderProps) {
     { label: "Manutenção", path: "/manutencao" },
     { label: "Rotas", path: "/rotas" },
     { label: "Equipamentos", path: "/equipamentos" },
+    { label: "Eventos", path: "/eventos" },
     { label: "Sobre", path: "/sobre" },
   ];
 
@@ -50,10 +52,8 @@ export default function Header({ customPages }: HeaderProps) {
         <span className="text-[10px] sm:text-[11px] text-muted-foreground tracking-widest uppercase truncate whitespace-nowrap">
           Blog independente · experiência real na estrada
         </span>
-        <div className="hidden sm:flex items-center gap-4 text-muted-foreground">
-          <a href="#" aria-label="Instagram" className="hover:text-primary transition-colors"><Instagram size={13} /></a>
-          <a href="#" aria-label="YouTube" className="hover:text-primary transition-colors"><Youtube size={13} /></a>
-          <a href="#" aria-label="Facebook" className="hover:text-primary transition-colors"><Facebook size={13} /></a>
+        <div className="hidden sm:flex items-center">
+          <SocialLinks iconSize={13} className="flex items-center gap-3.5 text-muted-foreground" />
         </div>
       </div>
 
@@ -106,7 +106,7 @@ export default function Header({ customPages }: HeaderProps) {
               <Search size={14} className="text-muted-foreground shrink-0" />
               <input
                 autoFocus
-                placeholder="Buscar posts..."
+                placeholder="Buscar posts por palavra-chave..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none w-full"
@@ -135,9 +135,13 @@ export default function Header({ customPages }: HeaderProps) {
                 </Link>
               );
             })}
+            <div className="p-5 flex justify-center border-t border-border">
+              <SocialLinks iconSize={16} showLabels className="flex items-center justify-center gap-5 text-muted-foreground" />
+            </div>
           </nav>
         )}
       </header>
     </>
   );
 }
+

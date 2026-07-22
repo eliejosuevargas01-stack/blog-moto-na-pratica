@@ -185,6 +185,9 @@ importers:
       recharts:
         specifier: 2.15.2
         version: 2.15.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      responsivevoice:
+        specifier: ^0.4.1
+        version: 0.4.1
       sharp:
         specifier: ^0.35.3
         version: 0.35.3(@types/node@20.17.14)
@@ -2462,6 +2465,10 @@ packages:
     engines: {node: '>= 0.4'}
     hasBin: true
 
+  responsivevoice@0.4.1:
+    resolution: {integrity: sha512-OQZ4vxfqwiYKdIKCA3TW+F6wY9cJDZJpUU+RKBzL1iAuJEp4KSJ+pyrKXajI62UThfGH95Gj4dA+wh4jDYlISw==}
+    engines: {node: '>=8.1.0'}
+
   safe-buffer@5.2.1:
     resolution: {integrity: sha512-rp3So07KcdmmKbGvgaNxQSJr7bGVSVk5S9Eq1F+ppbRo70+YeaDxkw5Dd8NPN+GD6bjnYm2VuPuCXmpuYvmCXQ==}
 
@@ -4732,6 +4739,8 @@ snapshots:
       is-core-module: 2.16.2
       path-parse: 1.0.7
       supports-preserve-symlinks-flag: 1.0.0
+
+  responsivevoice@0.4.1: {}
 
   safe-buffer@5.2.1: {}
 

@@ -1,12 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { savePostAction, deletePostAction, savePageAction, deletePageAction, logoutAction } from "../actions";
+import { 
+  savePostAction, 
+  deletePostAction, 
+  savePageAction, 
+  deletePageAction, 
+  logoutAction,
+  getNotificationsAction,
+  getSubscribersAction,
+  markNotificationAsReadAction
+} from "../actions";
 import { TEKO, BODY } from "../data";
-import { Plus, Trash2, Save, Upload, LogOut, FileText, Layout, ArrowLeft, Eye, Edit, Wrench, Sliders } from "lucide-react";
+import { 
+  Plus, Trash2, Save, Upload, LogOut, FileText, Layout, ArrowLeft, 
+  Eye, Edit, Wrench, Sliders, Bell, Mail, ArrowUp, ArrowDown, Users, Heart, Share2, Copy, Check, Lock, GripVertical
+} from "lucide-react";
 import { plugins } from "../../plugins";
-import { useEffect } from "react";
+
 
 interface FocalPointPickerProps {
   imageUrl: string;
@@ -246,9 +258,31 @@ interface AdminDashboardProps {
 export default function AdminDashboard({ initialPosts, initialPages }: AdminDashboardProps) {
   const [posts, setPosts] = useState(initialPosts);
   const [pages, setPages] = useState(initialPages.length > 0 ? initialPages : DEFAULT_FALLBACK_PAGES);
-  const [activeTab, setActiveTab] = useState<"posts" | "pages" | "settings">("posts");
+  const [activeTab, setActiveTab] = useState<"posts" | "pages" | "settings" | "notifications">("posts");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [subscribers, setSubscribers] = useState<any[]>([]);
+  const [n8nWebhookUrl, setN8nWebhookUrl] = useState<string>(() => {
+    const configPage = initialPages.find(p => p.slug === "config");
+    if (configPage && configPage.content) {
+      const content = typeof configPage.content === "string" ? JSON.parse(configPage.content) : configPage.content;
+      return content.n8nWebhookUrl || "";
+    }
+    return "";
+  });
+
+  useEffect(() => {
+    // Carregar notificações e inscritos
+    getNotificationsAction().then(res => {
+      if (res.success && res.notifications) setNotifications(res.notifications);
+    });
+    getSubscribersAction().then(res => {
+      if (res.success && res.subscribers) setSubscribers(res.subscribers);
+    });
+  }, []);
+
 
   const [activePlugins, setActivePlugins] = useState<Record<string, boolean>>(() => {
     const configPage = initialPages.find(p => p.slug === "config");
@@ -569,6 +603,42 @@ function BlockLinkMapper({
     setPostForm({ ...postForm, blocks: updatedBlocks });
   };
 
+  // --- REORDENAÇÃO DE BLOCOS DE POSTS (SUBIR, DESCER & DRAG AND DROP) ---
+  const [draggedBlockIndex, setDraggedBlockIndex] = useState<number | null>(null);
+
+  const movePostBlock = (index: number, direction: "up" | "down") => {
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= postForm.blocks.length) return;
+    const updatedBlocks = [...postForm.blocks];
+    const temp = updatedBlocks[index];
+    updatedBlocks[index] = updatedBlocks[targetIndex];
+    updatedBlocks[targetIndex] = temp;
+    setPostForm({ ...postForm, blocks: updatedBlocks });
+  };
+
+  const handleBlockDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedBlockIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleBlockDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleBlockDrop = (e: React.DragEvent, targetIndex: number) => {
+    e.preventDefault();
+    if (draggedBlockIndex === null || draggedBlockIndex === targetIndex) return;
+
+    const updatedBlocks = [...postForm.blocks];
+    const [removed] = updatedBlocks.splice(draggedBlockIndex, 1);
+    updatedBlocks.splice(targetIndex, 0, removed);
+
+    setPostForm({ ...postForm, blocks: updatedBlocks });
+    setDraggedBlockIndex(null);
+  };
+
+
   const generateSlugFromTitle = (titleStr: string) => {
     const cleanTitle = stripHtml(titleStr);
     return cleanTitle
@@ -753,6 +823,22 @@ function BlockLinkMapper({
             <span className="flex items-center gap-2"><Layout size={16} /> Editar Páginas</span>
           </button>
           <button
+            onClick={() => setActiveTab("notifications")}
+            style={TEKO}
+            className={`px-6 py-2.5 text-[20px] font-medium uppercase tracking-wider border-b-2 transition-colors ${
+              activeTab === "notifications" 
+                ? "border-primary text-primary" 
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <span className="flex items-center gap-2 relative">
+              <Bell size={16} /> Notificações & Métricas
+              {notifications.filter(n => !n.read).length > 0 && (
+                <span className="w-2 h-2 bg-primary rounded-full animate-ping" />
+              )}
+            </span>
+          </button>
+          <button
             onClick={() => setActiveTab("settings")}
             style={TEKO}
             className={`px-6 py-2.5 text-[20px] font-medium uppercase tracking-wider border-b-2 transition-colors ${
@@ -765,6 +851,7 @@ function BlockLinkMapper({
           </button>
         </div>
       )}
+
 
       {/* --- ABA 1: GERENCIAR POSTS --- */}
       {activeTab === "posts" && !editingPost && (
@@ -990,20 +1077,61 @@ function BlockLinkMapper({
 
             <div className="space-y-6">
               {postForm.blocks.map((block, idx) => (
-                <div key={idx} className="border border-border p-6 bg-[#161616] rounded-sm space-y-4 relative">
+                <div
+                  key={idx}
+                  draggable
+                  onDragStart={(e) => handleBlockDragStart(e, idx)}
+                  onDragOver={(e) => handleBlockDragOver(e, idx)}
+                  onDrop={(e) => handleBlockDrop(e, idx)}
+                  className={`border p-6 bg-[#161616] rounded-sm space-y-4 relative transition-all ${
+                    draggedBlockIndex === idx ? "border-primary opacity-50 bg-primary/10" : "border-border hover:border-border/80"
+                  }`}
+                >
                   <div className="flex items-center justify-between border-b border-border/60 pb-2">
-                    <span style={TEKO} className="text-[17px] font-semibold text-primary uppercase">
-                      Bloco {idx + 1}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => removeBlock(idx)}
-                      className="text-muted-foreground hover:text-primary transition-colors p-1"
-                      title="Deletar Bloco"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <div className="p-1 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-primary transition-colors" title="Clique e arraste para mudar a posição deste bloco">
+                        <GripVertical size={18} />
+                      </div>
+                      <span style={TEKO} className="text-[17px] font-semibold text-primary uppercase">
+                        Bloco {idx + 1}
+                      </span>
+                      <span className="text-[11px] text-muted-foreground hidden sm:inline">
+                        (Arraste o ícone à esquerda para reposicionar)
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={idx === 0}
+                        onClick={() => movePostBlock(idx, "up")}
+                        className="px-2 py-1 bg-secondary border border-border text-[11px] uppercase font-bold text-muted-foreground hover:text-foreground hover:border-primary/50 disabled:opacity-30 rounded-sm flex items-center gap-1"
+                        title="Mover bloco para cima"
+                      >
+                        <ArrowUp size={12} /> Subir
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={idx === postForm.blocks.length - 1}
+                        onClick={() => movePostBlock(idx, "down")}
+                        className="px-2 py-1 bg-secondary border border-border text-[11px] uppercase font-bold text-muted-foreground hover:text-foreground hover:border-primary/50 disabled:opacity-30 rounded-sm flex items-center gap-1"
+                        title="Mover bloco para baixo"
+                      >
+                        <ArrowDown size={12} /> Descer
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => removeBlock(idx)}
+                        className="text-muted-foreground hover:text-primary transition-colors p-1 ml-2"
+                        title="Deletar Bloco"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </div>
+
 
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-2 space-y-2">
@@ -1219,6 +1347,92 @@ function BlockLinkMapper({
           {editingPage.slug === "home" && (
             <div className="space-y-6 pt-4 border-t border-border">
               <h3 style={TEKO} className="text-[21px] uppercase tracking-wide text-foreground border-b border-border pb-1">Campos Estruturados - Home</h3>
+              
+              {/* HIERARQUIA REORDENÁVEL DE BLOCOS */}
+              <div className="border border-border p-5 bg-[#181818] rounded-sm space-y-4">
+                <h4 style={TEKO} className="text-[18px] uppercase tracking-wide text-primary flex items-center gap-2">
+                  Organização da Hierarquia de Blocos da Home
+                </h4>
+                <p className="text-[12px] text-muted-foreground">
+                  Use os botões <strong>Subir</strong> e <strong>Descer</strong> para reorganizar livremente a ordem das seções na página inicial.
+                </p>
+                {(() => {
+                  const sectionLabels: Record<string, string> = {
+                    hero: "Hero Inicial (Destaque Principal)",
+                    breaking: "Faixa de Notícia Rápida (Breaking Bar)",
+                    posts: "Seção de Últimos Posts + Sidebar",
+                    banner: "Banner Promocional da Moto"
+                  };
+                  const currentOrder: string[] = Array.isArray(editingPage.content.sectionOrder) && editingPage.content.sectionOrder.length > 0
+                    ? editingPage.content.sectionOrder
+                    : ["hero", "breaking", "posts", "banner"];
+
+                  const moveSection = (idx: number, direction: "up" | "down") => {
+                    const newOrder = [...currentOrder];
+                    const targetIdx = direction === "up" ? idx - 1 : idx + 1;
+                    if (targetIdx < 0 || targetIdx >= newOrder.length) return;
+                    const temp = newOrder[idx];
+                    newOrder[idx] = newOrder[targetIdx];
+                    newOrder[targetIdx] = temp;
+                    setEditingPage({
+                      ...editingPage,
+                      content: {
+                        ...editingPage.content,
+                        sectionOrder: newOrder
+                      }
+                    });
+                  };
+
+                  return (
+                    <div className="space-y-2">
+                      {currentOrder.map((key, index) => (
+                        <div key={key} className="flex items-center justify-between bg-[#222222] border border-border px-4 py-2.5 rounded-sm">
+                          <span className="text-[13px] font-semibold text-foreground uppercase tracking-wide">
+                            {index + 1}. {sectionLabels[key] || key}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              disabled={index === 0}
+                              onClick={() => moveSection(index, "up")}
+                              className="px-2 py-1 bg-secondary border border-border text-[11px] uppercase font-bold text-muted-foreground hover:text-foreground hover:border-primary/50 disabled:opacity-30 rounded-sm flex items-center gap-1"
+                            >
+                              <ArrowUp size={12} /> Subir
+                            </button>
+                            <button
+                              type="button"
+                              disabled={index === currentOrder.length - 1}
+                              onClick={() => moveSection(index, "down")}
+                              className="px-2 py-1 bg-secondary border border-border text-[11px] uppercase font-bold text-muted-foreground hover:text-foreground hover:border-primary/50 disabled:opacity-30 rounded-sm flex items-center gap-1"
+                            >
+                              <ArrowDown size={12} /> Descer
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* TAGS GLOBAIS DO SITE */}
+              <div className="border border-border p-5 bg-[#181818] rounded-sm space-y-3">
+                <h4 style={TEKO} className="text-[18px] uppercase tracking-wide text-foreground">Tags Estáticas / Globais do Site</h4>
+                <label className="text-[11px] text-muted-foreground block uppercase">
+                  Separe as tags principais por vírgula (ex: Fazer250, FZ25, Review, Manutenção, Rotas, Eventos)
+                </label>
+                <input
+                  type="text"
+                  value={editingPage.content.siteTags || ""}
+                  onChange={(e) => setEditingPage({
+                    ...editingPage,
+                    content: { ...editingPage.content, siteTags: e.target.value }
+                  })}
+                  placeholder="Fazer250, FZ25, Review, Manutenção, Rotas, Eventos, 2026"
+                  className="w-full bg-[#222222] border border-border rounded-sm text-[13px] text-foreground px-3 py-2 outline-none focus:border-primary/50"
+                />
+              </div>
+
               
               <div className="border border-border p-5 bg-[#181818] rounded-sm space-y-4">
                 <h4 style={TEKO} className="text-[18px] uppercase tracking-wide text-foreground">Seção do Hero Inicial</h4>
@@ -1851,6 +2065,251 @@ function BlockLinkMapper({
         </div>
       )}
 
+      {/* --- ABA 4: NOTIFICAÇÕES, MÉTRICAS & NEWSLETTER --- */}
+      {activeTab === "notifications" && (
+        <div className="space-y-8">
+          <div className="border-b border-border pb-3">
+            <h2 style={TEKO} className="text-[26px] uppercase tracking-wide">Métricas & Notificações</h2>
+            <p className="text-[13px] text-muted-foreground">Acompanhe acessos reais de leitores (sem inflar por admin), inscrições de leitores e curtidas.</p>
+          </div>
+
+          {/* QUADROS DE MÉTRICAS */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
+            <div className="bg-card border border-border p-5 rounded-sm flex items-center justify-between">
+              <div>
+                <span className="text-[11px] text-muted-foreground uppercase tracking-wider block">Visualizações Reais</span>
+                <span style={TEKO} className="text-[32px] font-bold leading-none text-foreground">
+                  {posts.reduce((acc, p) => acc + (p.views || 0), 0)}
+                </span>
+                <span className="text-[10px] text-green-400 block mt-1">✓ Descontando seus acessos de admin</span>
+              </div>
+              <div className="p-3 bg-primary/10 text-primary rounded-full">
+                <Eye size={20} />
+              </div>
+            </div>
+
+            <div className="bg-card border border-border p-5 rounded-sm flex items-center justify-between">
+              <div>
+                <span className="text-[11px] text-muted-foreground uppercase tracking-wider block">Total de Curtidas</span>
+                <span style={TEKO} className="text-[32px] font-bold leading-none text-foreground">
+                  {posts.reduce((acc, p) => acc + (p.likes || 0), 0)}
+                </span>
+                <span className="text-[10px] text-muted-foreground block mt-1">Interações nos posts</span>
+              </div>
+              <div className="p-3 bg-red-950/30 text-red-500 rounded-full">
+                <Heart size={20} />
+              </div>
+            </div>
+
+            <div className="bg-card border border-border p-5 rounded-sm flex items-center justify-between">
+              <div>
+                <span className="text-[11px] text-muted-foreground uppercase tracking-wider block">Inscritos na Newsletter</span>
+                <span style={TEKO} className="text-[32px] font-bold leading-none text-foreground">
+                  {subscribers.length}
+                </span>
+                <span className="text-[10px] text-muted-foreground block mt-1">Leitores cadastrados</span>
+              </div>
+              <div className="p-3 bg-blue-950/30 text-blue-400 rounded-full">
+                <Mail size={20} />
+              </div>
+            </div>
+
+            <div className="bg-card border border-border p-5 rounded-sm flex items-center justify-between">
+              <div>
+                <span className="text-[11px] text-muted-foreground uppercase tracking-wider block">Notificações</span>
+                <span style={TEKO} className="text-[32px] font-bold leading-none text-foreground">
+                  {notifications.length}
+                </span>
+                <span className="text-[10px] text-muted-foreground block mt-1">
+                  {notifications.filter(n => !n.read).length} não lidas
+                </span>
+              </div>
+              <div className="p-3 bg-yellow-950/30 text-yellow-400 rounded-full">
+                <Bell size={20} />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
+            {/* FEED DE NOTIFICAÇÕES */}
+            <div className="bg-card border border-border p-6 rounded-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-border pb-3">
+                <h3 style={TEKO} className="text-[20px] uppercase tracking-wide text-foreground flex items-center gap-2">
+                  <Bell size={16} className="text-primary" /> Feed de Atividades Recentes
+                </h3>
+                <span className="text-[11px] text-muted-foreground uppercase">
+                  {notifications.length} registros
+                </span>
+              </div>
+
+              {notifications.length === 0 ? (
+                <div className="p-8 text-center text-muted-foreground text-[13px]">
+                  Nenhuma notificação registrada até o momento.
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
+                  {notifications.map((notif) => (
+                    <div
+                      key={notif.id}
+                      className={`p-3.5 border rounded-sm flex items-start justify-between gap-3 text-[13px] transition-colors ${
+                        notif.read ? "bg-[#141414] border-border/40 text-muted-foreground" : "bg-[#1E1A16] border-primary/40 text-foreground"
+                      }`}
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${
+                            notif.type === "REGISTER" ? "bg-blue-900/60 text-blue-300" :
+                            notif.type === "LIKE" ? "bg-red-900/60 text-red-300" :
+                            notif.type === "SHARE" ? "bg-purple-900/60 text-purple-300" : "bg-primary/30 text-primary"
+                          }`}>
+                            {notif.type}
+                          </span>
+                          <span className="text-[11px] text-muted-foreground">
+                            {new Date(notif.createdAt).toLocaleString("pt-BR")}
+                          </span>
+                        </div>
+                        <p className="leading-snug">{notif.message}</p>
+                      </div>
+
+                      {!notif.read && (
+                        <button
+                          onClick={async () => {
+                            await markNotificationAsReadAction(notif.id);
+                            setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, read: true } : n));
+                          }}
+                          className="text-[10px] text-primary hover:underline shrink-0 uppercase font-bold"
+                        >
+                          Marcar lido
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* LISTA DE INSCRITOS DA NEWSLETTER */}
+            <div className="bg-card border border-border p-6 rounded-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-border pb-3">
+                <h3 style={TEKO} className="text-[20px] uppercase tracking-wide text-foreground flex items-center gap-2">
+                  <Mail size={16} className="text-primary" /> Inscritos na Newsletter ({subscribers.length})
+                </h3>
+                {subscribers.length > 0 && (
+                  <button
+                    onClick={() => {
+                      const emails = subscribers.map(s => s.email).join(", ");
+                      navigator.clipboard.writeText(emails);
+                      alert("Lista de e-mails copiada para a área de transferência!");
+                    }}
+                    className="flex items-center gap-1 text-[11px] bg-secondary hover:bg-primary text-muted-foreground hover:text-white px-2.5 py-1 rounded-sm border border-border uppercase font-bold transition-colors"
+                  >
+                    <Copy size={11} /> Copiar E-mails
+                  </button>
+                )}
+              </div>
+
+              {subscribers.length === 0 ? (
+                <div className="p-8 text-center text-muted-foreground text-[13px]">
+                  Nenhum leitor se inscreveu na newsletter ainda.
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
+                  {subscribers.map((sub) => (
+                    <div key={sub.id} className="p-3 bg-[#141414] border border-border/50 rounded-sm flex items-center justify-between text-[13px]">
+                      <div>
+                        <span className="text-foreground font-medium block">{sub.email}</span>
+                        {sub.name && <span className="text-[11px] text-muted-foreground block">{sub.name}</span>}
+                      </div>
+                      <span className="text-[11px] text-muted-foreground">
+                        {new Date(sub.createdAt).toLocaleDateString("pt-BR")}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+          </div>
+
+          {/* CONFIGURAÇÃO DO WEBHOOK DO N8N & CHAVE DE API AUTOMATIZADA */}
+          <div className="bg-card border border-border p-6 rounded-sm space-y-6">
+            <div className="flex items-center gap-2 border-b border-border pb-3 text-primary">
+              <Lock size={18} />
+              <h3 style={TEKO} className="text-[22px] uppercase tracking-wide font-semibold text-foreground">
+                Integração n8n & Endpoint de Automação de Posts
+              </h3>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              
+              {/* Webhook N8N */}
+              <div className="space-y-3">
+                <h4 style={TEKO} className="text-[18px] uppercase tracking-wide text-foreground">Webhook do n8n (Disparo ao Publicar)</h4>
+                <p className="text-[12px] text-muted-foreground">
+                  Insira a URL do seu Webhook no n8n. Sempre que um post novo for criado (manual ou via API), o sistema fará um disparo POST para esta URL informando o resumo e link do post.
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    value={n8nWebhookUrl}
+                    onChange={(e) => setN8nWebhookUrl(e.target.value)}
+                    placeholder="https://seu-n8n.com/webhook/moto-post"
+                    className="flex-1 bg-[#141414] border border-border rounded-sm text-[13px] px-3 py-2 text-foreground outline-none focus:border-primary/50"
+                  />
+                  <button
+                    onClick={async () => {
+                      setLoading(true);
+                      const existingConfig = pages.find(p => p.slug === "config") || {
+                        slug: "config",
+                        title: "Configurações do Sistema",
+                        isStatic: true,
+                        content: {}
+                      };
+                      const updated = {
+                        ...existingConfig,
+                        content: {
+                          ...((typeof existingConfig.content === "object" ? existingConfig.content : {}) as any),
+                          n8nWebhookUrl: n8nWebhookUrl.trim()
+                        }
+                      };
+                      const res = await savePageAction(updated);
+                      if (!res.error) {
+                        setMessage({ type: "success", text: "URL do Webhook do n8n salva com sucesso!" });
+                      } else {
+                        setMessage({ type: "error", text: "Erro ao salvar webhook: " + res.error });
+                      }
+                      setLoading(false);
+                    }}
+                    className="bg-primary hover:bg-[#E05300] text-white text-[12px] font-bold uppercase tracking-wider px-4 py-2 rounded-sm shrink-0"
+                  >
+                    Salvar Webhook
+                  </button>
+                </div>
+              </div>
+
+              {/* Endpoint API de Automação */}
+              <div className="space-y-3 bg-[#141414] p-4 border border-border/60 rounded-sm">
+                <h4 style={TEKO} className="text-[18px] uppercase tracking-wide text-foreground">Endpoint de Automação API</h4>
+                <p className="text-[12px] text-muted-foreground">
+                  Para fazer chamadas de criação automática de notícias (via n8n ou Python):
+                </p>
+                <div className="bg-black/50 p-2.5 rounded text-[11px] font-mono text-primary select-all border border-border/40">
+                  POST /api/posts
+                </div>
+                <div className="text-[11px] text-muted-foreground space-y-1">
+                  <p><strong>Header de Autenticação:</strong> <code className="text-foreground">x-api-key: motonapratica-secret-key-2026</code></p>
+                  <p><strong>Payload:</strong> Aceita o JSON exato com <code className="text-foreground">title, slug, tag, category, excerpt, readTime, img, blocks</code>.</p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      )}
+
     </div>
   );
 }
+

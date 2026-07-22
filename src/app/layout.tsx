@@ -1,11 +1,13 @@
-import "../styles/index.css";
+import "./globals.css";
 import { prisma } from "../lib/db";
 import { POSTS, TEKO, BODY } from "./data";
 import Header from "./components/Header";
 import Link from "next/link";
-import { ChevronRight, Instagram, Youtube, Facebook } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { Teko as TekoFont, Barlow as BarlowFont } from "next/font/google";
-import Script from "next/script";
+import GoogleAnalytics from "./components/GoogleAnalytics";
+import SocialLinks from "./components/SocialLinks";
+import NewsletterBox from "./components/NewsletterBox";
 
 const tekoFont = TekoFont({
   subsets: ["latin"],
@@ -38,7 +40,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Buscar páginas dinâmicas e posts recentes com tratamento de falhas para build seguro
+  // Buscar páginas dinâmicas e posts recentes ordenados por data de criação
   let customPages: { title: string; slug: string }[] = [];
   let recentPosts: { id: string; title: string; slug: string }[] = [];
 
@@ -51,13 +53,12 @@ export default async function RootLayout({
 
     const posts = await prisma.post.findMany({
       take: 3,
-      orderBy: { updatedAt: "desc" },
+      orderBy: { createdAt: "desc" },
       select: { id: true, title: true, slug: true },
     });
     recentPosts = posts;
   } catch (error) {
     console.warn("Database connection failed during SSR, using static fallbacks.", error);
-    // Fallback para posts estáticos
     recentPosts = POSTS.slice(0, 3).map(p => ({
       id: String(p.id),
       title: p.title,
@@ -72,30 +73,20 @@ export default async function RootLayout({
     { label: "Manutenção", path: "/manutencao" },
     { label: "Rotas", path: "/rotas" },
     { label: "Equipamentos", path: "/equipamentos" },
+    { label: "Eventos", path: "/eventos" },
     { label: "Sobre", path: "/sobre" },
   ];
 
   return (
-    <html lang="pt-BR" className={`dark ${tekoFont.variable} ${barlowFont.variable}`}>
+    <html lang="pt-BR" suppressHydrationWarning className={`dark ${tekoFont.variable} ${barlowFont.variable}`}>
       <head>
         <link rel="icon" type="image/png" href="/favicon.png" />
         <link rel="preconnect" href="https://images.unsplash.com" />
         <meta name="google-site-verification" content="fbASypBsg3iwxoSLbdAaR_U4bHoizv_FGbwhS9FBmqQ" />
-        {/* Google Analytics - must be in <head> for Search Console GA verification */}
-        <Script 
-          src="https://www.googletagmanager.com/gtag/js?id=G-WS2JW3944T" 
-          strategy="lazyOnload" 
-        />
-        <Script id="google-analytics" strategy="lazyOnload">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-WS2JW3944T');
-          `}
-        </Script>
+        {/* Google Analytics - Injetado apenas nas páginas públicas (exclui /admin) */}
+        <GoogleAnalytics gaId="G-WS2JW3944T" />
       </head>
-      <body className="min-h-screen bg-background text-foreground flex flex-col" style={BODY}>
+      <body suppressHydrationWarning className="min-h-screen bg-background text-foreground flex flex-col" style={BODY}>
         {/* HEADER CLIENT SIDE COMPONENT */}
         <Header customPages={customPages} />
 
@@ -103,6 +94,9 @@ export default async function RootLayout({
         <main className="flex-1">
           {children}
         </main>
+
+        {/* BANNER DE NEWSLETTER */}
+        <NewsletterBox variant="banner" />
 
         {/* FOOTER */}
         <footer className="bg-[#0A0A0A] border-t border-border mt-auto">
@@ -117,10 +111,8 @@ export default async function RootLayout({
               <p className="text-[13px] text-muted-foreground leading-relaxed">
                 Blog independente sobre motos. Experiência real, sem filtro e sem patrocínio.
               </p>
-              <div className="flex items-center gap-4 mt-5">
-                <a href="#" aria-label="Instagram" className="text-muted-foreground hover:text-primary transition-colors"><Instagram size={16} /></a>
-                <a href="#" aria-label="YouTube" className="text-muted-foreground hover:text-primary transition-colors"><Youtube size={16} /></a>
-                <a href="#" aria-label="Facebook" className="text-muted-foreground hover:text-primary transition-colors"><Facebook size={16} /></a>
+              <div className="mt-5">
+                <SocialLinks iconSize={16} />
               </div>
             </div>
             
@@ -154,10 +146,11 @@ export default async function RootLayout({
             </div>
           </div>
           <div className="border-t border-border py-4 text-center text-[11px] text-muted-foreground tracking-widest uppercase">
-            © 2025 Moto na Prática · Todos os direitos reservados
+            © 2026 Moto na Prática · Todos os direitos reservados
           </div>
         </footer>
       </body>
     </html>
   );
 }
+
