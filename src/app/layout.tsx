@@ -95,9 +95,6 @@ export default async function RootLayout({
           {children}
         </main>
 
-        {/* BANNER DE NEWSLETTER */}
-        <NewsletterBox variant="banner" />
-
         {/* FOOTER */}
         <footer className="bg-[#0A0A0A] border-t border-border mt-auto">
           <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-14 grid grid-cols-1 md:grid-cols-3 gap-12">
