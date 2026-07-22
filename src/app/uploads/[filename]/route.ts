@@ -50,7 +50,7 @@ export async function GET(
       }
 
       const webpBuffer = fs.readFileSync(cachePath);
-      return new Response(webpBuffer, {
+      return new Response(new Uint8Array(webpBuffer), {
         headers: {
           "Content-Type": "image/webp",
           "Cache-Control": "public, max-age=31536000, immutable",
@@ -65,7 +65,7 @@ export async function GET(
     else if (ext === ".svg") contentType = "image/svg+xml";
     else if (ext === ".avif") contentType = "image/avif";
 
-    return new Response(fileBuffer, {
+    return new Response(new Uint8Array(fileBuffer), {
       headers: {
         "Content-Type": contentType,
         "Cache-Control": "public, max-age=31536000, immutable",

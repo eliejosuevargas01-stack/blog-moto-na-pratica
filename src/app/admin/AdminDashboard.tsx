@@ -605,6 +605,7 @@ function BlockLinkMapper({
 
   // --- REORDENAÇÃO DE BLOCOS DE POSTS (SUBIR, DESCER & DRAG AND DROP) ---
   const [draggedBlockIndex, setDraggedBlockIndex] = useState<number | null>(null);
+  const [draggableBlockIdx, setDraggableBlockIdx] = useState<number | null>(null);
 
   const movePostBlock = (index: number, direction: "up" | "down") => {
     const targetIndex = direction === "up" ? index - 1 : index + 1;
@@ -1079,17 +1080,26 @@ function BlockLinkMapper({
               {postForm.blocks.map((block, idx) => (
                 <div
                   key={idx}
-                  draggable
+                  draggable={draggableBlockIdx === idx}
                   onDragStart={(e) => handleBlockDragStart(e, idx)}
                   onDragOver={(e) => handleBlockDragOver(e, idx)}
                   onDrop={(e) => handleBlockDrop(e, idx)}
+                  onDragEnd={() => {
+                    setDraggableBlockIdx(null);
+                    setDraggedBlockIndex(null);
+                  }}
                   className={`border p-6 bg-[#161616] rounded-sm space-y-4 relative transition-all ${
                     draggedBlockIndex === idx ? "border-primary opacity-50 bg-primary/10" : "border-border hover:border-border/80"
                   }`}
                 >
                   <div className="flex items-center justify-between border-b border-border/60 pb-2">
                     <div className="flex items-center gap-3">
-                      <div className="p-1 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-primary transition-colors" title="Clique e arraste para mudar a posição deste bloco">
+                      <div
+                        className="p-1 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-primary transition-colors"
+                        title="Clique e arraste para mudar a posição deste bloco"
+                        onMouseDown={() => setDraggableBlockIdx(idx)}
+                        onMouseUp={() => setDraggableBlockIdx(null)}
+                      >
                         <GripVertical size={18} />
                       </div>
                       <span style={TEKO} className="text-[17px] font-semibold text-primary uppercase">
