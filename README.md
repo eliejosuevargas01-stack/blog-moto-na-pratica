@@ -1,6 +1,6 @@
-# Moto na Prática - Blog SSR & CMS
+# Moto na Prática - Blog SSR & CMS Avançado
 
-O **Moto na Prática** é um blog de alto desempenho focado em motociclismo, desenvolvido com **Next.js (App Router)** para renderização dinâmica no servidor (SSR) e SEO orgânico de alta indexação, conectado a um banco de dados **PostgreSQL (Supabase)** e com um painel de controle administrativo (**CMS**) integrado.
+O **Moto na Prática** é um blog de altíssimo desempenho focado em motociclismo. Ele foi desenvolvido utilizando **Next.js (App Router)** para renderização dinâmica no servidor (SSR) e SEO orgânico de alta indexação, conectado a um banco de dados **PostgreSQL (Supabase)** através do **Prisma ORM**, e com um painel administrativo (**CMS**) moderno e integrado.
 
 ---
 
@@ -16,37 +16,60 @@ O **Moto na Prática** é um blog de alto desempenho focado em motociclismo, des
 
 ---
 
-## 🛠️ Como o Projeto Funciona (Simplicidade)
-- **Leitura do Google (SEO)**: Diferente de aplicativos React normais (SPAs), as páginas deste blog são geradas diretamente no servidor (SSR). O robô do Google lê o HTML completo com as meta-tags ideais já preenchidas.
-- **Painel Admin Integrado (/admin)**: Um CMS simplificado onde o administrador pode criar/editar artigos com quantidade flexível de blocos de imagem e texto, gerenciar novas páginas corporativas, escolher pontos focais das fotos e gerenciar palavras-chave de SEO.
-- **Armazenamento Otimizado**: O banco de dados armazena apenas as URLs e referências de dados. As imagens enviadas via upload são processadas e salvas localmente na pasta de armazenamento.
+## 🛠️ Recursos & Funcionalidades do CMS
+
+O painel administrativo em `/admin` conta com recursos de nível empresarial para otimização de conteúdo e SEO:
+
+### 1. Sistema de Plugins Modular
+Na aba **Funções**, você pode ativar ou desativar recursos em tempo real:
+- **Tempo de Leitura Estimado Automático**: Calcula matematicamente o tempo de leitura com base nas palavras dos blocos (média de 200 palavras por minuto) e desabilita o campo de entrada manual.
+- **Indexação Instantânea do Google (Google Indexing API)**: Envia automaticamente solicitações de indexação imediata para o Googlebot sempre que um post é criado ou editado.
+
+### 2. Editor de Blocos Dinâmicos com Grip Handle
+- Permite construir posts com blocos ilimitados de texto e imagem.
+- **Reordenação Inteligente**: A funcionalidade de arrastar e soltar (drag & drop) é restrita exclusivamente ao ícone de **Grip Handle** (6 pontinhos). Isso evita conflitos irritantes ao tentar selecionar textos longos nos campos editores.
+
+### 3. Ponto Focal de Imagem (Focal Point Picker)
+- Cada bloco e imagem de destaque possui um seletor visual de ponto focal.
+- Clique diretamente na imagem para definir a coordenada de destaque, garantindo que o corte visual (através de `object-position` do CSS) fique perfeito em dispositivos móveis e desktops.
+
+### 4. Mapeador Dinâmico de Links HTML (`BlockLinkMapper`)
+- O CMS analisa em tempo real o texto dos blocos em busca de links HTML (`<a>`).
+- Apresenta um painel onde você pode selecionar posts existentes no banco de dados para preencher dinamicamente a URL com o formato correto: `/{lang}/post/{slug}`.
+- **Filtro de Idioma**: O mapeador inteligente só lista posts do mesmo idioma do post atual (ex: posts em português só exibem links de posts em português), garantindo integridade e consistência de navegação.
 
 ---
 
 ## 🐳 Guia de Deploy no Coolify (Docker)
 
-O projeto já inclui um [Dockerfile](file:///home/eliezer/M%C3%BAsica/Design%20para%20blog%20de%20motos/Dockerfile) otimizado em múltiplos estágios (multi-stage) utilizando o modo **standalone** do Next.js, gerando imagens Docker extremamente leves (~100MB).
+O projeto inclui um [Dockerfile](file:///home/eliezer/M%C3%BAsica/Design%20para%20blog%20de%20motos/Dockerfile) multi-stage otimizado para o modo **standalone** do Next.js, gerando imagens leves (~100MB).
+
+> [!IMPORTANT]
+> **Ajuste de Caminho no Coolify**: Para evitar o erro `open Dockerfile: no such file or directory` durante o deployment, configure o **Base Directory** como `/` (raiz do repositório) e o **Dockerfile Path** como `/Dockerfile` (ou `./Dockerfile`) no painel de configurações da aplicação no Coolify.
 
 ### 1. Variáveis de Ambiente (Environment Variables)
-Ao configurar o deploy no painel do Coolify, declare as seguintes variáveis nas configurações do container:
+
+Declare as variáveis abaixo no painel de configurações do Coolify:
 
 | Variável | Descrição | Exemplo |
 | :--- | :--- | :--- |
-| `DATABASE_URL` | String de conexão com o banco PostgreSQL (Supabase). | `postgresql://postgres:senha@db.exemplo.supabase.co:5432/postgres` |
-| `NEXT_PUBLIC_SUPABASE_URL` | URL pública da sua API do Supabase. | `https://sua-id.supabase.co` |
+| `DATABASE_URL` | String de conexão PostgreSQL (Prisma). | `postgresql://postgres:senha@db.supabase.co:5432/postgres` |
+| `NEXT_PUBLIC_SUPABASE_URL` | URL do Supabase para requisições de cliente. | `https://sua-id.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Chave pública anônima do Supabase. | `sb_publishable_...` |
 | `SUPABASE_SECRET_KEY` | Chave secreta de serviço do Supabase. | `sb_secret_...` |
-| `SUPABASE_JWKS_URL` | URL do arquivo JWKS para verificação de chaves JWT. | `https://sua-id.supabase.co/auth/v1/.well-known/jwks.json` |
-| `ADMIN_USERNAME` | Nome de usuário para acesso à rota `/admin`. | `seu_usuario` |
-| `ADMIN_PASSWORD` | Senha de acesso para a área administrativa. | `sua_senha_secreta` |
-| `JWT_SECRET` | Chave secreta de segurança para assinatura do token de sessão. | `qualquer-frase-longa-e-aleatoria` |
-| `NEXT_PUBLIC_SITE_URL` | URL pública do blog (utilizada na geração dinâmica do sitemap.xml). | `https://motonapratica.com.br` |
+| `SUPABASE_JWKS_URL` | URL de chaves públicas para validar chaves JWT. | `https://sua-id.supabase.co/auth/v1/.well-known/jwks.json` |
+| `ADMIN_USERNAME` | Nome de usuário administrativo do painel. | `seu_usuario` |
+| `ADMIN_PASSWORD` | Senha de acesso ao painel do CMS. | `sua_senha_secreta` |
+| `JWT_SECRET` | Hash/Segredo para criptografia do token de sessão. | `qualquer-chave-longa-e-segura` |
+| `NEXT_PUBLIC_SITE_URL` | URL oficial de produção (usado no sitemap.xml). | `https://motonapratica.online` |
+| `N8N_WEBHOOK_URL` | (Opcional) Webhook para disparar automações de posts. | `https://n8n.seu-servidor.com/webhook/post` |
 
-### 2. Armazenamento Persistente (Persistent Volumes)
-Para garantir que as imagens enviadas por upload no CMS administrativo não sejam apagadas quando o container reiniciar ou atualizar, adicione o seguinte volume persistente no Coolify:
+### 2. Volumes Persistentes (Armazenamento de Uploads)
 
-- **Diretório do Container**: `/app/public/uploads`
-- **Mapeamento do Servidor (Volume Host)**: ex: `motonapratica-uploads:/app/public/uploads`
+Configure um volume no painel do Coolify para evitar perda de imagens enviadas no upload do CMS quando o container atualizar:
+
+- **Diretório do Container**: `/app/uploads`
+- **Mapeamento do Servidor (Volume Host)**: ex: `motonapratica-uploads:/app/uploads`
 
 ---
 
@@ -57,18 +80,18 @@ Para garantir que as imagens enviadas por upload no CMS administrativo não seja
    pnpm install
    ```
 
-2. **Subir tabelas no Banco de Dados**:
+2. **Sincronizar Banco de Dados (Prisma)**:
    ```bash
    npx prisma db push
    ```
 
-3. **Carregar Carga de Dados Inicial (Seed)**:
+3. **Gerar Carga Inicial de Dados (Seed)**:
    ```bash
    npx prisma db seed
    ```
 
-4. **Iniciar o Servidor de Desenvolvimento**:
+4. **Executar em Modo de Desenvolvimento**:
    ```bash
    pnpm dev
    ```
-   Acesse: `http://localhost:3000`
+   Acesse no navegador: `http://localhost:3000`
