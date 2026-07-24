@@ -58,11 +58,17 @@ export async function POST(req: Request) {
     }
 
     const rawBody = await req.json();
-    const body = Array.isArray(rawBody) ? rawBody[0] : rawBody;
+    let body = Array.isArray(rawBody) ? rawBody[0] : rawBody;
+
+    // Desembrulha invólucros nativos do n8n do tipo { json: { ... } }
+    if (body && typeof body === "object" && "json" in body && body.json) {
+      body = body.json;
+    }
+
+    const output = body?.output || (body?.en && body?.pt ? body : null);
 
     // SUPORTE A MULTI-IDIOMA AUTOMÁTICO DO N8N (output: { id, en, es, pt })
-    if (body?.output && typeof body.output === "object") {
-      const output = body.output;
+    if (output && typeof output === "object") {
       const translationGroupId = output.id || `group-${Date.now()}`;
       const createdPosts: any[] = [];
 
@@ -95,6 +101,8 @@ export async function POST(req: Request) {
             focalPoint: "center",
           });
         }
+
+        const postUrlPath = lang === "en" ? `/en/post/${finalSlug}` : lang === "es" ? `/es/post/${finalSlug}` : `/post/${finalSlug}`;
 
         // Upsert do post para cada idioma
         const post = await prisma.post.upsert({
@@ -134,7 +142,7 @@ export async function POST(req: Request) {
           id: post.id,
           lang: post.lang,
           slug: post.slug,
-          url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://motonapratica.online"}/post/${post.slug}`,
+          url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://motonapratica.online"}${postUrlPath}`,
         });
       }
 
