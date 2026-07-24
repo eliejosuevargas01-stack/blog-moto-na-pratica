@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Loader2, CheckCircle2 } from "lucide-react";
 import { TEKO } from "../data";
+import { getTranslation } from "../i18n/translations";
 
 interface NewsletterBoxProps {
   variant?: "compact" | "banner";
@@ -13,11 +14,21 @@ export default function NewsletterBox({ variant = "banner", className = "" }: Ne
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [currentLang, setCurrentLang] = useState("pt");
+
+  useEffect(() => {
+    const match = document.cookie.match(/NEXT_LOCALE=([^;]+)/);
+    if (match && ["pt", "en", "es"].includes(match[1])) {
+      setCurrentLang(match[1]);
+    }
+  }, []);
+
+  const t = getTranslation(currentLang);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !email.includes("@")) {
-      setStatus({ type: "error", text: "Por favor, digite um e-mail válido." });
+      setStatus({ type: "error", text: currentLang === "en" ? "Please enter a valid email." : currentLang === "es" ? "Por favor, introduce un email válido." : "Por favor, digite um e-mail válido." });
       return;
     }
 
@@ -33,13 +44,13 @@ export default function NewsletterBox({ variant = "banner", className = "" }: Ne
       const data = await res.json();
 
       if (res.ok && data.success) {
-        setStatus({ type: "success", text: "Inscrição realizada com sucesso!" });
+        setStatus({ type: "success", text: t.sidebar.subscribed });
         setEmail("");
       } else {
-        setStatus({ type: "error", text: data.error || "Erro ao realizar inscrição." });
+        setStatus({ type: "error", text: data.error || "Error" });
       }
     } catch (err) {
-      setStatus({ type: "error", text: "Falha de conexão. Tente novamente." });
+      setStatus({ type: "error", text: "Error" });
     } finally {
       setLoading(false);
     }
@@ -49,10 +60,10 @@ export default function NewsletterBox({ variant = "banner", className = "" }: Ne
     return (
       <div className={`bg-[#C81017] p-6 rounded-none text-white shadow-lg ${className}`}>
         <h3 style={TEKO} className="text-[32px] font-bold uppercase tracking-wide leading-none text-white mb-2">
-          RECEBA NOVOS POSTS
+          {t.sidebar.newsletterTitle}
         </h3>
         <p className="text-[13px] text-white/85 leading-snug mb-5">
-          Sem spam. Só artigo novo quando sai.
+          {t.sidebar.newsletterDesc}
         </p>
 
         {status && (
@@ -67,7 +78,7 @@ export default function NewsletterBox({ variant = "banner", className = "" }: Ne
         <form onSubmit={handleSubmit} className="space-y-3">
           <input
             type="email"
-            placeholder="seu@email.com"
+            placeholder={t.sidebar.emailPlaceholder}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -79,7 +90,7 @@ export default function NewsletterBox({ variant = "banner", className = "" }: Ne
             style={TEKO}
             className="w-full bg-[#111111] hover:bg-black text-white text-[20px] font-semibold uppercase tracking-wider py-2.5 flex items-center justify-center gap-2 transition-colors disabled:opacity-60 rounded-none shadow-md"
           >
-            {loading ? <Loader2 size={18} className="animate-spin text-white" /> : "INSCREVER"}
+            {loading ? <Loader2 size={18} className="animate-spin text-white" /> : t.sidebar.subscribe.toUpperCase()}
           </button>
         </form>
       </div>
@@ -91,10 +102,10 @@ export default function NewsletterBox({ variant = "banner", className = "" }: Ne
       <div className="max-w-[1200px] mx-auto grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-8 items-center">
         <div>
           <h2 style={TEKO} className="text-[40px] md:text-[50px] font-bold uppercase leading-none text-white tracking-wide">
-            RECEBA NOVOS POSTS
+            {t.sidebar.newsletterTitle}
           </h2>
           <p className="text-[15px] text-white/90 mt-2 max-w-[580px]">
-            Sem spam. Só artigo novo quando sai.
+            {t.sidebar.newsletterDesc}
           </p>
         </div>
 
@@ -111,7 +122,7 @@ export default function NewsletterBox({ variant = "banner", className = "" }: Ne
           <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
             <input
               type="email"
-              placeholder="seu@email.com"
+              placeholder={t.sidebar.emailPlaceholder}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -123,7 +134,7 @@ export default function NewsletterBox({ variant = "banner", className = "" }: Ne
               style={TEKO}
               className="bg-[#111111] hover:bg-black text-white text-[22px] font-semibold uppercase tracking-wider px-8 py-3.5 shrink-0 flex items-center justify-center gap-2 transition-colors disabled:opacity-60 rounded-none shadow-md"
             >
-              {loading ? <Loader2 size={20} className="animate-spin text-white" /> : "INSCREVER"}
+              {loading ? <Loader2 size={20} className="animate-spin text-white" /> : t.sidebar.subscribe.toUpperCase()}
             </button>
           </form>
         </div>

@@ -71,6 +71,10 @@ export default async function CategoryView({ tag, title, description, heroImg, i
   const firstPost = posts[0] || null;
   const restPosts = posts.slice(1);
 
+  const categoryLabel = currentLang === "en" ? "Category" : currentLang === "es" ? "Categoría" : "Categoria";
+  const postsInHeader = currentLang === "en" ? `Posts in ${title}` : currentLang === "es" ? `Posts en ${title}` : `Posts em ${title}`;
+  const seeAlsoTitle = currentLang === "en" ? "See also" : currentLang === "es" ? "Ver también" : "Veja também";
+
   return (
     <div>
       {/* CATEGORY HERO */}
@@ -80,7 +84,7 @@ export default async function CategoryView({ tag, title, description, heroImg, i
         <div className="absolute inset-0 flex flex-col justify-center px-8 md:px-16 max-w-[800px] z-10">
           <div className="flex items-center gap-3 mb-3">
             <span className="text-primary">{iconMap[iconName] || <Star size={20} />}</span>
-            <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Categoria</span>
+            <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{categoryLabel}</span>
           </div>
           <h1 style={TEKO} className="text-[56px] md:text-[72px] font-semibold uppercase leading-none tracking-wide text-white mb-3">
             {title}
@@ -105,7 +109,7 @@ export default async function CategoryView({ tag, title, description, heroImg, i
             <div className="flex items-center gap-3">
               <span className="block w-1 h-7 bg-primary" />
               <h2 style={TEKO} className="text-[26px] font-semibold uppercase tracking-wide">
-                {posts.length > 0 ? `${posts.length} post${posts.length > 1 ? "s" : ""}` : "Posts"} em {title}
+                {posts.length > 0 ? `${posts.length} post${posts.length > 1 ? "s" : ""}` : "Posts"} {currentLang === "en" ? "in" : currentLang === "es" ? "en" : "em"} {title}
               </h2>
             </div>
           </div>
@@ -133,7 +137,7 @@ export default async function CategoryView({ tag, title, description, heroImg, i
                       <p className="text-[13px] text-muted-foreground leading-relaxed mb-4">{firstPost.excerpt}</p>
                       <div className="flex items-center justify-between">
                         <span className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
-                          <Clock size={11} /> {firstPost.readTime} · {firstPost.date instanceof Date ? firstPost.date.toLocaleDateString("pt-BR", { day: '2-digit', month: 'short', year: 'numeric' }) : firstPost.date}
+                          <Clock size={11} /> {firstPost.readTime} · {firstPost.date instanceof Date ? firstPost.date.toLocaleDateString(currentLang === "en" ? "en-US" : currentLang === "es" ? "es-ES" : "pt-BR", { day: '2-digit', month: 'short', year: 'numeric' }) : firstPost.date}
                         </span>
                         <span className="text-[12px] font-bold text-primary uppercase tracking-wider flex items-center gap-1">{t.posts.read} <ArrowRight size={12} /></span>
                       </div>
@@ -164,7 +168,7 @@ export default async function CategoryView({ tag, title, description, heroImg, i
                           />
                           <p className="text-[13px] text-muted-foreground leading-relaxed mb-4 flex-1">{post.excerpt}</p>
                           <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                            <Clock size={10} /> {post.readTime} · {post.date instanceof Date ? post.date.toLocaleDateString("pt-BR", { day: '2-digit', month: 'short', year: 'numeric' }) : post.date}
+                            <Clock size={10} /> {post.readTime} · {post.date instanceof Date ? post.date.toLocaleDateString(currentLang === "en" ? "en-US" : currentLang === "es" ? "es-ES" : "pt-BR", { day: '2-digit', month: 'short', year: 'numeric' }) : post.date}
                           </div>
                         </div>
                       </Link>
@@ -191,7 +195,7 @@ export default async function CategoryView({ tag, title, description, heroImg, i
             <div className="mt-14">
               <div className="flex items-center gap-3 mb-6">
                 <span className="block w-1 h-6 bg-primary" />
-                <h3 style={TEKO} className="text-[22px] font-semibold uppercase tracking-wide">Veja também</h3>
+                <h3 style={TEKO} className="text-[22px] font-semibold uppercase tracking-wide">{seeAlsoTitle}</h3>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {allOthers.map((post) => (

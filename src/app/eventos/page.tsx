@@ -4,6 +4,8 @@ import Link from "next/link";
 import { Clock, Trophy, Flame, Radio, ArrowRight, Flag, Calendar, Medal, CheckCircle2 } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import EventCountdown from "../components/EventCountdown";
+import { cookies } from "next/headers";
+import { getTranslation } from "../i18n/translations";
 
 export const dynamic = "force-dynamic";
 
@@ -37,20 +39,29 @@ const COUNTRY_FLAGS: Record<string, string> = {
 };
 
 export default async function EventosPage() {
+  const cookieStore = cookies();
+  const currentLang = cookieStore.get("NEXT_LOCALE")?.value || "pt";
+  const t = getTranslation(currentLang);
+
+  const langFilter = {
+    OR: [
+      { lang: currentLang },
+      ...(currentLang === "pt" ? [{ lang: null }] : []),
+    ],
+  };
+
   let upcomingEvents: any[] = [];
   let riderStandings: any[] = [];
   let recentStageResults: any[] = [];
   let eventPosts: any[] = [];
 
   try {
-    // 1. Próximas corridas do banco de dados
     upcomingEvents = await prisma.calendarioEventos.findMany({
       where: { status: "UPCOMING" },
       orderBy: { dateEnd: "asc" },
       take: 4,
     });
 
-    // Fallback se não houver corridas UPCOMING cadastradas
     if (upcomingEvents.length === 0) {
       upcomingEvents = await prisma.calendarioEventos.findMany({
         orderBy: { dateStart: "asc" },
@@ -58,13 +69,11 @@ export default async function EventosPage() {
       });
     }
 
-    // 2. Ranking de pilotos 2026
     riderStandings = await prisma.rankingPilotos.findMany({
       where: { seasonYear: 2026 },
       orderBy: { position: "asc" },
     });
 
-    // 3. Resultados da última etapa realizada
     recentStageResults = await prisma.resultadosEtapas.findMany({
       include: { event: true },
       orderBy: [
@@ -73,21 +82,29 @@ export default async function EventosPage() {
       take: 30,
     });
 
-    // 4. Posts sobre eventos
     eventPosts = await prisma.post.findMany({
       where: {
-        OR: [
-          { tag: { contains: "Evento" } },
-          { tag: { contains: "MotoGP" } },
-          { tag: { contains: "Corrida" } },
-          { category: { contains: "Eventos" } },
-        ],
+        AND: [
+          langFilter,
+          {
+            OR: [
+              { tag: { contains: "Evento" } },
+              { tag: { contains: "MotoGP" } },
+              { tag: { contains: "Corrida" } },
+              { category: { contains: "Eventos" } },
+              { category: { contains: "Notícias" } }
+            ],
+          }
+        ]
       },
       orderBy: { createdAt: "desc" },
     });
   } catch (error) {
     console.error("Erro ao carregar dados de eventos:", error);
   }
+
+  const newsHeader = currentLang === "en" ? "Event News & Coverage" : currentLang === "es" ? "Noticias y Coberturas de Eventos" : "Notícias & Coberturas de Eventos";
+  const upcomingHeader = currentLang === "en" ? "Upcoming Races & Countdowns" : currentLang === "es" ? "Próximas Carreras y Cuentas Regresivas" : "Próximas Corridas & Contagens Regressivas";
 
   return (
     <div style={BODY} className="bg-background text-foreground min-h-screen">
@@ -101,10 +118,10 @@ export default async function EventosPage() {
             </span>
           </div>
           <h1 style={TEKO} className="text-[48px] md:text-[68px] font-semibold uppercase leading-none tracking-wide max-w-[850px]">
-            Calendário, Ranking & Resultados ao Vivo
+            {t.categories.eventsTitle}
           </h1>
           <p className="text-[16px] text-muted-foreground max-w-[680px] mt-3 leading-relaxed">
-            Acompanhe a contagem regressiva das próximas etapas, a tabela oficial de classificação dos pilotos e a súmula completa de cada GP.
+            {t.categories.eventsDesc}
           </p>
         </div>
       </section>
@@ -114,7 +131,7 @@ export default async function EventosPage() {
         <div className="flex items-center gap-3 mb-6">
           <span className="block w-1 h-6 bg-primary" />
           <h2 style={TEKO} className="text-[28px] font-semibold uppercase tracking-wide">
-            Próximas Corridas & Contagens Regressivas
+            {upcomingHeader}
           </h2>
         </div>
 
@@ -273,84 +290,58 @@ export default async function EventosPage() {
         </div>
       </section>
 
-      {/* ÁREA PREPARADA PARA TRANSMISSÃO / YOUTUBE EMBED */}
-      <section className="max-w-[1200px] mx-auto px-4 md:px-6 py-8">
-        <div className="bg-[#111111] border border-border p-8 rounded-sm text-center relative overflow-hidden">
-          <div className="flex items-center justify-center gap-2 text-red-500 mb-2">
-            <Radio size={22} className="animate-pulse" />
-            <span style={TEKO} className="text-[22px] uppercase font-bold tracking-wider">
-              Central de Transmissões ao Vivo
-            </span>
-          </div>
-          <h3 style={TEKO} className="text-[28px] uppercase text-foreground mb-2">
-            Transmissões e Coberturas do Canal Moto na Prática
-          </h3>
-          <p className="text-[14px] text-muted-foreground max-w-[600px] mx-auto mb-6">
-            Em breve estaremos integrando transmissões e análises em tempo real diretamente do nosso canal no YouTube durante as etapas dos campeonatos.
-          </p>
-          <a
-            href="https://www.youtube.com/@motonapratica"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-[13px] font-bold uppercase tracking-wider px-6 py-3 rounded-sm transition-colors"
-          >
-            Inscrever-se no Canal do YouTube <ArrowRight size={14} />
-          </a>
-        </div>
-      </section>
-
       {/* NOTÍCIAS DE EVENTOS */}
       <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-12 grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-14">
         <div>
           <div className="flex items-center gap-3 mb-8">
             <span className="block w-1 h-6 bg-primary" />
             <h2 style={TEKO} className="text-[28px] font-semibold uppercase tracking-wide">
-              Notícias & Coberturas de Eventos
+              {newsHeader}
             </h2>
           </div>
 
           {eventPosts.length === 0 ? (
             <div className="bg-card border border-border p-10 text-center">
-              <p style={TEKO} className="text-[22px] uppercase text-muted-foreground">Nenhum post sobre eventos cadastrado ainda</p>
-              <p className="text-[13px] text-muted-foreground mt-2">
-                Use o painel CMS ou a API automatizada para criar posts com a tag "Eventos" ou "MotoGP".
-              </p>
+              <p style={TEKO} className="text-[22px] uppercase text-muted-foreground">{t.posts.noPosts}</p>
+              <p className="text-[13px] text-muted-foreground mt-2">{t.posts.noPostsDesc}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {eventPosts.map((post) => (
-                <article key={post.id} className="group bg-card border border-border overflow-hidden flex flex-col transition-all hover:-translate-y-1">
-                  <Link href={`/post/${post.slug}`} className="flex flex-col flex-1">
-                    <div className="relative overflow-hidden w-full h-[180px]">
-                      <img 
-                        src={optimizeImageUrl(post.img, 450, 260)} 
-                        alt={post.title} 
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                        loading="lazy"
-                      />
-                      <span className={`absolute top-2 left-2 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 ${TAG_COLORS[post.tag] || "bg-primary text-white"}`}>
-                        {post.tag}
-                      </span>
-                    </div>
-                    <div className="p-5 flex flex-col flex-1">
-                      <h3 style={TEKO} className="text-[22px] font-semibold uppercase leading-tight text-foreground mb-2 group-hover:text-primary transition-colors">
-                        {post.title}
-                      </h3>
-                      <p className="text-[13px] text-muted-foreground leading-relaxed mb-4 flex-1">
-                        {post.excerpt}
-                      </p>
-                      <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                        <Clock size={10} /> {post.readTime}
-                      </span>
-                    </div>
-                  </Link>
-                </article>
-              ))}
+              {eventPosts.map((post) => {
+                const postUrlPath = post.lang === "en" ? `/en/post/${post.slug}` : post.lang === "es" ? `/es/post/${post.slug}` : `/post/${post.slug}`;
+                return (
+                  <article key={post.id} className="group bg-card border border-border overflow-hidden flex flex-col transition-all hover:-translate-y-1">
+                    <Link href={postUrlPath} className="flex flex-col flex-1">
+                      <div className="relative overflow-hidden w-full h-[180px]">
+                        <img 
+                          src={optimizeImageUrl(post.img, 450, 260)} 
+                          alt={post.title} 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                          loading="lazy"
+                        />
+                        <span className={`absolute top-2 left-2 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 ${TAG_COLORS[post.tag] || "bg-primary text-white"}`}>
+                          {post.tag}
+                        </span>
+                      </div>
+                      <div className="p-5 flex flex-col flex-1">
+                        <h3 style={TEKO} className="text-[22px] font-semibold uppercase leading-tight text-foreground mb-2 group-hover:text-primary transition-colors">
+                          {post.title}
+                        </h3>
+                        <p className="text-[13px] text-muted-foreground leading-relaxed mb-4 flex-1">
+                          {post.excerpt}
+                        </p>
+                        <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                          <Clock size={10} /> {post.readTime}
+                        </span>
+                      </div>
+                    </Link>
+                  </article>
+                );
+              })}
             </div>
           )}
         </div>
 
-        {/* SIDEBAR */}
         <Sidebar />
       </div>
     </div>
