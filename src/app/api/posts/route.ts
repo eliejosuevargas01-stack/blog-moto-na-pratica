@@ -58,8 +58,8 @@ function processImagePlaceholdersInHtml(htmlText: string, langData: any): string
 
 /**
  * GET /api/posts
- * Permite buscar posts ordenados por postsComentados, views, likes ou createdAt
- * Exemplo: GET /api/posts?orderBy=postsComentados&order=asc&limit=10&lang=pt
+ * Permite buscar posts ordenados por mentions, views, likes ou createdAt
+ * Exemplo: GET /api/posts?orderBy=mentions&order=asc&limit=10&lang=pt
  */
 export async function GET(req: Request) {
   try {
@@ -69,7 +69,7 @@ export async function GET(req: Request) {
     const order = url.searchParams.get("order") === "asc" ? "asc" : "desc";
     const limit = parseInt(url.searchParams.get("limit") || "50", 10);
 
-    const validOrderByFields = ["createdAt", "postsComentados", "views", "likes", "title"];
+    const validOrderByFields = ["createdAt", "mentions", "views", "likes", "title"];
     const orderByField = validOrderByFields.includes(orderByParam) ? orderByParam : "createdAt";
 
     const posts = await prisma.post.findMany({
@@ -89,7 +89,7 @@ export async function GET(req: Request) {
         tag: true,
         category: true,
         lang: true,
-        postsComentados: true,
+        mentions: true,
         views: true,
         likes: true,
         createdAt: true,
@@ -208,11 +208,11 @@ export async function POST(req: Request) {
         });
       }
 
-      // Incrementar postsComentados no Supabase para todos os slugs citados
+      // Incrementar mentions no Supabase para todos os slugs citados
       if (extractedMentionedSlugs.size > 0) {
         await prisma.post.updateMany({
           where: { slug: { in: Array.from(extractedMentionedSlugs) } },
-          data: { postsComentados: { increment: 1 } },
+          data: { mentions: { increment: 1 } },
         });
       }
 
@@ -297,7 +297,7 @@ export async function POST(req: Request) {
     if (extractedMentionedSlugs.size > 0) {
       await prisma.post.updateMany({
         where: { slug: { in: Array.from(extractedMentionedSlugs) } },
-        data: { postsComentados: { increment: 1 } },
+        data: { mentions: { increment: 1 } },
       });
     }
 
@@ -314,7 +314,7 @@ export async function POST(req: Request) {
         title: post.title,
         slug: post.slug,
         lang: post.lang,
-        postsComentados: post.postsComentados,
+        mentions: post.mentions,
         url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://motonapratica.online"}/post/${post.slug}`,
       },
     });

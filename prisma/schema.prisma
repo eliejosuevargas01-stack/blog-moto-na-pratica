@@ -38,7 +38,7 @@ model Post {
   imageGenerationSent Boolean  @default(false) @map("image_generation_sent")
 
   // Contador de citações em outros posts (Link Building interno)
-  postsComentados     Int      @default(0) @map("posts_comentados")
+  mentions            Int      @default(0)
 
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
