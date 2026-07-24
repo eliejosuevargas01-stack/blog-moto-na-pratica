@@ -18,6 +18,15 @@ function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, "");
 }
 
+function cleanBlockHtml(html: string): string {
+  if (!html) return "";
+  return html
+    .replace(/<p>\s*(?:Image|Imagem)\s*URL\s*:?\s*https?:\/\/[^\s<]+\s*<\/p>/gi, "")
+    .replace(/(?:Image|Imagem)\s*URL\s*:?\s*https?:\/\/[^\s<]+/gi, "")
+    .replace(/\{[^}]*\}=\d+\{[^}]*\}/gi, "")
+    .trim();
+}
+
 function injectHeadingIds(html: string): string {
   if (!html) return "";
   return html.replace(/<(h[23])\b([^>]*)>(.*?)<\/\1>/gi, (match, tag, attrs, content) => {
@@ -34,7 +43,6 @@ interface PostPageProps {
   };
 }
 
-// SEO Dinâmico: Metadados dinâmicos lidos do banco com suporte a hreflang
 export async function generateMetadata({ params }: PostPageProps) {
   const { slug } = params;
   try {
@@ -97,7 +105,6 @@ export default async function PostPage({ params }: PostPageProps) {
     return notFound();
   }
 
-  // Buscar traduções irmãs vinculadas pelo translationGroupId
   if (post.translationGroupId) {
     try {
       translations = await prisma.post.findMany({
@@ -109,7 +116,6 @@ export default async function PostPage({ params }: PostPageProps) {
     }
   }
 
-  // Buscar posts relacionados com a mesma tag (exceto o próprio post)
   try {
     related = await prisma.post.findMany({
       where: {
@@ -135,7 +141,6 @@ export default async function PostPage({ params }: PostPageProps) {
     }
   }
 
-  // Parsear blocos dinâmicos
   let blocks: any[] = [];
   if (Array.isArray(post.blocks)) {
     blocks = post.blocks;
@@ -164,7 +169,6 @@ export default async function PostPage({ params }: PostPageProps) {
     }
   }
 
-  // Extrair tags dinâmicas do próprio post
   const dynamicPostTags: string[] = [post.tag];
   if (post.seoKeywords) {
     post.seoKeywords.split(",").forEach((k: string) => {
@@ -175,19 +179,12 @@ export default async function PostPage({ params }: PostPageProps) {
     });
   }
 
-  // Tratamento de datas
   const createdDate = post.createdAt ? new Date(post.createdAt) : (post.date ? new Date(post.date) : new Date());
   const updatedDate = post.updatedAt ? new Date(post.updatedAt) : null;
   const isUpdated = updatedDate && (updatedDate.getTime() - createdDate.getTime() > 24 * 60 * 60 * 1000);
 
   const formattedCreated = createdDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
   const formattedUpdated = updatedDate ? updatedDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" }) : "";
-
-  const LANG_FLAGS: Record<string, string> = {
-    pt: "🇧🇷 PT",
-    en: "🇺🇸 EN",
-    es: "🇪🇸 ES",
-  };
 
   return (
     <div>
@@ -250,26 +247,32 @@ export default async function PostPage({ params }: PostPageProps) {
 
           {/* Article body with Dynamic HTML Blocks */}
           <div className="space-y-8" style={BODY}>
-            {blocks.map((block: any, i: number) => (
-              <div key={i} className="flex flex-col gap-6">
-                <div 
-                  className="prose prose-invert max-w-none text-muted-foreground text-[15px] leading-relaxed [&_a]:text-primary [&_a]:underline [&_a:hover]:text-primary/80 [&_a]:transition-colors"
-                  dangerouslySetInnerHTML={{ __html: injectHeadingIds(block.text) }}
-                />
-                
-                {block.image && (
-                  <div className="relative overflow-hidden w-full h-[360px] border border-border rounded-sm">
-                    <img
-                      src={optimizeImageUrl(block.image, 800)}
-                      alt={`Ilustração do bloco ${i + 1}`}
-                      className="w-full h-full object-cover"
-                      style={{ objectPosition: block.focalPoint || "center" }}
-                      loading="lazy"
-                    />
-                  </div>
-                )}
-              </div>
-            ))}
+            {blocks.map((block: any, i: number) => {
+              const cleanedText = cleanBlockHtml(injectHeadingIds(block.text || ""));
+              const hasImageInText = cleanedText.includes("<img");
+              const isImageAlreadyInText = block.image && cleanedText.includes(block.image);
+
+              return (
+                <div key={i} className="flex flex-col gap-6">
+                  <div 
+                    className="prose prose-invert max-w-none text-muted-foreground text-[15px] leading-relaxed [&_a]:text-primary [&_a]:underline [&_a:hover]:text-primary/80 [&_a]:transition-colors"
+                    dangerouslySetInnerHTML={{ __html: cleanedText }}
+                  />
+                  
+                  {block.image && !hasImageInText && !isImageAlreadyInText && (
+                    <div className="relative overflow-hidden w-full h-[360px] border border-border rounded-sm">
+                      <img
+                        src={optimizeImageUrl(block.image, 800)}
+                        alt={`Ilustração do bloco ${i + 1}`}
+                        className="w-full h-full object-cover"
+                        style={{ objectPosition: block.focalPoint || "center" }}
+                        loading="lazy"
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           {/* Dynamic Post Tags */}

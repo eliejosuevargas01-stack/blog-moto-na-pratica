@@ -40,10 +40,19 @@ function extractMentionedSlugsFromHtml(html: string, selfSlug?: string): string[
   return Array.from(new Set(slugs));
 }
 
+function cleanBlockHtml(html: string): string {
+  if (!html) return "";
+  return html
+    .replace(/<p>\s*(?:Image|Imagem)\s*URL\s*:?\s*https?:\/\/[^\s<]+\s*<\/p>/gi, "")
+    .replace(/(?:Image|Imagem)\s*URL\s*:?\s*https?:\/\/[^\s<]+/gi, "")
+    .replace(/\{[^}]*\}=\d+\{[^}]*\}/gi, "")
+    .trim();
+}
+
 function processImagePlaceholdersInHtml(htmlText: string, langData: any): string {
   if (!htmlText) return "";
 
-  return htmlText.replace(/\{[^}]*\}=(\d+)\{([^}]*)\}/gi, (match, orderStr, altText) => {
+  let processed = htmlText.replace(/\{[^}]*\}=(\d+)\{([^}]*)\}/gi, (match, orderStr, altText) => {
     const orderNum = parseInt(orderStr, 10);
     const imgKey = `img-${orderNum}`;
     const imgUrl = extractImageUrl(langData[imgKey]);
@@ -54,6 +63,8 @@ function processImagePlaceholdersInHtml(htmlText: string, langData: any): string
     }
     return "";
   });
+
+  return cleanBlockHtml(processed);
 }
 
 /**
@@ -156,11 +167,14 @@ export async function POST(req: Request) {
           foundSlugs.forEach(s => extractedMentionedSlugs.add(s));
 
           const processedBlockText = processImagePlaceholdersInHtml(rawBlockText, langData);
-          const blockImg = extractImageUrl(langData[`img-${i + 1}`]);
+          const rawBlockImg = extractImageUrl(langData[`img-${i + 1}`]);
+
+          // Evita imagem duplicada se o texto HTML já tiver a tag <img> embutida
+          const hasImgTagInText = processedBlockText.includes("<img");
 
           blocks.push({
             text: processedBlockText,
-            image: blockImg,
+            image: hasImgTagInText ? "" : rawBlockImg,
             focalPoint: "center",
           });
         }
@@ -254,21 +268,27 @@ export async function POST(req: Request) {
     const finalSlug = customSlug?.trim() || generateSlug(title);
     const extractedMentionedSlugs: Set<string> = new Set(explicitMentionedSlugs);
 
-    if (Array.isArray(blocks)) {
-      blocks.forEach((b: any) => {
-        if (b && typeof b.text === "string") {
-          const found = extractMentionedSlugsFromHtml(b.text, finalSlug);
-          found.forEach(s => extractedMentionedSlugs.add(s));
-        }
-      });
-    }
+    const cleanedBlocks = Array.isArray(blocks) ? blocks.map((b: any) => {
+      if (b && typeof b.text === "string") {
+        const found = extractMentionedSlugsFromHtml(b.text, finalSlug);
+        found.forEach(s => extractedMentionedSlugs.add(s));
+        const cleanedText = cleanBlockHtml(b.text);
+        const hasImgTagInText = cleanedText.includes("<img");
+        return {
+          ...b,
+          text: cleanedText,
+          image: hasImgTagInText ? "" : (b.image || "")
+        };
+      }
+      return b;
+    }) : [];
 
     const post = await prisma.post.upsert({
       where: { slug: finalSlug },
       update: {
         title,
         excerpt: excerpt || title,
-        blocks: Array.isArray(blocks) ? blocks : [],
+        blocks: cleanedBlocks,
         seoTitle: seoTitle || title,
         seoDescription: seoDescription || excerpt,
         seoKeywords: seoKeywords || `${tag}, ${category}, Moto na Prática`,
@@ -284,7 +304,7 @@ export async function POST(req: Request) {
         readTime,
         img,
         imgFocalPoint,
-        blocks: Array.isArray(blocks) ? blocks : [],
+        blocks: cleanedBlocks,
         seoTitle: seoTitle || title,
         seoDescription: seoDescription || excerpt,
         seoKeywords: seoKeywords || `${tag}, ${category}, Moto na Prática`,
