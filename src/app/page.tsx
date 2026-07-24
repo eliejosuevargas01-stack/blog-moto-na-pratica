@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Clock, Tag, ChevronRight, ArrowRight, Star, Calendar, MapPin, Wrench } from "lucide-react";
 import Image from "next/image";
 import Sidebar from "./components/Sidebar";
+import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
@@ -15,11 +16,22 @@ function stripHtml(html: string): string {
 interface HomeProps {
   searchParams: {
     search?: string;
+    lang?: string;
   };
 }
 
 export default async function Home({ searchParams }: HomeProps) {
   const searchQuery = searchParams.search || "";
+  const cookieStore = cookies();
+  const currentLang = searchParams.lang || cookieStore.get("NEXT_LOCALE")?.value || "pt";
+
+  // Filtro de idioma para as queries do Prisma
+  const langFilter = {
+    OR: [
+      { lang: currentLang },
+      ...(currentLang === "pt" ? [{ lang: null }] : []),
+    ],
+  };
 
   // 1. Carregar configuração da Home Page e Posts
   let homeContent: any = {
@@ -46,29 +58,36 @@ export default async function Home({ searchParams }: HomeProps) {
       homeContent = pageDb.content;
     }
 
-    // Carregar posts filtrados se houver busca, ordenando sempre por data de criação (createdAt)
+    // Carregar posts filtrados pelo IDIOMA ATUAL (currentLang)
     if (searchQuery) {
       posts = await prisma.post.findMany({
         where: {
-          OR: [
-            { title: { contains: searchQuery } },
-            { excerpt: { contains: searchQuery } },
-            { tag: { contains: searchQuery } },
-            { category: { contains: searchQuery } },
-            { seoKeywords: { contains: searchQuery } }
+          AND: [
+            langFilter,
+            {
+              OR: [
+                { title: { contains: searchQuery } },
+                { excerpt: { contains: searchQuery } },
+                { tag: { contains: searchQuery } },
+                { category: { contains: searchQuery } },
+                { seoKeywords: { contains: searchQuery } }
+              ]
+            }
           ]
         },
         orderBy: { createdAt: "desc" }
       });
     } else {
       posts = await prisma.post.findMany({
+        where: langFilter,
         orderBy: { createdAt: "desc" }
       });
     }
 
-    // Contagem de categorias dinâmicas
+    // Contagem de categorias filtradas pelo idioma
     const grouped = await prisma.post.groupBy({
       by: ["tag"],
+      where: langFilter,
       _count: {
         id: true
       }
@@ -99,7 +118,7 @@ export default async function Home({ searchParams }: HomeProps) {
     count: categoryCounts[cat.tag] || 0
   }));
 
-  // Determinar o post do Hero (Destaque principal)
+  // Determinar o post do Hero (Destaque principal) filtrado pelo idioma
   let heroPost = posts[0] || null;
   if (homeContent.heroPostId) {
     const found = posts.find(p => String(p.id) === String(homeContent.heroPostId));
@@ -122,11 +141,13 @@ export default async function Home({ searchParams }: HomeProps) {
   const heroTitle = heroPost ? heroPost.title : homeContent.heroTitle;
   const heroSubtitle = heroPost ? heroPost.excerpt : homeContent.heroSubtitle;
   const heroSlug = heroPost ? heroPost.slug : (homeContent.breakingSlug || "fazer-250-solid-grey-2026-6-meses");
+  const heroLangPrefix = heroPost?.lang === "en" ? "/en" : heroPost?.lang === "es" ? "/es" : "";
 
   const breakingText = breakingPost ? breakingPost.title : homeContent.breakingText;
   const breakingSlug = breakingPost ? breakingPost.slug : (homeContent.breakingSlug || "michelin-pilot-street-2-fazer");
+  const breakingLangPrefix = breakingPost?.lang === "en" ? "/en" : breakingPost?.lang === "es" ? "/es" : "";
 
-  // Ordem de seções personalizável (configurada pelo usuário no Admin CMS)
+  // Ordem de seções personalizável
   const defaultSectionOrder = ["hero", "breaking", "posts", "banner"];
   const sectionOrder: string[] = Array.isArray(homeContent.sectionOrder) && homeContent.sectionOrder.length > 0 
     ? homeContent.sectionOrder 
@@ -160,7 +181,7 @@ export default async function Home({ searchParams }: HomeProps) {
           {heroSubtitle}
         </p>
         <Link
-          href={`/post/${heroSlug}`}
+          href={`${heroLangPrefix}/post/${heroSlug}`}
           className="flex items-center gap-2 bg-primary hover:bg-[#A00B22] text-white text-[14px] font-bold uppercase tracking-wider px-6 py-3 transition-colors w-fit"
         >
           Ler artigo completo <ArrowRight size={15} />
@@ -174,7 +195,7 @@ export default async function Home({ searchParams }: HomeProps) {
       <span style={TEKO} className="text-white text-[15px] font-semibold uppercase tracking-widest shrink-0 bg-[#E31E24] px-2 py-0.5">Novo</span>
       <span className="text-white text-[14px] truncate" dangerouslySetInnerHTML={{ __html: breakingText }} />
       <Link
-        href={`/post/${breakingSlug}`}
+        href={`${breakingLangPrefix}/post/${breakingSlug}`}
         className="text-white/80 hover:text-white text-[13px] font-semibold uppercase ml-auto shrink-0 flex items-center gap-1"
       >
         Ler <ChevronRight size={13} />
@@ -184,7 +205,6 @@ export default async function Home({ searchParams }: HomeProps) {
 
   const renderPosts = () => (
     <div key="posts" className="max-w-[1200px] mx-auto px-4 md:px-6 py-16 grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-14">
-      {/* Posts */}
       <div>
         <div className="flex items-center justify-between mb-10">
           <div className="flex items-center gap-3">
@@ -198,8 +218,8 @@ export default async function Home({ searchParams }: HomeProps) {
         {posts.length === 0 ? (
           <div className="bg-card border border-border p-12 text-center">
             <span className="text-muted-foreground text-[40px] block mb-3">🔍</span>
-            <p style={TEKO} className="text-[22px] uppercase text-muted-foreground">Nenhum post encontrado</p>
-            <p className="text-[13px] text-muted-foreground mt-2">Não encontramos nenhum artigo correspondente à sua busca.</p>
+            <p style={TEKO} className="text-[22px] uppercase text-muted-foreground">Nenhum post encontrado neste idioma</p>
+            <p className="text-[13px] text-muted-foreground mt-2">Não encontramos nenhum artigo correspondente à sua busca ou idioma selecionado.</p>
             <Link
               href="/"
               className="mt-6 inline-flex items-center gap-2 bg-primary text-white text-[13px] font-bold uppercase tracking-wider px-5 py-2.5 transition-colors hover:bg-[#A00B22]"
@@ -212,7 +232,7 @@ export default async function Home({ searchParams }: HomeProps) {
             {/* Featured Post Card (Large) */}
             {featuredPost && (
               <article className="group bg-card border border-border overflow-hidden mb-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
-                <Link href={`/post/${featuredPost.slug}`} className="block">
+                <Link href={`${featuredPost.lang === "en" ? "/en" : featuredPost.lang === "es" ? "/es" : ""}/post/${featuredPost.slug}`} className="block">
                   <div className="relative overflow-hidden w-full h-[280px]">
                     <img 
                       src={optimizeImageUrl(featuredPost.img, 750, 420)} 
@@ -252,7 +272,7 @@ export default async function Home({ searchParams }: HomeProps) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-10">
                 {gridPosts.map((post) => (
                   <article key={post.id} className="group bg-card border border-border overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-                    <Link href={`/post/${post.slug}`} className="flex flex-col flex-1">
+                    <Link href={`${post.lang === "en" ? "/en" : post.lang === "es" ? "/es" : ""}/post/${post.slug}`} className="flex flex-col flex-1">
                       <div className="relative overflow-hidden w-full h-[185px]">
                         <img 
                           src={optimizeImageUrl(post.img, 450, 260)} 
@@ -284,7 +304,6 @@ export default async function Home({ searchParams }: HomeProps) {
               </div>
             )}
 
-            {/* BOTÃO CARREGAR MAIS POSTS */}
             <div className="text-center mt-8 pt-6 border-t border-border/60">
               <Link
                 href="/posts"
@@ -297,7 +316,6 @@ export default async function Home({ searchParams }: HomeProps) {
         )}
       </div>
 
-      {/* SIDEBAR */}
       <Sidebar />
     </div>
   );
@@ -339,4 +357,3 @@ export default async function Home({ searchParams }: HomeProps) {
     </>
   );
 }
-

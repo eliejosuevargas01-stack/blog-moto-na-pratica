@@ -225,31 +225,6 @@ export default async function PostPage({ params }: PostPageProps) {
                 (Atualizado em {formattedUpdated})
               </span>
             )}
-
-            {/* SELETOR DE IDIOMAS DO POST (COM SUBDIRETÓRIOS /en/ E /es/) */}
-            {translations.length > 1 && (
-              <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-md border border-white/20 px-2.5 py-1 rounded-sm ml-auto">
-                <Globe size={13} className="text-primary" />
-                {translations.map((t) => {
-                  const isCurrent = t.slug === post.slug;
-                  const href = t.lang === "en" ? `/en/post/${t.slug}` : t.lang === "es" ? `/es/post/${t.slug}` : `/post/${t.slug}`;
-
-                  return isCurrent ? (
-                    <span key={t.lang} className="text-[10px] font-extrabold px-1.5 py-0.5 bg-primary text-white uppercase rounded-xs">
-                      {LANG_FLAGS[t.lang] || t.lang?.toUpperCase()}
-                    </span>
-                  ) : (
-                    <Link
-                      key={t.lang}
-                      href={href}
-                      className="text-[10px] font-medium px-1.5 py-0.5 bg-white/10 hover:bg-white/20 text-white/80 hover:text-white uppercase transition-colors rounded-xs"
-                    >
-                      {LANG_FLAGS[t.lang] || t.lang?.toUpperCase()}
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
           </div>
           <h1 
             style={TEKO} 

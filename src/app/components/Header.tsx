@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Search, Menu, X, ChevronRight } from "lucide-react";
@@ -15,8 +15,60 @@ export default function Header({ customPages }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentLang, setCurrentLang] = useState("pt");
   const pathname = usePathname();
   const router = useRouter();
+
+  useEffect(() => {
+    if (pathname?.startsWith("/en")) {
+      setCurrentLang("en");
+    } else if (pathname?.startsWith("/es")) {
+      setCurrentLang("es");
+    } else {
+      const match = document.cookie.match(/NEXT_LOCALE=([^;]+)/);
+      if (match && ["pt", "en", "es"].includes(match[1])) {
+        setCurrentLang(match[1]);
+      } else {
+        setCurrentLang("pt");
+      }
+    }
+  }, [pathname]);
+
+  const handleLangChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newLang = e.target.value;
+    setCurrentLang(newLang);
+    document.cookie = `NEXT_LOCALE=${newLang}; path=/; max-age=31536000`;
+
+    // 1. Se estiver lendo um artigo em /post/[slug], /en/post/[slug] ou /es/post/[slug]
+    const postMatch = pathname?.match(/\/(?:en\/|es\/)?post\/([^/]+)/);
+
+    if (postMatch && postMatch[1]) {
+      const currentSlug = postMatch[1];
+      try {
+        const res = await fetch(`/api/posts/translate?slug=${encodeURIComponent(currentSlug)}&targetLang=${newLang}`);
+        const data = await res.json();
+
+        if (data.targetSlug) {
+          const targetPath = newLang === "en" 
+            ? `/en/post/${data.targetSlug}` 
+            : newLang === "es" 
+              ? `/es/post/${data.targetSlug}` 
+              : `/post/${data.targetSlug}`;
+          
+          router.push(targetPath);
+          return;
+        }
+      } catch (err) {
+        console.error("Erro ao buscar tradução da slug:", err);
+      }
+    }
+
+    // 2. Se estiver na Home ou outras páginas de listagem
+    const url = new URL(window.location.href);
+    url.searchParams.set("lang", newLang);
+    router.push(url.pathname + url.search);
+    router.refresh();
+  };
 
   const baseLinks = [
     { label: "Home", path: "/" },
@@ -28,7 +80,6 @@ export default function Header({ customPages }: HeaderProps) {
     { label: "Sobre", path: "/sobre" },
   ];
 
-  // Adicionar as páginas dinâmicas customizadas criadas pelo usuário
   const dynamicLinks = customPages.map(page => ({
     label: page.title,
     path: `/${page.slug}`
@@ -53,13 +104,18 @@ export default function Header({ customPages }: HeaderProps) {
           Blog independente · experiência real na estrada
         </span>
         <div className="flex items-center gap-4">
-          {/* BANDEIRAS DE IDIOMA NO HEADER */}
-          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground border-r border-border pr-3">
-            <Link href="/" className="hover:text-white font-bold text-white transition-colors" title="Português (Brasil)">🇧🇷 PT</Link>
-            <span className="text-border">|</span>
-            <Link href="/en/post" className="hover:text-white transition-colors" title="English (US)">🇺🇸 EN</Link>
-            <span className="text-border">|</span>
-            <Link href="/es/post" className="hover:text-white transition-colors" title="Español">🇪🇸 ES</Link>
+          {/* SELETOR DROPDOWN DE IDIOMA NO HEADER (ÚNICO PONTO DE TROCA) */}
+          <div className="flex items-center border-r border-border pr-3">
+            <select
+              value={currentLang}
+              onChange={handleLangChange}
+              className="bg-[#181818] border border-border text-white text-[11px] font-bold uppercase rounded px-2 py-0.5 outline-none cursor-pointer hover:border-primary transition-colors"
+              aria-label="Selecionar Idioma"
+            >
+              <option value="pt">🇧🇷 PT</option>
+              <option value="en">🇺🇸 EN</option>
+              <option value="es">🇪🇸 ES</option>
+            </select>
           </div>
 
           <div className="hidden sm:flex items-center">
@@ -155,4 +211,3 @@ export default function Header({ customPages }: HeaderProps) {
     </>
   );
 }
-

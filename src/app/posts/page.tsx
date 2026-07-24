@@ -3,13 +3,9 @@ import { POSTS, TAG_COLORS, TEKO, BODY, optimizeImageUrl } from "../data";
 import Link from "next/link";
 import { Clock, Search, ArrowRight, Tag } from "lucide-react";
 import Sidebar from "../components/Sidebar";
+import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
-
-export const metadata = {
-  title: "Todos os Posts · Moto na Prática",
-  description: "Explore todos os artigos do blog Moto na Prática: análises sinceras da Fazer 250, dicas de manutenção, relatos de viagens e equipamentos.",
-};
 
 function stripHtml(html: string): string {
   if (!html) return "";
@@ -20,39 +16,53 @@ interface PostsPageProps {
   searchParams: {
     search?: string;
     tag?: string;
+    lang?: string;
   };
 }
 
 export default async function PostsPage({ searchParams }: PostsPageProps) {
   const searchQuery = searchParams.search || "";
   const tagFilter = searchParams.tag || "";
+  const cookieStore = cookies();
+  const currentLang = searchParams.lang || cookieStore.get("NEXT_LOCALE")?.value || "pt";
+
+  const langFilter = {
+    OR: [
+      { lang: currentLang },
+      ...(currentLang === "pt" ? [{ lang: null }] : []),
+    ],
+  };
 
   let posts: any[] = [];
 
   try {
-    const whereClause: any = {};
+    const conditions: any[] = [langFilter];
 
     if (searchQuery) {
-      whereClause.OR = [
-        { title: { contains: searchQuery } },
-        { excerpt: { contains: searchQuery } },
-        { tag: { contains: searchQuery } },
-        { category: { contains: searchQuery } },
-        { seoKeywords: { contains: searchQuery } }
-      ];
+      conditions.push({
+        OR: [
+          { title: { contains: searchQuery } },
+          { excerpt: { contains: searchQuery } },
+          { tag: { contains: searchQuery } },
+          { category: { contains: searchQuery } },
+          { seoKeywords: { contains: searchQuery } }
+        ]
+      });
     }
 
     if (tagFilter) {
-      whereClause.OR = [
-        { tag: { equals: tagFilter } },
-        { category: { equals: tagFilter } },
-        { seoKeywords: { contains: tagFilter } }
-      ];
+      conditions.push({
+        OR: [
+          { tag: { equals: tagFilter } },
+          { category: { equals: tagFilter } },
+          { seoKeywords: { contains: tagFilter } }
+        ]
+      });
     }
 
     posts = await prisma.post.findMany({
-      where: Object.keys(whereClause).length > 0 ? whereClause : undefined,
-      orderBy: { createdAt: "desc" }, // Ordenar por data de criação
+      where: { AND: conditions },
+      orderBy: { createdAt: "desc" },
     });
   } catch (error) {
     console.warn("Falha ao buscar posts no banco, usando POSTS estáticos:", error);
@@ -61,7 +71,6 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
 
   return (
     <div style={BODY}>
-      {/* HEADER DA PÁGINA */}
       <section className="bg-[#0A0A0A] border-b border-border py-14 px-6">
         <div className="max-w-[1200px] mx-auto">
           <div className="flex items-center gap-2 mb-2">
@@ -74,18 +83,17 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
             {tagFilter ? `Artigos marcados com "${tagFilter}"` : searchQuery ? `Resultados da busca: "${searchQuery}"` : "Todos os Posts"}
           </h1>
           <p className="text-[14px] text-muted-foreground mt-3 max-w-[600px]">
-            Confira todos os artigos publicados em ordem cronológica de criação.
+            Confira todos os artigos publicados no idioma selecionado.
           </p>
         </div>
       </section>
 
-      {/* CONTEÚDO PRINCIPAL */}
       <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-14 grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-14">
         <div>
           {posts.length === 0 ? (
             <div className="bg-card border border-border p-12 text-center">
               <span className="text-[40px] block mb-3">🔍</span>
-              <h3 style={TEKO} className="text-[24px] uppercase text-muted-foreground">Nenhum post encontrado</h3>
+              <h3 style={TEKO} className="text-[24px] uppercase text-muted-foreground">Nenhum post encontrado neste idioma</h3>
               <p className="text-[13px] text-muted-foreground mt-2 mb-6">
                 Não encontramos nenhum artigo correspondente aos critérios selecionados.
               </p>
@@ -105,10 +113,11 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
 
                 const formattedCreated = createdDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
                 const formattedUpdated = updatedDate ? updatedDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" }) : "";
+                const postUrlPath = post.lang === "en" ? `/en/post/${post.slug}` : post.lang === "es" ? `/es/post/${post.slug}` : `/post/${post.slug}`;
 
                 return (
                   <article key={post.id} className="group bg-card border border-border overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-                    <Link href={`/post/${post.slug}`} className="flex flex-col flex-1">
+                    <Link href={postUrlPath} className="flex flex-col flex-1">
                       <div className="relative overflow-hidden w-full h-[190px]">
                         <img 
                           src={optimizeImageUrl(post.img, 450, 260)} 
@@ -152,7 +161,6 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
           )}
         </div>
 
-        {/* SIDEBAR */}
         <Sidebar />
       </div>
     </div>
