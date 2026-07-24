@@ -242,8 +242,8 @@ function parseContentToBlocks(content: string): any[] {
 async function main() {
   console.log("Iniciando semeadura do banco de dados...");
 
-  // 1. Limpar banco existente
-  await prisma.post.deleteMany({});
+  // 1. Limpar banco existente (Post.deleteMany removido para proteger os posts do usuário)
+  // await prisma.post.deleteMany({});
   await prisma.page.deleteMany({});
 
   // 2. Semear Posts
