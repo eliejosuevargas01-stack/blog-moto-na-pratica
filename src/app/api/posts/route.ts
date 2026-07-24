@@ -24,10 +24,13 @@ function extractImageUrl(imgField: any): string {
   return "";
 }
 
-/**
- * Substitui os marcadores no formato {translation_group_id}=N{texto_alt}
- * pela tag HTML <img> real com a URL correspondente a img-N e a legenda alt da IA.
- */
+function extractMentionedSlugsFromHtml(html: string): string[] {
+  if (!html) return [];
+  const matches = html.match(/\/post\/([a-zA-Z0-9_-]+)/g);
+  if (!matches) return [];
+  return Array.from(new Set(matches.map(m => m.replace("/post/", ""))));
+}
+
 function processImagePlaceholdersInHtml(htmlText: string, langData: any): string {
   if (!htmlText) return "";
 
@@ -42,6 +45,56 @@ function processImagePlaceholdersInHtml(htmlText: string, langData: any): string
     }
     return "";
   });
+}
+
+/**
+ * GET /api/posts
+ * Permite buscar posts ordenados por postsComentados, views, likes ou createdAt
+ * Exemplo: GET /api/posts?orderBy=postsComentados&order=asc&limit=10&lang=pt
+ */
+export async function GET(req: Request) {
+  try {
+    const url = new URL(req.url);
+    const lang = url.searchParams.get("lang") || "pt";
+    const orderByParam = url.searchParams.get("orderBy") || "createdAt";
+    const order = url.searchParams.get("order") === "asc" ? "asc" : "desc";
+    const limit = parseInt(url.searchParams.get("limit") || "50", 10);
+
+    const validOrderByFields = ["createdAt", "postsComentados", "views", "likes", "title"];
+    const orderByField = validOrderByFields.includes(orderByParam) ? orderByParam : "createdAt";
+
+    const posts = await prisma.post.findMany({
+      where: {
+        OR: [
+          { lang },
+          ...(lang === "pt" ? [{ lang: null }] : [])
+        ]
+      },
+      orderBy: { [orderByField]: order },
+      take: limit,
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        excerpt: true,
+        tag: true,
+        category: true,
+        lang: true,
+        postsComentados: true,
+        views: true,
+        likes: true,
+        createdAt: true,
+      }
+    });
+
+    return NextResponse.json({
+      success: true,
+      count: posts.length,
+      posts
+    });
+  } catch (error: any) {
+    return NextResponse.json({ error: "Erro ao buscar posts", details: error.message }, { status: 500 });
+  }
 }
 
 export async function POST(req: Request) {
@@ -60,17 +113,17 @@ export async function POST(req: Request) {
     const rawBody = await req.json();
     let body = Array.isArray(rawBody) ? rawBody[0] : rawBody;
 
-    // Desembrulha invólucros nativos do n8n do tipo { json: { ... } }
     if (body && typeof body === "object" && "json" in body && body.json) {
       body = body.json;
     }
 
     const output = body?.output || (body?.en && body?.pt ? body : null);
+    const explicitMentionedSlugs: string[] = Array.isArray(body?.mentioned_slugs || body?.mentionedSlugs) ? (body?.mentioned_slugs || body?.mentionedSlugs) : [];
 
-    // SUPORTE A MULTI-IDIOMA AUTOMÁTICO DO N8N (output: { id, en, es, pt })
     if (output && typeof output === "object") {
       const translationGroupId = output.id || `group-${Date.now()}`;
       const createdPosts: any[] = [];
+      const extractedMentionedSlugs: Set<string> = new Set(explicitMentionedSlugs);
 
       const langs = ["pt", "en", "es"];
 
@@ -80,18 +133,18 @@ export async function POST(req: Request) {
 
         const finalSlug = langData.slug?.trim() || generateSlug(langData.title);
 
-        // Extrair imagem destacada (Hero) de img-1
         const featuredImg =
           extractImageUrl(langData["img-1"]) ||
           "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=1200";
 
-        // Construir os blocos processando os marcadores {group_id}=N{alt} para tags <img>
         const blocks: any[] = [];
         for (let i = 1; i <= 5; i++) {
           const rawBlockText = langData[`block-${i}`];
           if (!rawBlockText) continue;
 
-          // Processa o HTML substituindo os marcadores de imagem
+          const foundSlugs = extractMentionedSlugsFromHtml(rawBlockText);
+          foundSlugs.forEach(s => extractedMentionedSlugs.add(s));
+
           const processedBlockText = processImagePlaceholdersInHtml(rawBlockText, langData);
           const blockImg = extractImageUrl(langData[`img-${i + 1}`]);
 
@@ -104,7 +157,6 @@ export async function POST(req: Request) {
 
         const postUrlPath = lang === "en" ? `/en/post/${finalSlug}` : lang === "es" ? `/es/post/${finalSlug}` : `/post/${finalSlug}`;
 
-        // Upsert do post para cada idioma
         const post = await prisma.post.upsert({
           where: { slug: finalSlug },
           update: {
@@ -146,6 +198,14 @@ export async function POST(req: Request) {
         });
       }
 
+      // Incrementar postsComentados para os slugs que foram mencionados neste novo post
+      if (extractedMentionedSlugs.size > 0) {
+        await prisma.post.updateMany({
+          where: { slug: { in: Array.from(extractedMentionedSlugs) } },
+          data: { postsComentados: { increment: 1 } },
+        });
+      }
+
       revalidatePath("/");
       revalidatePath("/posts");
       revalidatePath("/eventos");
@@ -154,11 +214,12 @@ export async function POST(req: Request) {
         success: true,
         message: `Post multi-idioma (${createdPosts.length} versões) criado com sucesso!`,
         translationGroupId,
+        mentionedSlugsCount: extractedMentionedSlugs.size,
         posts: createdPosts,
       });
     }
 
-    // SUPORTE A POST ÚNICO (MANUAL / TRADICIONAL)
+    // POST ÚNICO MANUAL
     const {
       title,
       slug: customSlug,
@@ -213,6 +274,13 @@ export async function POST(req: Request) {
       },
     });
 
+    if (explicitMentionedSlugs.length > 0) {
+      await prisma.post.updateMany({
+        where: { slug: { in: explicitMentionedSlugs } },
+        data: { postsComentados: { increment: 1 } },
+      });
+    }
+
     revalidatePath("/");
     revalidatePath("/posts");
     revalidatePath("/eventos");
@@ -226,6 +294,7 @@ export async function POST(req: Request) {
         title: post.title,
         slug: post.slug,
         lang: post.lang,
+        postsComentados: post.postsComentados,
         url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://motonapratica.online"}/post/${post.slug}`,
       },
     });
