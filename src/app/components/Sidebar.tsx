@@ -5,6 +5,8 @@ import { ChevronRight, ArrowRight, Tag } from "lucide-react";
 import type { ReactNode } from "react";
 import SocialLinks from "./SocialLinks";
 import NewsletterBox from "./NewsletterBox";
+import { cookies } from "next/headers";
+import { getTranslation } from "../i18n/translations";
 
 interface SidebarProps {
   postTags?: string[];
@@ -12,6 +14,17 @@ interface SidebarProps {
 }
 
 export default async function Sidebar({ postTags, tableOfContents }: SidebarProps = {}) {
+  const cookieStore = cookies();
+  const currentLang = cookieStore.get("NEXT_LOCALE")?.value || "pt";
+  const t = getTranslation(currentLang);
+
+  const langFilter = {
+    OR: [
+      { lang: currentLang },
+      ...(currentLang === "pt" ? [{ lang: null }] : []),
+    ],
+  };
+
   let categoryCounts: Record<string, number> = {};
   let tagsList: string[] = [];
 
@@ -20,6 +33,7 @@ export default async function Sidebar({ postTags, tableOfContents }: SidebarProp
   } else {
     try {
       const posts = await prisma.post.findMany({
+        where: langFilter,
         select: { tag: true, seoKeywords: true }
       });
       const uniqueTags = new Set<string>();
@@ -45,6 +59,7 @@ export default async function Sidebar({ postTags, tableOfContents }: SidebarProp
   try {
     const grouped = await prisma.post.groupBy({
       by: ["tag"],
+      where: langFilter,
       _count: { id: true }
     });
     grouped.forEach(g => {
@@ -57,11 +72,11 @@ export default async function Sidebar({ postTags, tableOfContents }: SidebarProp
   }
 
   const finalCategories = [
-    { label: "Reviews", tag: "Review", path: "/reviews" },
-    { label: "Manutenção", tag: "Manutenção", path: "/manutencao" },
-    { label: "Rotas", tag: "Rotas", path: "/rotas" },
-    { label: "Equipamentos", tag: "Equipamentos", path: "/equipamentos" },
-    { label: "Eventos", tag: "Eventos", path: "/eventos" }
+    { label: t.nav.reviews, tag: "Review", path: "/reviews" },
+    { label: t.nav.maintenance, tag: "Manutenção", path: "/manutencao" },
+    { label: t.nav.routes, tag: "Rotas", path: "/rotas" },
+    { label: t.nav.gear, tag: "Equipamentos", path: "/equipamentos" },
+    { label: t.nav.events, tag: "Eventos", path: "/eventos" }
   ].map(cat => ({
     ...cat,
     count: categoryCounts[cat.tag] || 0
@@ -84,7 +99,7 @@ export default async function Sidebar({ postTags, tableOfContents }: SidebarProp
       <div className="bg-card border border-border p-6">
         <div className="flex items-center gap-3 mb-5">
           <span className="block w-1 h-5 bg-primary" />
-          <h3 style={TEKO} className="text-[20px] font-semibold uppercase tracking-wide">Categorias</h3>
+          <h3 style={TEKO} className="text-[20px] font-semibold uppercase tracking-wide">{t.sidebar.categories}</h3>
         </div>
         <ul>
           {finalCategories.map((cat) => (
@@ -105,22 +120,21 @@ export default async function Sidebar({ postTags, tableOfContents }: SidebarProp
       <div className="bg-card border border-border p-6">
         <div className="flex items-center gap-3 mb-5">
           <span className="block w-1 h-5 bg-primary" />
-          <h3 style={TEKO} className="text-[20px] font-semibold uppercase tracking-wide">Sobre o blog</h3>
+          <h3 style={TEKO} className="text-[20px] font-semibold uppercase tracking-wide">{t.sidebar.about}</h3>
         </div>
         <div className="overflow-hidden mb-4" style={{ height: "120px" }}>
           <img src={SIDEBAR_IMG} alt="Na estrada" className="w-full h-full object-cover opacity-80" />
         </div>
         <p className="text-[13px] text-muted-foreground leading-relaxed mb-4">
-          Motociclista por paixão, dono de uma Fazer 250 Solid Grey 2026. Escrevo sobre o que vivo na estrada — sem patrocinador, sem jabá.
+          {t.sidebar.aboutText}
         </p>
 
-        {/* Social Networks Links */}
         <div className="border-t border-border/60 pt-3 mb-4">
           <SocialLinks iconSize={15} />
         </div>
 
         <Link href="/sobre" className="inline-flex items-center gap-1 text-[12px] font-bold text-primary uppercase tracking-wider hover:gap-2 transition-all">
-          Conhecer mais <ArrowRight size={12} />
+          {t.sidebar.knowMore} <ArrowRight size={12} />
         </Link>
       </div>
 
@@ -128,7 +142,7 @@ export default async function Sidebar({ postTags, tableOfContents }: SidebarProp
       <div className="bg-card border border-border p-6">
         <div className="flex items-center gap-3 mb-5">
           <span className="block w-1 h-5 bg-primary" />
-          <h3 style={TEKO} className="text-[20px] font-semibold uppercase tracking-wide">Tags</h3>
+          <h3 style={TEKO} className="text-[20px] font-semibold uppercase tracking-wide">{t.sidebar.tags}</h3>
         </div>
         <div className="flex flex-wrap gap-2">
           {tagsList.slice(0, 12).map((tag) => (
@@ -141,4 +155,3 @@ export default async function Sidebar({ postTags, tableOfContents }: SidebarProp
     </aside>
   );
 }
-

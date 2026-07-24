@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Search, Menu, X, ChevronRight } from "lucide-react";
 import { TEKO } from "../data";
 import SocialLinks from "./SocialLinks";
+import { getTranslation } from "../i18n/translations";
 
 interface HeaderProps {
   customPages: { title: string; slug: string }[];
@@ -18,6 +19,8 @@ export default function Header({ customPages }: HeaderProps) {
   const [currentLang, setCurrentLang] = useState("pt");
   const pathname = usePathname();
   const router = useRouter();
+
+  const t = getTranslation(currentLang);
 
   useEffect(() => {
     if (pathname?.startsWith("/en")) {
@@ -39,7 +42,6 @@ export default function Header({ customPages }: HeaderProps) {
     setCurrentLang(newLang);
     document.cookie = `NEXT_LOCALE=${newLang}; path=/; max-age=31536000`;
 
-    // 1. Se estiver lendo um artigo em /post/[slug], /en/post/[slug] ou /es/post/[slug]
     const postMatch = pathname?.match(/\/(?:en\/|es\/)?post\/([^/]+)/);
 
     if (postMatch && postMatch[1]) {
@@ -63,7 +65,6 @@ export default function Header({ customPages }: HeaderProps) {
       }
     }
 
-    // 2. Se estiver na Home ou outras páginas de listagem
     const url = new URL(window.location.href);
     url.searchParams.set("lang", newLang);
     router.push(url.pathname + url.search);
@@ -71,13 +72,13 @@ export default function Header({ customPages }: HeaderProps) {
   };
 
   const baseLinks = [
-    { label: "Home", path: "/" },
-    { label: "Reviews", path: "/reviews" },
-    { label: "Manutenção", path: "/manutencao" },
-    { label: "Rotas", path: "/rotas" },
-    { label: "Equipamentos", path: "/equipamentos" },
-    { label: "Eventos", path: "/eventos" },
-    { label: "Sobre", path: "/sobre" },
+    { label: t.nav.home, path: "/" },
+    { label: t.nav.reviews, path: "/reviews" },
+    { label: t.nav.maintenance, path: "/manutencao" },
+    { label: t.nav.routes, path: "/rotas" },
+    { label: t.nav.gear, path: "/equipamentos" },
+    { label: t.nav.events, path: "/eventos" },
+    { label: t.nav.about, path: "/sobre" },
   ];
 
   const dynamicLinks = customPages.map(page => ({
@@ -90,7 +91,7 @@ export default function Header({ customPages }: HeaderProps) {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      router.push(`/?search=${encodeURIComponent(searchQuery.trim())}`);
+      router.push(`/?search=${encodeURIComponent(searchQuery.trim())}&lang=${currentLang}`);
       setSearchOpen(false);
       setSearchQuery("");
     }
@@ -101,10 +102,10 @@ export default function Header({ customPages }: HeaderProps) {
       {/* TOP BAR */}
       <div className="bg-[#0A0A0A] border-b border-border px-4 py-1.5 flex items-center justify-between z-50">
         <span className="text-[10px] sm:text-[11px] text-muted-foreground tracking-widest uppercase truncate whitespace-nowrap">
-          Blog independente · experiência real na estrada
+          {t.topBar}
         </span>
         <div className="flex items-center gap-4">
-          {/* SELETOR DROPDOWN DE IDIOMA NO HEADER (ÚNICO PONTO DE TROCA) */}
+          {/* SELETOR DROPDOWN DE IDIOMA NO HEADER */}
           <div className="flex items-center border-r border-border pr-3">
             <select
               value={currentLang}
@@ -173,7 +174,7 @@ export default function Header({ customPages }: HeaderProps) {
               <Search size={14} className="text-muted-foreground shrink-0" />
               <input
                 autoFocus
-                placeholder="Buscar posts por palavra-chave..."
+                placeholder="Buscar..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none w-full"
