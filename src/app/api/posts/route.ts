@@ -24,11 +24,20 @@ function extractImageUrl(imgField: any): string {
   return "";
 }
 
-function extractMentionedSlugsFromHtml(html: string): string[] {
+function extractMentionedSlugsFromHtml(html: string, selfSlug?: string): string[] {
   if (!html) return [];
-  const matches = html.match(/\/post\/([a-zA-Z0-9_-]+)/g);
-  if (!matches) return [];
-  return Array.from(new Set(matches.map(m => m.replace("/post/", ""))));
+  const regex = /(?:\/post\/|\/en\/post\/|\/es\/post\/|motonapratica\.online\/post\/)([a-zA-Z0-9_-]+)/gi;
+  const slugs: string[] = [];
+  let match;
+  while ((match = regex.exec(html)) !== null) {
+    if (match[1]) {
+      const clean = match[1].trim();
+      if (clean && clean !== selfSlug) {
+        slugs.push(clean);
+      }
+    }
+  }
+  return Array.from(new Set(slugs));
 }
 
 function processImagePlaceholdersInHtml(htmlText: string, langData: any): string {
@@ -120,6 +129,7 @@ export async function POST(req: Request) {
     const output = body?.output || (body?.en && body?.pt ? body : null);
     const explicitMentionedSlugs: string[] = Array.isArray(body?.mentioned_slugs || body?.mentionedSlugs) ? (body?.mentioned_slugs || body?.mentionedSlugs) : [];
 
+    // SUPORTE A POST MULTI-IDIOMA (OUTPUT DE AUTOMACÃO N8N)
     if (output && typeof output === "object") {
       const translationGroupId = output.id || `group-${Date.now()}`;
       const createdPosts: any[] = [];
@@ -142,7 +152,7 @@ export async function POST(req: Request) {
           const rawBlockText = langData[`block-${i}`];
           if (!rawBlockText) continue;
 
-          const foundSlugs = extractMentionedSlugsFromHtml(rawBlockText);
+          const foundSlugs = extractMentionedSlugsFromHtml(rawBlockText, finalSlug);
           foundSlugs.forEach(s => extractedMentionedSlugs.add(s));
 
           const processedBlockText = processImagePlaceholdersInHtml(rawBlockText, langData);
@@ -198,7 +208,7 @@ export async function POST(req: Request) {
         });
       }
 
-      // Incrementar postsComentados para os slugs que foram mencionados neste novo post
+      // Incrementar postsComentados no Supabase para todos os slugs citados
       if (extractedMentionedSlugs.size > 0) {
         await prisma.post.updateMany({
           where: { slug: { in: Array.from(extractedMentionedSlugs) } },
@@ -219,7 +229,7 @@ export async function POST(req: Request) {
       });
     }
 
-    // POST ÚNICO MANUAL
+    // SUPORTE A POST ÚNICO MANUAL
     const {
       title,
       slug: customSlug,
@@ -242,6 +252,16 @@ export async function POST(req: Request) {
     }
 
     const finalSlug = customSlug?.trim() || generateSlug(title);
+    const extractedMentionedSlugs: Set<string> = new Set(explicitMentionedSlugs);
+
+    if (Array.isArray(blocks)) {
+      blocks.forEach((b: any) => {
+        if (b && typeof b.text === "string") {
+          const found = extractMentionedSlugsFromHtml(b.text, finalSlug);
+          found.forEach(s => extractedMentionedSlugs.add(s));
+        }
+      });
+    }
 
     const post = await prisma.post.upsert({
       where: { slug: finalSlug },
@@ -274,9 +294,9 @@ export async function POST(req: Request) {
       },
     });
 
-    if (explicitMentionedSlugs.length > 0) {
+    if (extractedMentionedSlugs.size > 0) {
       await prisma.post.updateMany({
-        where: { slug: { in: explicitMentionedSlugs } },
+        where: { slug: { in: Array.from(extractedMentionedSlugs) } },
         data: { postsComentados: { increment: 1 } },
       });
     }
