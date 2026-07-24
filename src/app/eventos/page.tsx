@@ -38,6 +38,23 @@ const COUNTRY_FLAGS: Record<string, string> = {
   ZA: "🇿🇦",
 };
 
+const CIRCUIT_IMAGES: Record<string, string> = {
+  GB: "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=600&h=300&fit=crop&auto=format",
+  ES: "https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=600&h=300&fit=crop&auto=format",
+  SM: "https://images.unsplash.com/photo-1614165933026-0750fcd503e8?w=600&h=300&fit=crop&auto=format",
+  AT: "https://images.unsplash.com/photo-1591637333184-19aa84b3e01f?w=600&h=300&fit=crop&auto=format",
+  TH: "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=600&h=300&fit=crop&auto=format",
+  BR: "https://images.unsplash.com/photo-1571646036117-8015cc02547c?w=600&h=300&fit=crop&auto=format",
+  US: "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=600&h=300&fit=crop&auto=format",
+  FR: "https://images.unsplash.com/photo-1625811508773-db54e54ac0d3?w=600&h=300&fit=crop&auto=format",
+  IT: "https://images.unsplash.com/photo-1542351387-dde430deaaa7?w=600&h=300&fit=crop&auto=format",
+  NL: "https://images.unsplash.com/photo-1761000989410-3fa81f1b94cb?w=600&h=300&fit=crop&auto=format",
+  DE: "https://images.unsplash.com/photo-1625812184391-0359bf2344b9?w=600&h=300&fit=crop&auto=format",
+  JP: "https://images.unsplash.com/photo-1571646059462-99317ec8d1bf?w=600&h=300&fit=crop&auto=format",
+  QA: "https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=600&h=300&fit=crop&auto=format",
+  PT: "https://images.unsplash.com/photo-1614165933026-0750fcd503e8?w=600&h=300&fit=crop&auto=format",
+};
+
 export default async function EventosPage() {
   const cookieStore = cookies();
   const currentLang = cookieStore.get("NEXT_LOCALE")?.value || "pt";
@@ -108,25 +125,34 @@ export default async function EventosPage() {
 
   return (
     <div style={BODY} className="bg-background text-foreground min-h-screen">
-      {/* HERO BANNER */}
-      <section className="relative w-full bg-[#0A0A0A] border-b border-border py-16 px-6 overflow-hidden">
-        <div className="max-w-[1200px] mx-auto z-10 relative">
+      {/* HERO BANNER COM IMAGEM DE ALTO IMPACTO */}
+      <section className="relative w-full overflow-hidden border-b border-border" style={{ height: "380px" }}>
+        <img 
+          src="https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=1600&h=700&fit=crop&auto=format" 
+          alt="Central do Motociclismo Esportivo" 
+          className="absolute inset-0 w-full h-full object-cover" 
+          fetchPriority="high"
+        />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(to right, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.70) 60%, rgba(0,0,0,0.35) 100%)" }} />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 60%)" }} />
+
+        <div className="max-w-[1200px] mx-auto px-6 z-10 relative flex flex-col justify-center h-full">
           <div className="flex items-center gap-2 text-primary mb-3">
-            <Trophy size={20} />
-            <span style={TEKO} className="text-[20px] uppercase tracking-widest font-semibold text-primary">
+            <Trophy size={22} className="text-primary animate-pulse" />
+            <span style={TEKO} className="text-[22px] uppercase tracking-widest font-bold text-primary">
               Central do Motociclismo Esportivo 2026
             </span>
           </div>
-          <h1 style={TEKO} className="text-[48px] md:text-[68px] font-semibold uppercase leading-none tracking-wide max-w-[850px]">
+          <h1 style={TEKO} className="text-[52px] md:text-[76px] font-semibold uppercase leading-none tracking-wide text-white max-w-[880px] drop-shadow-md">
             {t.categories.eventsTitle}
           </h1>
-          <p className="text-[16px] text-muted-foreground max-w-[680px] mt-3 leading-relaxed">
+          <p className="text-[16px] text-[#CCCCCC] max-w-[700px] mt-4 leading-relaxed font-medium drop-shadow-sm">
             {t.categories.eventsDesc}
           </p>
         </div>
       </section>
 
-      {/* CRONÔMETROS DE CORRIDAS (COUNTDOWNS) */}
+      {/* CRONÔMETROS DE CORRIDAS (COUNTDOWNS COM IMAGENS DE PISTAS REAIS) */}
       <section className="max-w-[1200px] mx-auto px-4 md:px-6 py-12">
         <div className="flex items-center gap-3 mb-6">
           <span className="block w-1 h-6 bg-primary" />
@@ -149,6 +175,7 @@ export default async function EventosPage() {
                 category={evt.championship}
                 targetDate={evt.dateStart ? new Date(evt.dateStart).toISOString() : new Date().toISOString()}
                 flagEmoji={COUNTRY_FLAGS[evt.countryCode || ""] || "🏁"}
+                imageUrl={CIRCUIT_IMAGES[evt.countryCode || ""] || "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=600&h=300&fit=crop&auto=format"}
               />
             ))}
           </div>
