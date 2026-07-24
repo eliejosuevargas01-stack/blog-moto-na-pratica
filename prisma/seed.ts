@@ -399,6 +399,344 @@ async function main() {
     console.log(`Página de Categoria semeada: ${catPage.title}`);
   }
 
+  // 6. Semear Calendário de Eventos MotoGP 2026
+  await prisma.resultadosEtapas.deleteMany({});
+  await prisma.calendarioEventos.deleteMany({});
+  await prisma.rankingPilotos.deleteMany({});
+
+  const EVENTS_2026 = [
+    {
+      externalId: "f3fd8ba7-2966-46bd-8687-b92047f5e733",
+      championship: "MotoGP",
+      seasonYear: 2026,
+      eventName: "GRAND PRIX OF THAILAND",
+      circuitName: "Chang International Circuit",
+      countryCode: "TH",
+      dateStart: new Date("2026-02-27T00:00:00Z"),
+      dateEnd: new Date("2026-03-01T00:00:00Z"),
+      status: "FINISHED"
+    },
+    {
+      externalId: "motogp-2026-tha",
+      championship: "MotoGP",
+      seasonYear: 2026,
+      eventName: "GRAND PRIX OF THAILAND (ALt)",
+      circuitName: "Chang International Circuit",
+      countryCode: "TH",
+      dateStart: new Date("2026-02-27T00:00:00Z"),
+      dateEnd: new Date("2026-03-01T00:00:00Z"),
+      status: "FINISHED"
+    },
+    {
+      externalId: "738a8b22-f744-4c75-847b-a2565dce17de",
+      championship: "MotoGP",
+      seasonYear: 2026,
+      eventName: "GRAND PRIX OF BRAZIL",
+      circuitName: "Autódromo Internacional de Goiânia - Ayrton Senna",
+      countryCode: "BR",
+      dateStart: new Date("2026-03-20T00:00:00Z"),
+      dateEnd: new Date("2026-03-22T00:00:00Z"),
+      status: "FINISHED"
+    },
+    {
+      externalId: "782c929d-faaf-44e2-9d6f-0fde033855be",
+      championship: "MotoGP",
+      seasonYear: 2026,
+      eventName: "GRAND PRIX OF THE UNITED STATES",
+      circuitName: "Circuit Of The Americas",
+      countryCode: "US",
+      dateStart: new Date("2026-03-27T00:00:00Z"),
+      dateEnd: new Date("2026-03-29T00:00:00Z"),
+      status: "FINISHED"
+    },
+    {
+      externalId: "506917f4-179d-4e1d-b750-805c15bab8d7",
+      championship: "MotoGP",
+      seasonYear: 2026,
+      eventName: "GRAND PRIX OF SPAIN",
+      circuitName: "Circuito de Jerez - Ángel Nieto",
+      countryCode: "ES",
+      dateStart: new Date("2026-04-24T00:00:00Z"),
+      dateEnd: new Date("2026-04-26T00:00:00Z"),
+      status: "FINISHED"
+    },
+    {
+      externalId: "edcfdba3-7a1f-44f3-8fe8-1f8a6609770c",
+      championship: "MotoGP",
+      seasonYear: 2026,
+      eventName: "GRAND PRIX DE FRANCE",
+      circuitName: "Le Mans",
+      countryCode: "FR",
+      dateStart: new Date("2026-05-08T00:00:00Z"),
+      dateEnd: new Date("2026-05-10T00:00:00Z"),
+      status: "FINISHED"
+    },
+    {
+      externalId: "a0251657-afe5-4d90-a66f-d4779babd571",
+      championship: "MotoGP",
+      seasonYear: 2026,
+      eventName: "GRAND PRIX OF CATALONIA",
+      circuitName: "Circuit de Barcelona-Catalunya",
+      countryCode: "ES",
+      dateStart: new Date("2026-05-15T00:00:00Z"),
+      dateEnd: new Date("2026-05-17T00:00:00Z"),
+      status: "FINISHED"
+    },
+    {
+      externalId: "dd266adb-3930-4099-a3d1-a9807362f048",
+      championship: "MotoGP",
+      seasonYear: 2026,
+      eventName: "GRAND PRIX OF ITALY",
+      circuitName: "Autodromo Internazionale del Mugello",
+      countryCode: "IT",
+      dateStart: new Date("2026-05-29T00:00:00Z"),
+      dateEnd: new Date("2026-05-31T00:00:00Z"),
+      status: "FINISHED"
+    },
+    {
+      externalId: "4bd780c9-9da4-48c6-a69f-ebfd6bf8a425",
+      championship: "MotoGP",
+      seasonYear: 2026,
+      eventName: "GRAND PRIX OF HUNGARY",
+      circuitName: "Balaton Park Circuit",
+      countryCode: "HU",
+      dateStart: new Date("2026-06-05T00:00:00Z"),
+      dateEnd: new Date("2026-06-07T00:00:00Z"),
+      status: "FINISHED"
+    },
+    {
+      externalId: "f9d2e80c-431b-485f-afcf-671950648ad7",
+      championship: "MotoGP",
+      seasonYear: 2026,
+      eventName: "GRAND PRIX OF CZECHIA",
+      circuitName: "CREDITAS Autodrom Brno",
+      countryCode: "CZ",
+      dateStart: new Date("2026-06-19T00:00:00Z"),
+      dateEnd: new Date("2026-06-21T00:00:00Z"),
+      status: "FINISHED"
+    },
+    {
+      externalId: "83804cb1-a417-4213-b727-37f84b26d36e",
+      championship: "MotoGP",
+      seasonYear: 2026,
+      eventName: "GRAND PRIX OF THE NETHERLANDS",
+      circuitName: "TT Circuit Assen",
+      countryCode: "NL",
+      dateStart: new Date("2026-06-26T00:00:00Z"),
+      dateEnd: new Date("2026-06-28T00:00:00Z"),
+      status: "FINISHED"
+    },
+    {
+      externalId: "b26a84f7-2d9b-4cc5-a3e5-3d1abe916d8c",
+      championship: "MotoGP",
+      seasonYear: 2026,
+      eventName: "GRAND PRIX OF GERMANY",
+      circuitName: "Sachsenring",
+      countryCode: "DE",
+      dateStart: new Date("2026-07-10T00:00:00Z"),
+      dateEnd: new Date("2026-07-12T00:00:00Z"),
+      status: "FINISHED"
+    },
+    {
+      externalId: "6a16e0cb-ef4b-44b1-92e5-2e958cca0815",
+      championship: "MotoGP",
+      seasonYear: 2026,
+      eventName: "GRAND PRIX OF GREAT BRITAIN",
+      circuitName: "Silverstone Circuit",
+      countryCode: "GB",
+      dateStart: new Date("2026-08-07T00:00:00Z"),
+      dateEnd: new Date("2026-08-09T00:00:00Z"),
+      status: "UPCOMING"
+    },
+    {
+      externalId: "23b7a561-17e4-4aa6-9be3-2529a5b69938",
+      championship: "MotoGP",
+      seasonYear: 2026,
+      eventName: "GRAND PRIX OF ARAGON",
+      circuitName: "MotorLand Aragón",
+      countryCode: "ES",
+      dateStart: new Date("2026-08-28T00:00:00Z"),
+      dateEnd: new Date("2026-08-30T00:00:00Z"),
+      status: "UPCOMING"
+    },
+    {
+      externalId: "a5881826-ec88-4a41-8e4c-ba58709d4591",
+      championship: "MotoGP",
+      seasonYear: 2026,
+      eventName: "GRAND PRIX OF SAN MARINO",
+      circuitName: "Misano World Circuit Marco Simoncelli",
+      countryCode: "SM",
+      dateStart: new Date("2026-09-11T00:00:00Z"),
+      dateEnd: new Date("2026-09-13T00:00:00Z"),
+      status: "UPCOMING"
+    },
+    {
+      externalId: "e191f3f6-218b-4a1c-bbd2-3ed8b5135683",
+      championship: "MotoGP",
+      seasonYear: 2026,
+      eventName: "GRAND PRIX OF AUSTRIA",
+      circuitName: "Red Bull Ring - Spielberg",
+      countryCode: "AT",
+      dateStart: new Date("2026-09-18T00:00:00Z"),
+      dateEnd: new Date("2026-09-20T00:00:00Z"),
+      status: "UPCOMING"
+    },
+    {
+      externalId: "5a671255-63ca-46e2-bd60-34134bb063b4",
+      championship: "MotoGP",
+      seasonYear: 2026,
+      eventName: "GRAND PRIX OF JAPAN",
+      circuitName: "Mobility Resort Motegi",
+      countryCode: "JP",
+      dateStart: new Date("2026-10-02T00:00:00Z"),
+      dateEnd: new Date("2026-10-04T00:00:00Z"),
+      status: "UPCOMING"
+    },
+    {
+      externalId: "275ca55d-45d3-440f-ad59-17d6b3e6b2d3",
+      championship: "MotoGP",
+      seasonYear: 2026,
+      eventName: "GRAND PRIX OF INDONESIA",
+      circuitName: "Pertamina Mandalika Circuit",
+      countryCode: "ID",
+      dateStart: new Date("2026-10-09T00:00:00Z"),
+      dateEnd: new Date("2026-10-11T00:00:00Z"),
+      status: "UPCOMING"
+    },
+    {
+      externalId: "c1dea7a7-e35e-4363-9e28-7997e3bc6fbf",
+      championship: "MotoGP",
+      seasonYear: 2026,
+      eventName: "GRAND PRIX OF AUSTRALIA",
+      circuitName: "Phillip Island",
+      countryCode: "AU",
+      dateStart: new Date("2026-10-23T00:00:00Z"),
+      dateEnd: new Date("2026-10-25T00:00:00Z"),
+      status: "UPCOMING"
+    },
+    {
+      externalId: "ea2ba334-b943-462f-aedb-084ac38408d1",
+      championship: "MotoGP",
+      seasonYear: 2026,
+      eventName: "GRAND PRIX OF MALAYSIA",
+      circuitName: "Petronas Sepang International Circuit",
+      countryCode: "MY",
+      dateStart: new Date("2026-10-30T00:00:00Z"),
+      dateEnd: new Date("2026-11-01T00:00:00Z"),
+      status: "UPCOMING"
+    },
+    {
+      externalId: "5a880aba-62c4-413c-bb2d-b721683dd064",
+      championship: "MotoGP",
+      seasonYear: 2026,
+      eventName: "GRAND PRIX OF QATAR",
+      circuitName: "Lusail International Circuit",
+      countryCode: "QA",
+      dateStart: new Date("2026-11-06T00:00:00Z"),
+      dateEnd: new Date("2026-11-08T00:00:00Z"),
+      status: "UPCOMING"
+    },
+    {
+      externalId: "4b3882a8-24b2-4321-aa12-d1847c989438",
+      championship: "MotoGP",
+      seasonYear: 2026,
+      eventName: "GRAND PRIX OF PORTUGAL",
+      circuitName: "Autódromo Internacional do Algarve",
+      countryCode: "PT",
+      dateStart: new Date("2026-11-20T00:00:00Z"),
+      dateEnd: new Date("2026-11-22T00:00:00Z"),
+      status: "UPCOMING"
+    },
+    {
+      externalId: "723031d1-27bd-4467-b59c-4cb8f7e081ab",
+      championship: "MotoGP",
+      seasonYear: 2026,
+      eventName: "GRAND PRIX OF VALENCIA",
+      circuitName: "Circuit Ricardo Tormo",
+      countryCode: "ES",
+      dateStart: new Date("2026-11-27T00:00:00Z"),
+      dateEnd: new Date("2026-11-29T00:00:00Z"),
+      status: "UPCOMING"
+    }
+  ];
+
+  for (const evt of EVENTS_2026) {
+    await prisma.calendarioEventos.create({
+      data: evt
+    });
+  }
+  console.log("Calendário de Eventos semeado com sucesso!");
+
+  // 7. Semear Resultados do GP da Tailândia
+  const THAILAND_RESULTS = [
+    { position: 1, riderName: "Marco Bezzecchi", riderNumber: 72, teamName: "Aprilia Racing", constructorName: "Aprilia", timeResult: "39:36.270", timeGap: "0.000", pointsEarned: 25, totalLaps: 26, status: "INSTND" },
+    { position: 2, riderName: "Pedro Acosta", riderNumber: 37, teamName: "Red Bull KTM Factory Racing", constructorName: "KTM", timeResult: "39:41.813", timeGap: "5.543", pointsEarned: 20, totalLaps: 26, status: "INSTND" },
+    { position: 3, riderName: "Raul Fernandez", riderNumber: 25, teamName: "Trackhouse MotoGP Team", constructorName: "Aprilia", timeResult: "39:45.529", timeGap: "9.259", pointsEarned: 16, totalLaps: 26, status: "INSTND" },
+    { position: 4, riderName: "Jorge Martin", riderNumber: 89, teamName: "Aprilia Racing", constructorName: "Aprilia", timeResult: "39:48.452", timeGap: "12.182", pointsEarned: 13, totalLaps: 26, status: "INSTND" },
+    { position: 5, riderName: "Ai Ogura", riderNumber: 79, teamName: "Trackhouse MotoGP Team", constructorName: "Aprilia", timeResult: "39:48.681", timeGap: "12.411", pointsEarned: 11, totalLaps: 26, status: "INSTND" },
+    { position: 6, riderName: "Fabio Di Giannantonio", riderNumber: 49, teamName: "Pertamina Enduro VR46 Racing Team", constructorName: "Ducati", timeResult: "39:53.115", timeGap: "16.845", pointsEarned: 10, totalLaps: 26, status: "INSTND" },
+    { position: 7, riderName: "Brad Binder", riderNumber: 33, teamName: "Red Bull KTM Factory Racing", constructorName: "KTM", timeResult: "39:53.633", timeGap: "17.363", pointsEarned: 9, totalLaps: 26, status: "INSTND" },
+    { position: 8, riderName: "Franco Morbidelli", riderNumber: 21, teamName: "Pertamina Enduro VR46 Racing Team", constructorName: "Ducati", timeResult: "39:54.497", timeGap: "18.227", pointsEarned: 8, totalLaps: 26, status: "INSTND" },
+    { position: 9, riderName: "Francesco Bagnaia", riderNumber: 63, teamName: "Ducati Lenovo Team", constructorName: "Ducati", timeResult: "39:54.610", timeGap: "18.340", pointsEarned: 7, totalLaps: 26, status: "INSTND" },
+    { position: 10, riderName: "Luca Marini", riderNumber: 10, teamName: "Honda HRC Castrol", constructorName: "Honda", timeResult: "39:55.371", timeGap: "19.101", pointsEarned: 6, totalLaps: 26, status: "INSTND" },
+    { position: 11, riderName: "Johann Zarco", riderNumber: 5, teamName: "Castrol Honda LCR", constructorName: "Honda", timeResult: "39:56.173", timeGap: "19.903", pointsEarned: 5, totalLaps: 26, status: "INSTND" },
+    { position: 12, riderName: "Enea Bastianini", riderNumber: 23, teamName: "Red Bull KTM Tech3", constructorName: "KTM", timeResult: "39:59.656", timeGap: "23.386", pointsEarned: 4, totalLaps: 26, status: "INSTND" },
+    { position: 13, riderName: "Diogo Moreira", riderNumber: 11, teamName: "Pro Honda LCR", constructorName: "Honda", timeResult: "40:00.956", timeGap: "24.686", pointsEarned: 3, totalLaps: 26, status: "INSTND" },
+    { position: 14, riderName: "Fabio Quartararo", riderNumber: 20, teamName: "Monster Energy Yamaha MotoGP Team", constructorName: "Yamaha", timeResult: "40:07.093", timeGap: "30.823", pointsEarned: 2, totalLaps: 26, status: "INSTND" },
+    { position: 15, riderName: "Alex Rins", riderNumber: 42, teamName: "Monster Energy Yamaha MotoGP Team", constructorName: "Yamaha", timeResult: "40:09.225", timeGap: "32.955", pointsEarned: 1, totalLaps: 26, status: "INSTND" },
+    { position: 16, riderName: "Maverick Viñales", riderNumber: 12, teamName: "Red Bull KTM Tech3", constructorName: "KTM", timeResult: "40:12.815", timeGap: "36.545", pointsEarned: 0, totalLaps: 26, status: "INSTND" },
+    { position: 17, riderName: "Toprak Razgatlioglu", riderNumber: 7, teamName: "Prima Pramac Yamaha MotoGP", constructorName: "Yamaha", timeResult: "40:15.464", timeGap: "39.194", pointsEarned: 0, totalLaps: 26, status: "INSTND" },
+    { position: 18, riderName: "Jack Miller", riderNumber: 43, teamName: "Prima Pramac Yamaha MotoGP", constructorName: "Yamaha", timeResult: "40:24.118", timeGap: "47.848", pointsEarned: 0, totalLaps: 26, status: "INSTND" },
+    { position: 19, riderName: "Michele Pirro", riderNumber: 51, teamName: "BK8 Gresini Racing MotoGP", constructorName: "Ducati", timeResult: "40:39.868", timeGap: "63.598", pointsEarned: 0, totalLaps: 26, status: "INSTND" },
+    { position: null, riderName: "Joan Mir", riderNumber: 36, teamName: "Honda HRC Castrol", constructorName: "Honda", timeResult: "36:04.638", timeGap: "0.000", pointsEarned: 0, totalLaps: 23, status: "OUTSTND" },
+    { position: null, riderName: "Alex Marquez", riderNumber: 73, teamName: "BK8 Gresini Racing MotoGP", constructorName: "Ducati", timeResult: "32:07.163", timeGap: "0.000", pointsEarned: 0, totalLaps: 21, status: "OUTSTND" },
+    { position: null, riderName: "Marc Marquez", riderNumber: 93, teamName: "Ducati Lenovo Team", constructorName: "Ducati", timeResult: "30:25.913", timeGap: "0.000", pointsEarned: 0, totalLaps: 20, status: "OUTSTND" }
+  ];
+
+  for (const res of THAILAND_RESULTS) {
+    await prisma.resultadosEtapas.create({
+      data: {
+        eventExternalId: "motogp-2026-tha",
+        sessionType: "RAC",
+        ...res
+      }
+    });
+    // Também insere com a UUID oficial do evento
+    await prisma.resultadosEtapas.create({
+      data: {
+        eventExternalId: "f3fd8ba7-2966-46bd-8687-b92047f5e733",
+        sessionType: "RAC",
+        ...res
+      }
+    });
+  }
+  console.log("Resultados da Etapa semeados!");
+
+  // 8. Semear Ranking de Pilotos MotoGP 2026
+  const RANKING_2026 = [
+    { position: 1, riderName: "Marco Bezzecchi", teamName: "Aprilia Racing", constructor: "Aprilia", points: 185 },
+    { position: 2, riderName: "Pedro Acosta", teamName: "Red Bull KTM Factory Racing", constructor: "KTM", points: 162 },
+    { position: 3, riderName: "Jorge Martin", teamName: "Aprilia Racing", constructor: "Aprilia", points: 155 },
+    { position: 4, riderName: "Marc Marquez", teamName: "Ducati Lenovo Team", constructor: "Ducati", points: 148 },
+    { position: 5, riderName: "Francesco Bagnaia", teamName: "Ducati Lenovo Team", constructor: "Ducati", points: 140 },
+    { position: 6, riderName: "Fabio Di Giannantonio", teamName: "Pertamina Enduro VR46 Racing Team", constructor: "Ducati", points: 112 },
+    { position: 7, riderName: "Enea Bastianini", teamName: "Red Bull KTM Tech3", constructor: "KTM", points: 98 },
+    { position: 8, riderName: "Brad Binder", teamName: "Red Bull KTM Factory Racing", constructor: "KTM", points: 89 },
+    { position: 9, riderName: "Franco Morbidelli", teamName: "Pertamina Enduro VR46 Racing Team", constructor: "Ducati", points: 81 },
+    { position: 10, riderName: "Raul Fernandez", teamName: "Trackhouse MotoGP Team", constructor: "Aprilia", points: 76 }
+  ];
+
+  for (const rk of RANKING_2026) {
+    await prisma.rankingPilotos.create({
+      data: {
+        championship: "MotoGP",
+        seasonYear: 2026,
+        ...rk
+      }
+    });
+  }
+  console.log("Ranking de Pilotos semeado!");
+
   console.log("Semeadura concluída com sucesso!");
 }
 
@@ -410,3 +748,4 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+

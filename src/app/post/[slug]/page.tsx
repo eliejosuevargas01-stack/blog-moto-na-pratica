@@ -4,11 +4,10 @@ import Sidebar from "../../components/Sidebar";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { Clock, ChevronLeft, Tag, Eye } from "lucide-react";
+import { Clock, ChevronLeft, Tag, Eye, Globe } from "lucide-react";
 import TableOfContents from "../../components/TableOfContents";
 import CommentsSection from "../../components/CommentsSection";
 import SafeHtml from "../../components/SafeHtml";
-import PostVoiceReader from "../../components/PostVoiceReader";
 import PostActionsBar from "../../components/PostActionsBar";
 import PostViewTracker from "../../components/PostViewTracker";
 
@@ -35,7 +34,7 @@ interface PostPageProps {
   };
 }
 
-// SEO Dinâmico: Metadados dinâmicos lidos do banco
+// SEO Dinâmico: Metadados dinâmicos lidos do banco com suporte a hreflang
 export async function generateMetadata({ params }: PostPageProps) {
   const { slug } = params;
   try {
@@ -43,10 +42,27 @@ export async function generateMetadata({ params }: PostPageProps) {
       where: { slug }
     });
     if (!post) return { title: "Post Não Encontrado" };
+
+    let alternates: any = {};
+    if (post.translationGroupId) {
+      const siblings = await prisma.post.findMany({
+        where: { translationGroupId: post.translationGroupId },
+        select: { lang: true, slug: true }
+      });
+      const languages: Record<string, string> = {};
+      siblings.forEach((s) => {
+        if (s.lang) {
+          languages[s.lang] = `/post/${s.slug}`;
+        }
+      });
+      alternates = { languages };
+    }
+
     return {
       title: `${stripHtml(post.seoTitle || post.title)} · Moto na Prática`,
       description: post.seoDescription || post.excerpt,
       keywords: post.seoKeywords || `${post.tag}, Fazer 250, Moto`,
+      alternates,
       openGraph: {
         title: stripHtml(post.title),
         description: post.excerpt,
@@ -66,6 +82,7 @@ export default async function PostPage({ params }: PostPageProps) {
   const { slug } = params;
   let post: any = null;
   let related: any[] = [];
+  let translations: any[] = [];
 
   try {
     post = await prisma.post.findUnique({
@@ -80,6 +97,18 @@ export default async function PostPage({ params }: PostPageProps) {
     return notFound();
   }
 
+  // Buscar traduções irmãs vinculadas pelo translationGroupId
+  if (post.translationGroupId) {
+    try {
+      translations = await prisma.post.findMany({
+        where: { translationGroupId: post.translationGroupId },
+        select: { lang: true, slug: true, title: true }
+      });
+    } catch (e) {
+      translations = [];
+    }
+  }
+
   // Buscar posts relacionados com a mesma tag (exceto o próprio post)
   try {
     related = await prisma.post.findMany({
@@ -91,11 +120,9 @@ export default async function PostPage({ params }: PostPageProps) {
       orderBy: { createdAt: "desc" }
     });
   } catch (error) {
-    // Fallback estático
     related = POSTS.filter(p => p.slug !== post.slug && p.tag === post.tag).slice(0, 2);
   }
 
-  // Se não encontrar relacionados da mesma categoria, pegar posts mais novos
   if (related.length === 0) {
     try {
       related = await prisma.post.findMany({
@@ -108,7 +135,7 @@ export default async function PostPage({ params }: PostPageProps) {
     }
   }
 
-  // Parsear blocos dinâmicos (caso venha do DB, é um array de objetos)
+  // Parsear blocos dinâmicos
   let blocks: any[] = [];
   if (Array.isArray(post.blocks)) {
     blocks = post.blocks;
@@ -119,7 +146,6 @@ export default async function PostPage({ params }: PostPageProps) {
       blocks = [];
     }
   } else {
-    // Se for fallback estático (que tem um campo content), simular os blocos
     const paragraphs = (post.content ?? "").split("\n\n").filter(Boolean);
     const htmlParagraphs = paragraphs.map((p: string) => {
       if (p.startsWith("**") && p.endsWith("**")) {
@@ -157,9 +183,14 @@ export default async function PostPage({ params }: PostPageProps) {
   const formattedCreated = createdDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
   const formattedUpdated = updatedDate ? updatedDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" }) : "";
 
+  const LANG_FLAGS: Record<string, string> = {
+    pt: "🇧🇷 PT",
+    en: "🇺🇸 EN",
+    es: "🇪🇸 ES",
+  };
+
   return (
     <div>
-      {/* Rastrear visualização assíncrona descartando acessos do Admin */}
       <PostViewTracker postId={post.id} />
 
       {/* POST HERO */}
@@ -194,6 +225,31 @@ export default async function PostPage({ params }: PostPageProps) {
                 (Atualizado em {formattedUpdated})
               </span>
             )}
+
+            {/* SELETOR DE IDIOMAS DO POST (COM SUBDIRETÓRIOS /en/ E /es/) */}
+            {translations.length > 1 && (
+              <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-md border border-white/20 px-2.5 py-1 rounded-sm ml-auto">
+                <Globe size={13} className="text-primary" />
+                {translations.map((t) => {
+                  const isCurrent = t.slug === post.slug;
+                  const href = t.lang === "en" ? `/en/post/${t.slug}` : t.lang === "es" ? `/es/post/${t.slug}` : `/post/${t.slug}`;
+
+                  return isCurrent ? (
+                    <span key={t.lang} className="text-[10px] font-extrabold px-1.5 py-0.5 bg-primary text-white uppercase rounded-xs">
+                      {LANG_FLAGS[t.lang] || t.lang?.toUpperCase()}
+                    </span>
+                  ) : (
+                    <Link
+                      key={t.lang}
+                      href={href}
+                      className="text-[10px] font-medium px-1.5 py-0.5 bg-white/10 hover:bg-white/20 text-white/80 hover:text-white uppercase transition-colors rounded-xs"
+                    >
+                      {LANG_FLAGS[t.lang] || t.lang?.toUpperCase()}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
           </div>
           <h1 
             style={TEKO} 
@@ -217,18 +273,15 @@ export default async function PostPage({ params }: PostPageProps) {
           {/* Índice de Tópicos do Artigo (Table of Contents) */}
           <TableOfContents blocks={blocks} />
 
-
           {/* Article body with Dynamic HTML Blocks */}
           <div className="space-y-8" style={BODY}>
             {blocks.map((block: any, i: number) => (
               <div key={i} className="flex flex-col gap-6">
-                {/* Texto HTML-Safe com IDs injetados */}
                 <div 
                   className="prose prose-invert max-w-none text-muted-foreground text-[15px] leading-relaxed [&_a]:text-primary [&_a]:underline [&_a:hover]:text-primary/80 [&_a]:transition-colors"
                   dangerouslySetInnerHTML={{ __html: injectHeadingIds(block.text) }}
                 />
                 
-                {/* Imagem do bloco com Ponto Focal */}
                 {block.image && (
                   <div className="relative overflow-hidden w-full h-[360px] border border-border rounded-sm">
                     <img
@@ -308,4 +361,3 @@ export default async function PostPage({ params }: PostPageProps) {
     </div>
   );
 }
-

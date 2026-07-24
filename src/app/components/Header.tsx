@@ -52,8 +52,19 @@ export default function Header({ customPages }: HeaderProps) {
         <span className="text-[10px] sm:text-[11px] text-muted-foreground tracking-widest uppercase truncate whitespace-nowrap">
           Blog independente · experiência real na estrada
         </span>
-        <div className="hidden sm:flex items-center">
-          <SocialLinks iconSize={13} className="flex items-center gap-3.5 text-muted-foreground" />
+        <div className="flex items-center gap-4">
+          {/* BANDEIRAS DE IDIOMA NO HEADER */}
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground border-r border-border pr-3">
+            <Link href="/" className="hover:text-white font-bold text-white transition-colors" title="Português (Brasil)">🇧🇷 PT</Link>
+            <span className="text-border">|</span>
+            <Link href="/en/post" className="hover:text-white transition-colors" title="English (US)">🇺🇸 EN</Link>
+            <span className="text-border">|</span>
+            <Link href="/es/post" className="hover:text-white transition-colors" title="Español">🇪🇸 ES</Link>
+          </div>
+
+          <div className="hidden sm:flex items-center">
+            <SocialLinks iconSize={13} className="flex items-center gap-3.5 text-muted-foreground" />
+          </div>
         </div>
       </div>
 

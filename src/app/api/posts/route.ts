@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/db";
 import { revalidatePath } from "next/cache";
-import { triggerN8nWebhook } from "../../actions";
 
 function generateSlug(title: string): string {
   return title
@@ -13,9 +12,40 @@ function generateSlug(title: string): string {
     .replace(/\s+/g, "-");
 }
 
+function extractImageUrl(imgField: any): string {
+  if (!imgField) return "";
+  if (typeof imgField === "string") {
+    if (imgField.startsWith("http")) return imgField;
+    return "";
+  }
+  if (typeof imgField === "object" && imgField.url) {
+    return imgField.url;
+  }
+  return "";
+}
+
+/**
+ * Substitui os marcadores no formato {translation_group_id}=N{texto_alt}
+ * pela tag HTML <img> real com a URL correspondente a img-N e a legenda alt da IA.
+ */
+function processImagePlaceholdersInHtml(htmlText: string, langData: any): string {
+  if (!htmlText) return "";
+
+  return htmlText.replace(/\{[^}]*\}=(\d+)\{([^}]*)\}/gi, (match, orderStr, altText) => {
+    const orderNum = parseInt(orderStr, 10);
+    const imgKey = `img-${orderNum}`;
+    const imgUrl = extractImageUrl(langData[imgKey]);
+
+    if (imgUrl) {
+      const cleanAlt = altText ? altText.trim() : "Imagem do artigo";
+      return `<img src="${imgUrl}" alt="${cleanAlt}" class="w-full h-auto object-cover border border-border rounded-sm my-4" loading="lazy" />`;
+    }
+    return "";
+  });
+}
+
 export async function POST(req: Request) {
   try {
-    // Autenticação da API via Header ou Query String
     const apiKeyHeader = req.headers.get("x-api-key") || req.headers.get("authorization")?.replace("Bearer ", "");
     const url = new URL(req.url);
     const apiKeyQuery = url.searchParams.get("api_key");
@@ -27,7 +57,100 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Não autorizado. Chave de API inválida (x-api-key)." }, { status: 401 });
     }
 
-    const body = await req.json();
+    const rawBody = await req.json();
+    const body = Array.isArray(rawBody) ? rawBody[0] : rawBody;
+
+    // SUPORTE A MULTI-IDIOMA AUTOMÁTICO DO N8N (output: { id, en, es, pt })
+    if (body?.output && typeof body.output === "object") {
+      const output = body.output;
+      const translationGroupId = output.id || `group-${Date.now()}`;
+      const createdPosts: any[] = [];
+
+      const langs = ["pt", "en", "es"];
+
+      for (const lang of langs) {
+        const langData = output[lang];
+        if (!langData || !langData.title) continue;
+
+        const finalSlug = langData.slug?.trim() || generateSlug(langData.title);
+
+        // Extrair imagem destacada (Hero) de img-1
+        const featuredImg =
+          extractImageUrl(langData["img-1"]) ||
+          "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=1200";
+
+        // Construir os blocos processando os marcadores {group_id}=N{alt} para tags <img>
+        const blocks: any[] = [];
+        for (let i = 1; i <= 5; i++) {
+          const rawBlockText = langData[`block-${i}`];
+          if (!rawBlockText) continue;
+
+          // Processa o HTML substituindo os marcadores de imagem
+          const processedBlockText = processImagePlaceholdersInHtml(rawBlockText, langData);
+          const blockImg = extractImageUrl(langData[`img-${i + 1}`]);
+
+          blocks.push({
+            text: processedBlockText,
+            image: blockImg,
+            focalPoint: "center",
+          });
+        }
+
+        // Upsert do post para cada idioma
+        const post = await prisma.post.upsert({
+          where: { slug: finalSlug },
+          update: {
+            title: langData.title,
+            excerpt: langData.summary || langData.title,
+            readTime: "5 min",
+            img: featuredImg,
+            blocks,
+            seoTitle: langData["meta-title"] || langData.title,
+            seoDescription: langData["meta-description"] || langData.summary,
+            seoKeywords: langData["meta-tags"] || "MotoGP, Moto na Prática",
+            translationGroupId,
+            lang,
+          },
+          create: {
+            slug: finalSlug,
+            tag: "MotoGP",
+            category: "Notícias",
+            title: langData.title,
+            excerpt: langData.summary || langData.title,
+            readTime: "5 min",
+            img: featuredImg,
+            imgFocalPoint: "center",
+            blocks,
+            seoTitle: langData["meta-title"] || langData.title,
+            seoDescription: langData["meta-description"] || langData.summary,
+            seoKeywords: langData["meta-tags"] || "MotoGP, Moto na Prática",
+            translationGroupId,
+            lang,
+            date: new Date(),
+          },
+        });
+
+        createdPosts.push({
+          id: post.id,
+          lang: post.lang,
+          slug: post.slug,
+          url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://motonapratica.online"}/post/${post.slug}`,
+        });
+      }
+
+      revalidatePath("/");
+      revalidatePath("/posts");
+      revalidatePath("/eventos");
+
+      return NextResponse.json({
+        success: true,
+        message: `Post multi-idioma (${createdPosts.length} versões) criado com sucesso!`,
+        translationGroupId,
+        posts: createdPosts,
+      });
+    }
+
+    // SUPORTE A POST ÚNICO (MANUAL / TRADICIONAL)
     const {
       title,
       slug: customSlug,
@@ -41,6 +164,8 @@ export async function POST(req: Request) {
       seoTitle,
       seoDescription,
       seoKeywords,
+      lang = "pt",
+      translationGroupId,
     } = body;
 
     if (!title) {
@@ -49,21 +174,19 @@ export async function POST(req: Request) {
 
     const finalSlug = customSlug?.trim() || generateSlug(title);
 
-    // Verificar se já existe slug idêntico
-    const existing = await prisma.post.findUnique({
+    const post = await prisma.post.upsert({
       where: { slug: finalSlug },
-    });
-
-    if (existing) {
-      return NextResponse.json(
-        { error: `Já existe um post com o slug '${finalSlug}'. Escolha um slug diferente.` },
-        { status: 400 }
-      );
-    }
-
-    // Criar o post
-    const post = await prisma.post.create({
-      data: {
+      update: {
+        title,
+        excerpt: excerpt || title,
+        blocks: Array.isArray(blocks) ? blocks : [],
+        seoTitle: seoTitle || title,
+        seoDescription: seoDescription || excerpt,
+        seoKeywords: seoKeywords || `${tag}, ${category}, Moto na Prática`,
+        translationGroupId,
+        lang,
+      },
+      create: {
         slug: finalSlug,
         tag,
         category,
@@ -76,31 +199,25 @@ export async function POST(req: Request) {
         seoTitle: seoTitle || title,
         seoDescription: seoDescription || excerpt,
         seoKeywords: seoKeywords || `${tag}, ${category}, Moto na Prática`,
+        translationGroupId,
+        lang,
         date: new Date(),
       },
     });
 
-    // Revalidar caches públicos do Next.js
     revalidatePath("/");
     revalidatePath("/posts");
     revalidatePath("/eventos");
     revalidatePath(`/post/${finalSlug}`);
-    revalidatePath("/sitemap.xml");
-
-    // Acionar Webhook do n8n (caso esteja configurado)
-    try {
-      await triggerN8nWebhook(post);
-    } catch (e) {
-      console.warn("Webhook n8n não disparado:", e);
-    }
 
     return NextResponse.json({
       success: true,
-      message: "Post criado com sucesso via automação API!",
+      message: "Post criado com sucesso!",
       post: {
         id: post.id,
         title: post.title,
         slug: post.slug,
+        lang: post.lang,
         url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://motonapratica.online"}/post/${post.slug}`,
       },
     });

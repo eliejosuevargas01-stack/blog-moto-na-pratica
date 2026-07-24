@@ -1,7 +1,7 @@
 import { prisma } from "../../lib/db";
 import { TEKO, BODY, TAG_COLORS, optimizeImageUrl } from "../data";
 import Link from "next/link";
-import { Clock, Trophy, Flame, Compass, Radio, ArrowRight, Flag } from "lucide-react";
+import { Clock, Trophy, Flame, Radio, ArrowRight, Flag, Calendar, Medal, CheckCircle2 } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import EventCountdown from "../components/EventCountdown";
 
@@ -9,152 +9,102 @@ export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Eventos & Corridas Mundiais · Moto na Prática",
-  description: "Cobertura completa dos maiores eventos de motociclismo do mundo: MotoGP, Isle of Man TT, Rally Dakar, WorldSBK e competições locais.",
+  description: "Cobertura completa dos maiores eventos de motociclismo do mundo: MotoGP, Isle of Man TT, Rally Dakar, WorldSBK e resultados em tempo real.",
 };
 
-const INTERNATIONAL_EVENTS = [
-  // Competicoes de Pista
-  {
-    name: "MotoGP",
-    fullTitle: "Campeonato Mundial de Motovelocidade",
-    category: "Pista / Protótipos",
-    location: "Assen (Holanda), Mugello (Itália) & Global",
-    description: "A Fórmula 1 das duas rodas. Protótipos de altíssima tecnologia construídos do zero pelas montadoras com os pilotos de elite do planeta.",
-    targetDate: "2026-08-16T13:00:00Z",
-    flagEmoji: "🏍️",
-    badgeColor: "bg-red-600 text-white"
-  },
-  {
-    name: "WorldSBK",
-    fullTitle: "Mundial de Superbike",
-    category: "Pista / Série Modificada",
-    location: "Phillip Island (Austrália) & Circuitos Globais",
-    description: "Motos de produção em série preparadas ao extremo para corridas ferozes com marcas populares travando batalhas diretas.",
-    targetDate: "2026-09-06T12:00:00Z",
-    flagEmoji: "🏁",
-    badgeColor: "bg-blue-600 text-white"
-  },
-  {
-    name: "Suzuka 8 Hours",
-    fullTitle: "Mundial de Endurance FIM",
-    category: "Resistência",
-    location: "Circuito de Suzuka, Japão",
-    description: "A joia da coroa do endurance japonês. Honda, Yamaha, Kawasaki e Suzuki colocam suas equipes de fábrica em 8 horas exaustivas.",
-    targetDate: "2026-08-02T02:30:00Z",
-    flagEmoji: "🇯🇵",
-    badgeColor: "bg-yellow-600 text-white"
-  },
-  {
-    name: "Daytona 200",
-    fullTitle: "Histórica de Daytona Beach",
-    category: "Pista Oval / EUA",
-    location: "Daytona International Speedway, EUA",
-    description: "A corrida mais histórica e prestigiada do motociclismo norte-americano no lendário circuito oval de Daytona.",
-    targetDate: "2027-03-06T18:00:00Z",
-    flagEmoji: "🇺🇸",
-    badgeColor: "bg-indigo-600 text-white"
-  },
-
-  // Road Racing
-  {
-    name: "Isle of Man TT",
-    fullTitle: "Tourist Trophy - Corridas de Rua",
-    category: "Road Racing",
-    location: "Ilha de Man, Reino Unido",
-    description: "A corrida mais insana e perigosa do planeta. Pilotos voam a mais de 210 km/h em estradas públicas cercadas por muros e casas.",
-    targetDate: "2027-05-29T10:00:00Z",
-    flagEmoji: "🇮🇲",
-    badgeColor: "bg-orange-600 text-white"
-  },
-  {
-    name: "North West 200",
-    fullTitle: "Road Racing da Irlanda do Norte",
-    category: "Road Racing",
-    location: "Triângulo de Coleraine, Irlanda do Norte",
-    description: "Vários pilotos largam juntos e dividem pistas estreitas em velocidades absurdas entre os vilarejos irlandeses.",
-    targetDate: "2027-05-13T09:00:00Z",
-    flagEmoji: "🇬🇧",
-    badgeColor: "bg-emerald-600 text-white"
-  },
-  {
-    name: "GP de Macau",
-    fullTitle: "Grande Prêmio de Macau",
-    category: "Rua Urano",
-    location: "Circuito da Guia, Macau",
-    description: "Corrida fascinante e travada nas ruas apertadas de Macau, onde os guard-rails de ferro não perdoam o menor erro.",
-    targetDate: "2026-11-19T06:00:00Z",
-    flagEmoji: "🇲🇴",
-    badgeColor: "bg-purple-600 text-white"
-  },
-
-  // Off-Road & Rally
-  {
-    name: "Rally Dakar",
-    fullTitle: "Maior Rally Cross-Country do Mundo",
-    category: "Off-Road / Rally",
-    location: "Desertos da Arábia Saudita",
-    description: "A maior e mais desgastante prova off-road. Milhares de quilômetros de dunas, rochas e navegação extrema por semanas.",
-    targetDate: "2027-01-05T05:00:00Z",
-    flagEmoji: "🏜️",
-    badgeColor: "bg-amber-600 text-white"
-  },
-  {
-    name: "AMA Supercross",
-    fullTitle: "Campeonato Norte-Americano",
-    category: "Stadium Motocross",
-    location: "Estádios dos EUA",
-    description: "Supercross indoor em estádios cobertos lotados com saltos gigantescos e obstáculos artificiais alucinantes.",
-    targetDate: "2027-01-09T23:00:00Z",
-    flagEmoji: "🇺🇸",
-    badgeColor: "bg-red-700 text-white"
-  },
-  {
-    name: "Erzbergrodeo",
-    fullTitle: "Líder Mundial de Hard Enduro",
-    category: "Hard Enduro",
-    location: "Mina de Eisenerz, Áustria",
-    description: "Centenas de pilotos tentam escalar uma gigantesca mina de ferro desativada. Apenas uma fração mínima cruza a chegada.",
-    targetDate: "2027-06-03T11:00:00Z",
-    flagEmoji: "🇦🇹",
-    badgeColor: "bg-stone-600 text-white"
-  }
-];
+const COUNTRY_FLAGS: Record<string, string> = {
+  TH: "🇹🇭",
+  BR: "🇧🇷",
+  US: "🇺🇸",
+  ES: "🇪🇸",
+  FR: "🇫🇷",
+  IT: "🇮🇹",
+  HU: "🇭🇺",
+  CZ: "🇨🇿",
+  NL: "🇳🇱",
+  DE: "🇩🇪",
+  GB: "🇬🇧",
+  SM: "🇸🇲",
+  AT: "🇦🇹",
+  JP: "🇯🇵",
+  ID: "🇮🇩",
+  AU: "🇦🇺",
+  MY: "🇲🇾",
+  QA: "🇶🇦",
+  PT: "🇵🇹",
+  TR: "🇹🇷",
+  ZA: "🇿🇦",
+};
 
 export default async function EventosPage() {
+  let upcomingEvents: any[] = [];
+  let riderStandings: any[] = [];
+  let recentStageResults: any[] = [];
   let eventPosts: any[] = [];
 
   try {
+    // 1. Próximas corridas do banco de dados
+    upcomingEvents = await prisma.calendarioEventos.findMany({
+      where: { status: "UPCOMING" },
+      orderBy: { dateEnd: "asc" },
+      take: 4,
+    });
+
+    // Fallback se não houver corridas UPCOMING cadastradas
+    if (upcomingEvents.length === 0) {
+      upcomingEvents = await prisma.calendarioEventos.findMany({
+        orderBy: { dateStart: "asc" },
+        take: 4,
+      });
+    }
+
+    // 2. Ranking de pilotos 2026
+    riderStandings = await prisma.rankingPilotos.findMany({
+      where: { seasonYear: 2026 },
+      orderBy: { position: "asc" },
+    });
+
+    // 3. Resultados da última etapa realizada
+    recentStageResults = await prisma.resultadosEtapas.findMany({
+      include: { event: true },
+      orderBy: [
+        { position: "asc" }
+      ],
+      take: 30,
+    });
+
+    // 4. Posts sobre eventos
     eventPosts = await prisma.post.findMany({
       where: {
         OR: [
           { tag: { contains: "Evento" } },
           { tag: { contains: "MotoGP" } },
           { tag: { contains: "Corrida" } },
-          { category: { contains: "Eventos" } }
-        ]
+          { category: { contains: "Eventos" } },
+        ],
       },
-      orderBy: { createdAt: "desc" }
+      orderBy: { createdAt: "desc" },
     });
   } catch (error) {
-    eventPosts = [];
+    console.error("Erro ao carregar dados de eventos:", error);
   }
 
   return (
-    <div style={BODY}>
-      {/* HERO BANNER DA PÁGINA DE EVENTOS */}
+    <div style={BODY} className="bg-background text-foreground min-h-screen">
+      {/* HERO BANNER */}
       <section className="relative w-full bg-[#0A0A0A] border-b border-border py-16 px-6 overflow-hidden">
         <div className="max-w-[1200px] mx-auto z-10 relative">
           <div className="flex items-center gap-2 text-primary mb-3">
             <Trophy size={20} />
-            <span style={TEKO} className="text-[20px] uppercase tracking-widest font-semibold">
-              Calendário & Notícias Esportivas
+            <span style={TEKO} className="text-[20px] uppercase tracking-widest font-semibold text-primary">
+              Central do Motociclismo Esportivo 2026
             </span>
           </div>
-          <h1 style={TEKO} className="text-[52px] md:text-[68px] font-semibold uppercase leading-none text-foreground tracking-wide max-w-[850px]">
-            Eventos Mundiais e Locais de Motociclismo
+          <h1 style={TEKO} className="text-[48px] md:text-[68px] font-semibold uppercase leading-none tracking-wide max-w-[850px]">
+            Calendário, Ranking & Resultados ao Vivo
           </h1>
           <p className="text-[16px] text-muted-foreground max-w-[680px] mt-3 leading-relaxed">
-            Do asfalto do MotoGP à insanidade da Ilha de Man e às dunas do Dakar. Cronômetros de próximas etapas, matérias sobre lendas do esporte e cobertura de campeonatos.
+            Acompanhe a contagem regressiva das próximas etapas, a tabela oficial de classificação dos pilotos e a súmula completa de cada GP.
           </p>
         </div>
       </section>
@@ -168,103 +118,163 @@ export default async function EventosPage() {
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {INTERNATIONAL_EVENTS.slice(0, 4).map((evt) => (
-            <EventCountdown
-              key={evt.name}
-              eventName={evt.name}
-              circuitOrLocation={evt.location}
-              category={evt.category}
-              targetDate={evt.targetDate}
-              flagEmoji={evt.flagEmoji}
-            />
-          ))}
-        </div>
+        {upcomingEvents.length === 0 ? (
+          <div className="bg-card border border-border p-6 text-center text-muted-foreground">
+            Nenhuma etapa próxima cadastrada.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {upcomingEvents.map((evt) => (
+              <EventCountdown
+                key={evt.id}
+                eventName={evt.eventName}
+                circuitOrLocation={evt.circuitName || "Circuito Mundial"}
+                category={evt.championship}
+                targetDate={evt.dateStart ? new Date(evt.dateStart).toISOString() : new Date().toISOString()}
+                flagEmoji={COUNTRY_FLAGS[evt.countryCode || ""] || "🏁"}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
-      {/* GUIA DE COMPETIÇÕES INTERNACIONAIS */}
-      <section className="max-w-[1200px] mx-auto px-4 md:px-6 py-8">
-        <div className="flex items-center gap-3 mb-8">
-          <span className="block w-1 h-6 bg-primary" />
-          <h2 style={TEKO} className="text-[28px] font-semibold uppercase tracking-wide">
-            As Maiores Competições do Planeta
-          </h2>
+      {/* GRID DUPLO: CLASSIFICAÇÃO DE PILOTOS & ÚLTIMA CORRIDA */}
+      <section className="max-w-[1200px] mx-auto px-4 md:px-6 py-8 grid grid-cols-1 lg:grid-cols-2 gap-10">
+        {/* TABELA 1: RANKING DE PILOTOS 2026 */}
+        <div className="bg-card border border-border p-6 rounded-sm flex flex-col justify-between shadow-sm">
+          <div>
+            <div className="flex items-center justify-between pb-4 mb-4 border-b border-border">
+              <div className="flex items-center gap-2">
+                <Trophy className="text-yellow-500" size={22} />
+                <h3 style={TEKO} className="text-[26px] font-bold uppercase tracking-wide">
+                  Ranking do Campeonato MotoGP 2026
+                </h3>
+              </div>
+              <span className="text-[11px] font-bold uppercase px-2 py-0.5 bg-secondary text-primary border border-primary/20">
+                Temp. 2026
+              </span>
+            </div>
+
+            {riderStandings.length === 0 ? (
+              <p className="text-[13px] text-muted-foreground py-4">Nenhum ranking cadastrado ainda.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-[13px]">
+                  <thead>
+                    <tr className="border-b border-border text-[11px] uppercase tracking-wider text-muted-foreground">
+                      <th className="pb-2 w-10">Pos</th>
+                      <th className="pb-2">Piloto</th>
+                      <th className="pb-2">Equipe / Moto</th>
+                      <th className="pb-2 text-right">Pts</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/40">
+                    {riderStandings.map((rider) => {
+                      const isTop1 = rider.position === 1;
+                      const isTop2 = rider.position === 2;
+                      const isTop3 = rider.position === 3;
+
+                      return (
+                        <tr key={rider.id} className="hover:bg-secondary/40 transition-colors">
+                          <td className="py-3 font-bold">
+                            {isTop1 && <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-yellow-500/20 text-yellow-500 font-extrabold text-[12px]">1º</span>}
+                            {isTop2 && <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-300/20 text-slate-300 font-extrabold text-[12px]">2º</span>}
+                            {isTop3 && <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-700/20 text-amber-600 font-extrabold text-[12px]">3º</span>}
+                            {!isTop1 && !isTop2 && !isTop3 && <span className="pl-1 text-muted-foreground">{rider.position}º</span>}
+                          </td>
+                          <td className="py-3">
+                            <span className="font-semibold text-foreground block">{rider.riderName}</span>
+                          </td>
+                          <td className="py-3 text-muted-foreground text-[12px]">
+                            {rider.teamName} <span className="text-primary/80 font-medium">({rider.constructor || "MotoGP"})</span>
+                          </td>
+                          <td className="py-3 text-right font-bold text-primary text-[14px]">
+                            {rider.points}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* 3 Colunas de Categorias */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          
-          {/* Pista */}
-          <div className="bg-card border border-border p-6 rounded-sm">
-            <div className="flex items-center gap-2 mb-5 pb-3 border-b border-border">
-              <Flame size={18} className="text-red-500" />
-              <h3 style={TEKO} className="text-[22px] font-semibold uppercase tracking-wide">
-                Competições de Pista
-              </h3>
+        {/* TABELA 2: ÚLTIMA ETAPA / RESULTADOS DE CORRIDA */}
+        <div className="bg-card border border-border p-6 rounded-sm flex flex-col justify-between shadow-sm">
+          <div>
+            <div className="flex items-center justify-between pb-4 mb-4 border-b border-border">
+              <div className="flex items-center gap-2">
+                <Flag className="text-red-500" size={22} />
+                <h3 style={TEKO} className="text-[26px] font-bold uppercase tracking-wide">
+                  Resultado Oficial: {recentStageResults[0]?.event?.eventName || "GP da Tailândia"} ({recentStageResults[0]?.sessionType || "RAC"})
+                </h3>
+              </div>
+              <span className="text-[11px] font-bold uppercase px-2.5 py-0.5 bg-red-600/20 text-red-500 border border-red-500/30">
+                Última Etapa
+              </span>
             </div>
-            <div className="space-y-6">
-              {INTERNATIONAL_EVENTS.filter(e => e.category.includes("Pista") || e.category.includes("Resistência")).map(item => (
-                <div key={item.name} className="border-b border-border/40 pb-4 last:border-0 last:pb-0">
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <span style={TEKO} className="text-[20px] font-bold uppercase text-foreground">{item.name}</span>
-                    <span className="text-[10px] bg-secondary text-muted-foreground px-2 py-0.5 uppercase">{item.flagEmoji}</span>
-                  </div>
-                  <p className="text-[12px] text-primary font-medium mb-1.5">{item.fullTitle}</p>
-                  <p className="text-[13px] text-muted-foreground leading-relaxed">{item.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
 
-          {/* Road Racing */}
-          <div className="bg-card border border-border p-6 rounded-sm">
-            <div className="flex items-center gap-2 mb-5 pb-3 border-b border-border">
-              <Flag size={18} className="text-orange-500" />
-              <h3 style={TEKO} className="text-[22px] font-semibold uppercase tracking-wide">
-                Road Racing (Rua)
-              </h3>
-            </div>
-            <div className="space-y-6">
-              {INTERNATIONAL_EVENTS.filter(e => e.category.includes("Road Racing") || e.category.includes("Rua")).map(item => (
-                <div key={item.name} className="border-b border-border/40 pb-4 last:border-0 last:pb-0">
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <span style={TEKO} className="text-[20px] font-bold uppercase text-foreground">{item.name}</span>
-                    <span className="text-[10px] bg-secondary text-muted-foreground px-2 py-0.5 uppercase">{item.flagEmoji}</span>
-                  </div>
-                  <p className="text-[12px] text-primary font-medium mb-1.5">{item.fullTitle}</p>
-                  <p className="text-[13px] text-muted-foreground leading-relaxed">{item.description}</p>
-                </div>
-              ))}
-            </div>
+            {recentStageResults.length === 0 ? (
+              <p className="text-[13px] text-muted-foreground py-4">Nenhum resultado cadastrado ainda.</p>
+            ) : (
+              <div className="overflow-x-auto max-h-[480px]">
+                <table className="w-full text-left text-[13px]">
+                  <thead>
+                    <tr className="border-b border-border text-[11px] uppercase tracking-wider text-muted-foreground">
+                      <th className="pb-2 w-10">Pos</th>
+                      <th className="pb-2">Nº / Piloto</th>
+                      <th className="pb-2">Equipe</th>
+                      <th className="pb-2">Tempo / Gap</th>
+                      <th className="pb-2 text-right">Pts</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/40">
+                    {recentStageResults.slice(0, 15).map((res) => (
+                      <tr key={res.id} className="hover:bg-secondary/40 transition-colors">
+                        <td className="py-2.5 font-bold">
+                          {res.position ? (
+                            <span className={res.position <= 3 ? "text-primary font-extrabold" : "text-foreground"}>
+                              {res.position}º
+                            </span>
+                          ) : (
+                            <span className="text-[10px] bg-red-950 text-red-400 font-bold px-1.5 py-0.5 rounded">
+                              {res.status || "OUT"}
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-2.5">
+                          <span className="font-semibold text-foreground flex items-center gap-1.5">
+                            {res.riderNumber && (
+                              <span className="text-[10px] font-extrabold px-1.5 py-0.2 bg-secondary text-primary rounded">
+                                #{res.riderNumber}
+                              </span>
+                            )}
+                            {res.riderName}
+                          </span>
+                        </td>
+                        <td className="py-2.5 text-muted-foreground text-[12px]">
+                          {res.teamName}
+                        </td>
+                        <td className="py-2.5 text-muted-foreground text-[12px] font-mono">
+                          {res.position === 1 ? res.timeResult : `+${res.timeGap}`}
+                        </td>
+                        <td className="py-2.5 text-right font-bold text-primary">
+                          +{res.pointsEarned}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-
-          {/* Off-Road & Rally */}
-          <div className="bg-card border border-border p-6 rounded-sm">
-            <div className="flex items-center gap-2 mb-5 pb-3 border-b border-border">
-              <Compass size={18} className="text-amber-500" />
-              <h3 style={TEKO} className="text-[22px] font-semibold uppercase tracking-wide">
-                Off-Road & Rally
-              </h3>
-            </div>
-            <div className="space-y-6">
-              {INTERNATIONAL_EVENTS.filter(e => e.category.includes("Off-Road") || e.category.includes("Enduro")).map(item => (
-                <div key={item.name} className="border-b border-border/40 pb-4 last:border-0 last:pb-0">
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <span style={TEKO} className="text-[20px] font-bold uppercase text-foreground">{item.name}</span>
-                    <span className="text-[10px] bg-secondary text-muted-foreground px-2 py-0.5 uppercase">{item.flagEmoji}</span>
-                  </div>
-                  <p className="text-[12px] text-primary font-medium mb-1.5">{item.fullTitle}</p>
-                  <p className="text-[13px] text-muted-foreground leading-relaxed">{item.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
         </div>
       </section>
 
       {/* ÁREA PREPARADA PARA TRANSMISSÃO / YOUTUBE EMBED */}
-      <section className="max-w-[1200px] mx-auto px-4 md:px-6 py-10">
+      <section className="max-w-[1200px] mx-auto px-4 md:px-6 py-8">
         <div className="bg-[#111111] border border-border p-8 rounded-sm text-center relative overflow-hidden">
           <div className="flex items-center justify-center gap-2 text-red-500 mb-2">
             <Radio size={22} className="animate-pulse" />
