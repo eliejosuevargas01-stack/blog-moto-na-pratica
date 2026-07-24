@@ -254,3 +254,118 @@
   color: #FFFFFF;
 }
 
+/* --- FICHA TÉCNICA PADRONIZADA DE MOTOS (.ficha-tecnica) --- */
+.ficha-tecnica {
+  background: #141414;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  padding: 1.5rem;
+  margin: 2rem 0;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+}
+
+.ficha-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.ficha-badge {
+  display: inline-block;
+  background: var(--primary, #C8102E);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 2px 8px;
+  border-radius: 2px;
+  margin-bottom: 0.5rem;
+}
+
+.ficha-title {
+  font-family: 'Teko', sans-serif !important;
+  font-size: 32px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  color: #ffffff !important;
+  margin: 0 !important;
+  line-height: 1 !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+.ficha-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .ficha-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.ficha-bloco {
+  background: #1A1A1A;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 2px;
+  padding: 1.25rem;
+}
+
+.ficha-bloco-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.ficha-bloco-icon {
+  font-size: 16px;
+}
+
+.ficha-bloco-header h4 {
+  font-family: 'Teko', sans-serif !important;
+  font-size: 22px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  color: var(--primary, #C8102E) !important;
+  margin: 0 !important;
+  line-height: 1 !important;
+}
+
+.ficha-lista {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.ficha-lista li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.45rem 0;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+  font-size: 13px !important;
+}
+
+.ficha-lista li:last-child {
+  border-bottom: none;
+}
+
+.spec-label {
+  color: #888888;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.spec-value {
+  color: #ffffff;
+  font-weight: 700;
+  text-align: right;
+  font-size: 13px;
+}
+
