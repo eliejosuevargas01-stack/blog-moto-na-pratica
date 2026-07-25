@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Clock, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { TEKO } from "../data";
 
 interface EventCountdownProps {
@@ -21,6 +21,7 @@ export default function EventCountdown({
   flagEmoji = "🏁",
   imageUrl,
 }: EventCountdownProps) {
+  const [mounted, setMounted] = useState(false);
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
     hours: 0,
@@ -30,6 +31,12 @@ export default function EventCountdown({
   });
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+
     const calculateTime = () => {
       const target = new Date(targetDate).getTime();
       const now = new Date().getTime();
@@ -51,7 +58,7 @@ export default function EventCountdown({
     calculateTime();
     const interval = setInterval(calculateTime, 1000);
     return () => clearInterval(interval);
-  }, [targetDate]);
+  }, [targetDate, mounted]);
 
   const defaultImg = "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=600&h=300&fit=crop&auto=format";
 
@@ -84,7 +91,9 @@ export default function EventCountdown({
           </p>
         </div>
 
-        {timeLeft.isLive ? (
+        {!mounted ? (
+          <div className="h-[46px] bg-[#0C0C0C] border border-border/50 rounded-sm animate-pulse" />
+        ) : timeLeft.isLive ? (
           <div className="bg-red-950/40 border border-red-800/40 p-2.5 rounded-sm text-center">
             <span className="inline-block w-2 h-2 bg-red-500 rounded-full animate-ping mr-2" />
             <span style={TEKO} className="text-[17px] uppercase tracking-wider text-red-400 font-bold">
