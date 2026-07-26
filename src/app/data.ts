@@ -270,7 +270,10 @@ export function slugify(text: string): string {
 
 export function formatPostUrl(slug: string, lang?: string | null): string {
   if (!slug) return "/";
-  const clean = slug.trim().replace(/^\/?(posts|post)\//i, "").replace(/^\/+/, "");
+  let clean = slug.trim().replace(/^https?:\/\/[^\/]+/i, "");
+  while (/^\/?(posts|post|reviews|resenas|avaliacoes)\//i.test(clean) || clean.startsWith("/")) {
+    clean = clean.replace(/^\/?(posts|post|reviews|resenas|avaliacoes)\//i, "").replace(/^\/+/, "");
+  }
   if (lang === "en") return `/en/post/${clean}`;
   if (lang === "es") return `/es/post/${clean}`;
   return `/post/${clean}`;

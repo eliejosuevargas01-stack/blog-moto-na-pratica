@@ -24,6 +24,25 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  async redirects() {
+    return [
+      {
+        source: '/posts/:slug([a-zA-Z0-9_-]+)',
+        destination: '/post/:slug',
+        permanent: true,
+      },
+      {
+        source: '/en/posts/:slug([a-zA-Z0-9_-]+)',
+        destination: '/en/post/:slug',
+        permanent: true,
+      },
+      {
+        source: '/es/posts/:slug([a-zA-Z0-9_-]+)',
+        destination: '/es/post/:slug',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

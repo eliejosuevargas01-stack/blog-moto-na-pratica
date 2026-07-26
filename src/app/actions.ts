@@ -58,6 +58,7 @@ export async function savePostAction(data: {
   seoTitle?: string;
   seoDescription?: string;
   seoKeywords?: string;
+  lang?: string;
 }) {
   try {
     // Validar slug
@@ -71,6 +72,8 @@ export async function savePostAction(data: {
     if (existing) {
       return { error: "Já existe um post com esta URL (slug). Escolha outro." };
     }
+
+    const lang = data.lang || "pt";
 
     if (data.id) {
       // Atualização
@@ -89,6 +92,7 @@ export async function savePostAction(data: {
           seoTitle: data.seoTitle || data.title,
           seoDescription: data.seoDescription || data.excerpt,
           seoKeywords: data.seoKeywords || "",
+          lang,
           date: new Date() // Atualizar data ao editar
         }
       });
@@ -107,7 +111,8 @@ export async function savePostAction(data: {
           blocks: data.blocks as any,
           seoTitle: data.seoTitle || data.title,
           seoDescription: data.seoDescription || data.excerpt,
-          seoKeywords: data.seoKeywords || ""
+          seoKeywords: data.seoKeywords || "",
+          lang
         }
       });
     }

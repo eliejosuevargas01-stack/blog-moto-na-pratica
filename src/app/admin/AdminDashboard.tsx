@@ -362,6 +362,7 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
 
   // --- CONTROLE DE POSTS ---
   const [editingPost, setEditingPost] = useState<any | null>(null); // null significa listagem, {} significa novo post
+  const [postFilterLang, setPostFilterLang] = useState<"all" | "pt" | "en" | "es">("all");
   const [postForm, setPostForm] = useState({
     id: "",
     title: "",
@@ -379,7 +380,8 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
     ],
     seoTitle: "",
     seoDescription: "",
-    seoKeywords: ""
+    seoKeywords: "",
+    lang: "pt"
   });
 
   // --- CONTROLE DE PÁGINAS ---
@@ -433,7 +435,8 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
       ],
       seoTitle: "",
       seoDescription: "",
-      seoKeywords: ""
+      seoKeywords: "",
+      lang: "pt"
     });
     setEditingPost({});
     setMessage(null);
@@ -469,7 +472,8 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
       blocks: parsedBlocks,
       seoTitle: post.seoTitle || "",
       seoDescription: post.seoDescription || "",
-      seoKeywords: post.seoKeywords || ""
+      seoKeywords: post.seoKeywords || "",
+      lang: post.lang || "pt"
     });
     setEditingPost(post);
     setMessage(null);
@@ -857,13 +861,60 @@ function BlockLinkMapper({
       {/* --- ABA 1: GERENCIAR POSTS --- */}
       {activeTab === "posts" && !editingPost && (
         <div>
-          <div className="flex items-center justify-between mb-6">
-            <h2 style={TEKO} className="text-[26px] uppercase tracking-wide">Todos os Artigos</h2>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 style={TEKO} className="text-[26px] uppercase tracking-wide">Gerenciar Artigos</h2>
+              <p className="text-[12px] text-muted-foreground">Filtre ou gerencie posts por idioma de publicação</p>
+            </div>
             <button
               onClick={startNewPost}
-              className="flex items-center gap-2 bg-primary hover:bg-[#E05300] text-white text-[13px] font-bold uppercase tracking-wider px-4 py-2.5 rounded-sm transition-colors"
+              className="flex items-center gap-2 bg-primary hover:bg-[#E05300] text-white text-[13px] font-bold uppercase tracking-wider px-4 py-2.5 rounded-sm transition-colors w-fit"
             >
               <Plus size={15} /> Novo Artigo
+            </button>
+          </div>
+
+          {/* FILTRO DE IDIOMAS */}
+          <div className="flex items-center gap-2 mb-6 bg-[#161616] p-1.5 border border-border rounded-sm w-fit overflow-x-auto">
+            <button
+              onClick={() => setPostFilterLang("all")}
+              className={`px-3 py-1.5 text-[12px] font-bold uppercase rounded-sm transition-all ${
+                postFilterLang === "all"
+                  ? "bg-primary text-white shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-white/[0.04]"
+              }`}
+            >
+              Todos ({posts.length})
+            </button>
+            <button
+              onClick={() => setPostFilterLang("pt")}
+              className={`px-3 py-1.5 text-[12px] font-bold uppercase rounded-sm flex items-center gap-1.5 transition-all ${
+                postFilterLang === "pt"
+                  ? "bg-emerald-600 text-white shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-white/[0.04]"
+              }`}
+            >
+              <span>🇵🇹</span> Português ({posts.filter(p => (p.lang || "pt") === "pt").length})
+            </button>
+            <button
+              onClick={() => setPostFilterLang("en")}
+              className={`px-3 py-1.5 text-[12px] font-bold uppercase rounded-sm flex items-center gap-1.5 transition-all ${
+                postFilterLang === "en"
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-white/[0.04]"
+              }`}
+            >
+              <span>🇬🇧</span> English ({posts.filter(p => p.lang === "en").length})
+            </button>
+            <button
+              onClick={() => setPostFilterLang("es")}
+              className={`px-3 py-1.5 text-[12px] font-bold uppercase rounded-sm flex items-center gap-1.5 transition-all ${
+                postFilterLang === "es"
+                  ? "bg-amber-600 text-white shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-white/[0.04]"
+              }`}
+            >
+              <span>🇪🇸</span> Español ({posts.filter(p => p.lang === "es").length})
             </button>
           </div>
 
@@ -872,6 +923,7 @@ function BlockLinkMapper({
               <table className="w-full text-left border-collapse text-[13px]">
                 <thead>
                   <tr className="border-b border-border bg-[#1A1A1A] text-muted-foreground uppercase tracking-wider">
+                    <th className="p-4 font-semibold">Idioma</th>
                     <th className="p-4 font-semibold">Título</th>
                     <th className="p-4 font-semibold">Categoria</th>
                     <th className="p-4 font-semibold">Data</th>
@@ -879,35 +931,53 @@ function BlockLinkMapper({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {posts.map((post) => (
-                    <tr key={post.id} className="hover:bg-white/[0.02] transition-colors">
-                      <td className="p-4 font-medium text-foreground">{stripHtml(post.title)}</td>
-                      <td className="p-4 text-muted-foreground">{post.tag}</td>
-                      <td className="p-4 text-muted-foreground">
-                        {new Date(post.date).toLocaleDateString("pt-BR")}
-                      </td>
-                      <td className="p-4 text-right space-x-2">
-                        <button
-                          onClick={() => startEditPost(post)}
-                          className="inline-flex items-center gap-1 bg-secondary hover:bg-primary/20 hover:text-primary border border-border p-1.5 rounded-sm text-muted-foreground transition-colors"
-                          title="Editar"
-                        >
-                          <Edit size={13} />
-                        </button>
-                        <button
-                          onClick={() => handleDeletePost(post.id)}
-                          className="inline-flex items-center gap-1 bg-secondary hover:bg-primary hover:text-white border border-border p-1.5 rounded-sm text-muted-foreground transition-colors"
-                          title="Excluir"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                  {posts.length === 0 && (
+                  {posts
+                    .filter(post => postFilterLang === "all" || (post.lang || "pt") === postFilterLang)
+                    .map((post) => {
+                      const langCode = post.lang || "pt";
+                      const langBadgeClass =
+                        langCode === "en"
+                          ? "bg-blue-950/70 border-blue-800/80 text-blue-400"
+                          : langCode === "es"
+                          ? "bg-amber-950/70 border-amber-800/80 text-amber-400"
+                          : "bg-emerald-950/70 border-emerald-800/80 text-emerald-400";
+                      const langLabel = langCode === "en" ? "EN 🇬🇧" : langCode === "es" ? "ES 🇪🇸" : "PT 🇵🇹";
+
+                      return (
+                        <tr key={post.id} className="hover:bg-white/[0.02] transition-colors">
+                          <td className="p-4">
+                            <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border rounded-sm ${langBadgeClass}`}>
+                              {langLabel}
+                            </span>
+                          </td>
+                          <td className="p-4 font-medium text-foreground">{stripHtml(post.title)}</td>
+                          <td className="p-4 text-muted-foreground">{post.tag}</td>
+                          <td className="p-4 text-muted-foreground">
+                            {new Date(post.date).toLocaleDateString("pt-BR")}
+                          </td>
+                          <td className="p-4 text-right space-x-2">
+                            <button
+                              onClick={() => startEditPost(post)}
+                              className="inline-flex items-center gap-1 bg-secondary hover:bg-primary/20 hover:text-primary border border-border p-1.5 rounded-sm text-muted-foreground transition-colors"
+                              title="Editar"
+                            >
+                              <Edit size={13} />
+                            </button>
+                            <button
+                              onClick={() => handleDeletePost(post.id)}
+                              className="inline-flex items-center gap-1 bg-secondary hover:bg-primary hover:text-white border border-border p-1.5 rounded-sm text-muted-foreground transition-colors"
+                              title="Excluir"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  {posts.filter(post => postFilterLang === "all" || (post.lang || "pt") === postFilterLang).length === 0 && (
                     <tr>
-                      <td colSpan={4} className="p-8 text-center text-muted-foreground">
-                        Nenhum post cadastrado. Clique em "Novo Artigo" para começar!
+                      <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                        Nenhum post encontrado neste filtro de idioma.
                       </td>
                     </tr>
                   )}
@@ -934,8 +1004,8 @@ function BlockLinkMapper({
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-1.5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-1.5 md:col-span-2">
               <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold">Título do Post</label>
               <input
                 required
@@ -948,6 +1018,19 @@ function BlockLinkMapper({
             </div>
 
             <div className="space-y-1.5">
+              <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold">Idioma do Artigo</label>
+              <select
+                value={postForm.lang}
+                onChange={(e) => setPostForm({ ...postForm, lang: e.target.value })}
+                className="w-full bg-[#222222] border border-border rounded-sm text-[14px] text-foreground px-4 py-2.5 outline-none focus:border-primary/50 font-semibold"
+              >
+                <option value="pt">🇵🇹 Português (pt)</option>
+                <option value="en">🇬🇧 English (en)</option>
+                <option value="es">🇪🇸 Español (es)</option>
+              </select>
+            </div>
+
+            <div className="space-y-1.5 md:col-span-2">
               <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold">Slug URL (Opcional - Gerado Automático)</label>
               <input
                 type="text"

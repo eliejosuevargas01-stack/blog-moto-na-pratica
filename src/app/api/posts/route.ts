@@ -16,7 +16,7 @@ function cleanSlug(slug?: string): string {
   if (!slug) return "";
   return slug
     .trim()
-    .replace(/^\/?(posts|post)\//i, "")
+    .replace(/^\/?(posts|post|reviews|resenas|avaliacoes)\//i, "")
     .replace(/^\/+/, "");
 }
 
@@ -140,7 +140,16 @@ export async function POST(req: Request) {
       body = body.json;
     }
 
-    const output = body?.output || (body?.en && body?.pt ? body : null);
+    let output = body?.output || (body?.en && body?.pt ? body : null);
+
+    if (typeof output === "string") {
+      try {
+        output = JSON.parse(output);
+      } catch (e) {
+        console.error("Falha ao fazer parse do output recebido como string:", e);
+      }
+    }
+
     const explicitMentionedSlugs: string[] = Array.isArray(body?.mentioned_slugs || body?.mentionedSlugs) ? (body?.mentioned_slugs || body?.mentionedSlugs) : [];
 
     // SUPORTE A POST MULTI-IDIOMA (OUTPUT DE AUTOMACÃO N8N)
