@@ -40,16 +40,22 @@ export async function POST(request: Request) {
       .webp({ quality: 82 })
       .toBuffer();
 
-    // Gerar nome de arquivo seguro com extensão .webp
-    const filename = `${Date.now()}-${Math.floor(Math.random() * 100000)}.webp`;
+    // Gerar hash MD5 único do conteúdo da imagem para evitar duplicatas no disco
+    const { createHash } = await import("crypto");
+    const { existsSync } = await import("fs");
+
+    const fileHash = createHash("md5").update(optimizedBuffer).digest("hex");
+    const filename = `img-${fileHash}.webp`;
     const uploadDir = path.join(process.cwd(), "uploads");
     const filePath = path.join(uploadDir, filename);
 
     // Garantir que o diretório existe (cria recursivamente se necessário)
     await mkdir(uploadDir, { recursive: true });
 
-    // Salvar o buffer otimizado em disco
-    await writeFile(filePath, optimizedBuffer);
+    // Se a imagem já existe no servidor, REUTILIZAR sem criar duplicata!
+    if (!existsSync(filePath)) {
+      await writeFile(filePath, optimizedBuffer);
+    }
 
     // Retorna a URL pública relativa
     return NextResponse.json({ url: `/uploads/${filename}` });
