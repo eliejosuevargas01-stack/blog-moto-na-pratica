@@ -16,7 +16,7 @@ import { TEKO, BODY } from "../data";
 import { 
   Plus, Trash2, Save, Upload, LogOut, FileText, Layout, ArrowLeft, 
   Eye, Edit, Wrench, Sliders, Bell, Mail, ArrowUp, ArrowDown, Users, Heart, Share2, Copy, Check, Lock, GripVertical,
-  Globe, ChevronDown, ChevronUp, Languages, ExternalLink, CornerDownRight
+  Globe, ChevronDown, ChevronUp, Languages, ExternalLink, CornerDownRight, Image as ImageIcon, Search, X
 } from "lucide-react";
 import { plugins } from "../../plugins";
 
@@ -371,6 +371,35 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
       setMessage({ type: "error", text: "Erro ao salvar configuração: " + res.error });
     }
     setLoading(false);
+  };
+
+  // --- CONTROLE DA GALERIA DE MÍDIAS / IMAGENS ---
+  const [isGalleryModalOpen, setIsGalleryModalOpen] = useState(false);
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [gallerySearch, setGallerySearch] = useState("");
+  const [galleryLoading, setGalleryLoading] = useState(false);
+  const [galleryTargetCallback, setGalleryTargetCallback] = useState<((url: string) => void) | null>(null);
+
+  const openGalleryModal = (callback: (url: string) => void) => {
+    setGalleryTargetCallback(() => (url: string) => callback(url));
+    setIsGalleryModalOpen(true);
+    setGalleryLoading(true);
+    fetch("/api/upload")
+      .then(res => res.json())
+      .then(data => {
+        if (data.images && Array.isArray(data.images)) {
+          setGalleryImages(data.images);
+        }
+      })
+      .catch(err => console.error("Erro ao carregar galeria:", err))
+      .finally(() => setGalleryLoading(false));
+  };
+
+  const selectGalleryImage = (url: string) => {
+    if (galleryTargetCallback) {
+      galleryTargetCallback(url);
+    }
+    setIsGalleryModalOpen(false);
   };
 
   // --- CONTROLE DE POSTS ---
@@ -1183,7 +1212,7 @@ function BlockLinkMapper({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="md:col-span-2 space-y-3">
                 <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold">Upload Local</label>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <input
                     type="file"
                     accept="image/*"
@@ -1197,8 +1226,17 @@ function BlockLinkMapper({
                   >
                     <Upload size={14} /> Selecionar Arquivo
                   </label>
+
+                  <button
+                    type="button"
+                    onClick={() => openGalleryModal((url) => setPostForm(prev => ({ ...prev, img: url })))}
+                    className="flex items-center gap-2 bg-blue-950 hover:bg-blue-900 border border-blue-700/60 text-blue-300 text-[12px] font-bold uppercase tracking-wider px-4 py-2.5 rounded-sm transition-all shadow-sm"
+                  >
+                    <ImageIcon size={14} /> Escolher da Galeria
+                  </button>
+
                   <span className="text-[12px] text-muted-foreground truncate max-w-[200px]">
-                    {postForm.img ? "Upload ativo" : "Nenhum arquivo enviado"}
+                    {postForm.img ? "Imagem definida" : "Nenhuma imagem"}
                   </span>
                 </div>
 
@@ -1327,7 +1365,7 @@ function BlockLinkMapper({
                     <div className="space-y-3 bg-[#202020] p-4 border border-border/40 rounded-sm">
                       <label className="text-[11px] text-muted-foreground uppercase tracking-widest block font-bold">Imagem do Bloco (Opcional)</label>
                       
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <input
                           type="file"
                           accept="image/*"
@@ -1341,6 +1379,14 @@ function BlockLinkMapper({
                         >
                           <Upload size={12} /> Upload
                         </label>
+                        <button
+                          type="button"
+                          onClick={() => openGalleryModal((url) => handlePostBlockChange(idx, "image", url))}
+                          className="flex items-center gap-1 bg-blue-950 hover:bg-blue-900 border border-blue-700/60 text-blue-300 text-[11px] font-bold uppercase tracking-wider px-2.5 py-2 rounded-sm transition-all shadow-sm"
+                          title="Escolher imagem da galeria"
+                        >
+                          <ImageIcon size={12} /> Galeria
+                        </button>
                         <input
                           type="text"
                           value={block.image}
@@ -2480,6 +2526,120 @@ function BlockLinkMapper({
             </div>
           </div>
 
+        </div>
+      )}
+
+      {/* --- MODAL DE GALERIA DE IMAGENS --- */}
+      {isGalleryModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-[#181818] border border-border rounded-sm max-w-4xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+            {/* Cabeçalho do Modal */}
+            <div className="flex items-center justify-between p-4 border-b border-border bg-[#141414]">
+              <div className="flex items-center gap-2">
+                <ImageIcon className="text-primary" size={20} />
+                <h3 style={TEKO} className="text-[22px] uppercase tracking-wide text-foreground">
+                  Galeria de Mídias & Imagens
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsGalleryModalOpen(false)}
+                className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-white/[0.05] rounded-sm transition-colors"
+                title="Fechar Galeria"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Barra de Pesquisa */}
+            <div className="p-4 border-b border-border bg-[#1A1A1A] flex items-center gap-3">
+              <div className="relative flex-1">
+                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={gallerySearch}
+                  onChange={(e) => setGallerySearch(e.target.value)}
+                  placeholder="Pesquisar imagem por nome ou URL..."
+                  className="w-full bg-[#222222] border border-border rounded-sm text-[13px] text-foreground pl-9 pr-4 py-2 outline-none focus:border-primary/50"
+                />
+              </div>
+              <span className="text-[12px] text-muted-foreground whitespace-nowrap font-mono hidden sm:inline">
+                {galleryImages.length} imagens na biblioteca
+              </span>
+            </div>
+
+            {/* Grid de Imagens */}
+            <div className="flex-1 p-4 overflow-y-auto min-h-[300px] bg-[#121212]">
+              {galleryLoading ? (
+                <div className="flex flex-col items-center justify-center h-48 space-y-2 text-muted-foreground">
+                  <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  <span className="text-[12px]">Carregando imagens da galeria...</span>
+                </div>
+              ) : (
+                (() => {
+                  const filtered = galleryImages.filter(imgUrl =>
+                    imgUrl.toLowerCase().includes(gallerySearch.toLowerCase())
+                  );
+
+                  if (filtered.length === 0) {
+                    return (
+                      <div className="text-center py-12 text-muted-foreground space-y-2">
+                        <ImageIcon size={32} className="mx-auto text-muted-foreground/40" />
+                        <p className="text-[14px]">Nenhuma imagem encontrada.</p>
+                        <p className="text-[12px] text-muted-foreground/60">Faça upload de uma imagem nova ou cole a URL externa.</p>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                      {filtered.map((imgUrl, index) => {
+                        const filename = imgUrl.split("/").pop() || imgUrl;
+                        return (
+                          <div
+                            key={index}
+                            onClick={() => selectGalleryImage(imgUrl)}
+                            className="group relative bg-[#1B1B1B] border border-border hover:border-primary rounded-sm overflow-hidden cursor-pointer transition-all duration-150 hover:shadow-lg flex flex-col h-[135px]"
+                          >
+                            <div className="relative flex-1 bg-black/40 overflow-hidden flex items-center justify-center">
+                              <img
+                                src={imgUrl}
+                                alt={filename}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                                onError={(e: any) => {
+                                  e.target.onerror = null;
+                                  e.target.src = "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=300";
+                                }}
+                              />
+                              <div className="absolute inset-0 bg-primary/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <span className="bg-primary text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-sm shadow-md">
+                                  Usar esta Imagem
+                                </span>
+                              </div>
+                            </div>
+                            <div className="p-1.5 bg-[#161616] border-t border-border/50 text-[10px] text-muted-foreground truncate font-mono" title={imgUrl}>
+                              {filename}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()
+              )}
+            </div>
+
+            {/* Rodapé do Modal */}
+            <div className="p-3 border-t border-border bg-[#141414] flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsGalleryModalOpen(false)}
+                className="px-4 py-2 bg-secondary border border-border text-muted-foreground hover:text-foreground text-[12px] font-bold uppercase rounded-sm transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
