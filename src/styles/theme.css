@@ -262,6 +262,7 @@
   padding: 1.5rem;
   margin: 2rem 0;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+  width: 100%;
 }
 
 .ficha-header {
@@ -296,40 +297,36 @@
 }
 
 .ficha-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.25rem;
-}
-
-@media (min-width: 768px) {
-  .ficha-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
 }
 
 .ficha-bloco {
-  background: #1A1A1A;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 2px;
+  background: #181818;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 3px;
   padding: 1.25rem;
+  width: 100%;
 }
 
 .ficha-bloco-header {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding-bottom: 0.5rem;
-  margin-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 0.6rem;
+  margin-bottom: 1rem;
 }
 
 .ficha-bloco-icon {
-  font-size: 16px;
+  font-size: 18px;
 }
 
 .ficha-bloco-header h4 {
   font-family: 'Teko', sans-serif !important;
-  font-size: 22px !important;
+  font-size: 24px !important;
   font-weight: 600 !important;
   text-transform: uppercase !important;
   color: var(--primary, #C8102E) !important;
@@ -341,31 +338,64 @@
   list-style: none !important;
   padding: 0 !important;
   margin: 0 !important;
+  width: 100%;
 }
 
 .ficha-lista li {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.45rem 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+  padding: 0.75rem 0;
   border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
-  font-size: 13px !important;
+  font-size: 13.5px !important;
+  align-items: start;
 }
 
 .ficha-lista li:last-child {
   border-bottom: none;
 }
 
-.spec-label {
-  color: #888888;
-  font-weight: 500;
-  font-size: 13px;
+/* Em telas maiores (tabela de 3 colunas: Item | Número | Tradução para o asfalto) */
+@media (min-width: 640px) {
+  .ficha-lista li {
+    grid-template-columns: 170px 210px 1fr;
+    gap: 1.25rem;
+    align-items: center;
+  }
 }
 
+/* Coluna 1 (Esquerda): Tipo / Item / Propriedade */
+.spec-label {
+  color: #999999;
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+/* Coluna 2 (Meio): Números / Especificações da moto */
 .spec-value {
   color: #ffffff;
   font-weight: 700;
-  text-align: right;
-  font-size: 13px;
+  font-size: 13.5px;
+  line-height: 1.35;
+  text-align: left;
+}
+
+/* Coluna 3 (Direita): Tradução para o asfalto */
+.spec-asfalto {
+  color: #D1D1D1;
+  font-size: 12.5px;
+  line-height: 1.45;
+  background: rgba(255, 255, 255, 0.03);
+  border-left: 2px solid var(--primary, #C8102E);
+  padding: 0.4rem 0.75rem;
+  border-radius: 0 2px 2px 0;
+  display: block;
+}
+
+.spec-asfalto strong, .spec-asfalto b {
+  color: var(--primary, #C8102E);
+  font-weight: 700;
+  margin-right: 4px;
 }
 
