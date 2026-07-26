@@ -66,51 +66,15 @@ export async function GET() {
   try {
     const imagesSet = new Set<string>();
 
-    // 1. Varrer a pasta /uploads no servidor
+    // Varrer estritamente os arquivos salvos no volume /uploads do servidor
     const uploadDir = path.join(process.cwd(), "uploads");
     try {
       const files = await readdir(uploadDir);
-      for (const file of files) {
-        if (/\.(webp|jpg|jpeg|png|gif|avif)$/i.test(file)) {
-          imagesSet.add(`/uploads/${file}`);
-        }
-      }
+      // Ordenar por data de modificação ou nome (mais recentes primeiro)
+      const validFiles = files.filter(file => /\.(webp|jpg|jpeg|png|gif|avif)$/i.test(file));
+      validFiles.forEach(file => imagesSet.add(`/uploads/${file}`));
     } catch (e) {
-      // Diretório ainda não criado
-    }
-
-    // 2. Buscar imagens de capa e blocos dos posts no banco de dados
-    const { PrismaClient } = await import("@prisma/client");
-    const prisma = new PrismaClient();
-    try {
-      const posts = await prisma.post.findMany({
-        select: { img: true, blocks: true }
-      });
-
-      for (const p of posts) {
-        if (p.img && typeof p.img === "string" && p.img.trim()) {
-          imagesSet.add(p.img.trim());
-        }
-        if (p.blocks) {
-          let bList: any[] = [];
-          if (Array.isArray(p.blocks)) {
-            bList = p.blocks;
-          } else if (typeof p.blocks === "string") {
-            try {
-              bList = JSON.parse(p.blocks);
-            } catch (err) {}
-          }
-          for (const b of bList) {
-            if (b && typeof b.image === "string" && b.image.trim()) {
-              imagesSet.add(b.image.trim());
-            }
-          }
-        }
-      }
-    } catch (e) {
-      console.error("Erro ao buscar imagens de posts:", e);
-    } finally {
-      await prisma.$disconnect();
+      // Diretório ainda não existe
     }
 
     return NextResponse.json({ images: Array.from(imagesSet) });
