@@ -134,9 +134,20 @@ function FocalPointPicker({ imageUrl, value, onChange }: FocalPointPickerProps) 
   );
 }
 
-function stripHtml(html: string): string {
-  if (!html) return "";
+function stripHtml(html?: any): string {
+  if (!html || typeof html !== "string") return "";
   return html.replace(/<[^>]*>/g, "");
+}
+
+function formatDate(dateInput?: any): string {
+  if (!dateInput) return "";
+  try {
+    const d = new Date(dateInput);
+    if (isNaN(d.getTime())) return "";
+    return d.toLocaleDateString("pt-BR");
+  } catch (e) {
+    return "";
+  }
 }
 
 const DEFAULT_FALLBACK_PAGES = [
@@ -251,12 +262,58 @@ const DEFAULT_FALLBACK_PAGES = [
   }
 ];
 
-interface AdminDashboardProps {
-  initialPosts: any[];
-  initialPages: any[];
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
 }
 
-export default function AdminDashboard({ initialPosts, initialPages }: AdminDashboardProps) {
+class AdminErrorBoundary extends React.Component<{ children: React.ReactNode }, ErrorBoundaryState> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error("Erro capturado no AdminDashboard:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-[#0E0E0E] text-foreground flex flex-col items-center justify-center p-6 text-center">
+          <div className="bg-[#181818] border border-border p-8 rounded-sm max-w-md w-full space-y-4 shadow-2xl">
+            <div className="w-12 h-12 rounded-full bg-primary/20 text-primary flex items-center justify-center mx-auto text-xl font-bold">
+              ⚠️
+            </div>
+            <h2 style={{ fontFamily: "var(--font-teko, sans-serif)" }} className="text-2xl uppercase tracking-wide">
+              Ocorreu um erro no painel
+            </h2>
+            <p className="text-xs text-muted-foreground font-mono bg-[#111111] p-3 rounded text-left overflow-x-auto border border-border/40">
+              {this.state.error?.message || "Erro desconhecido de execução."}
+            </p>
+            <button
+              onClick={() => {
+                this.setState({ hasError: false, error: null });
+                window.location.reload();
+              }}
+              className="w-full bg-primary hover:bg-[#E05300] text-white text-xs font-bold uppercase tracking-wider py-2.5 rounded-sm transition-colors"
+            >
+              Recarregar Painel
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+function AdminDashboardContent({ initialPosts, initialPages }: AdminDashboardProps) {
   const [posts, setPosts] = useState(initialPosts);
   const [pages, setPages] = useState(initialPages.length > 0 ? initialPages : DEFAULT_FALLBACK_PAGES);
   const [activeTab, setActiveTab] = useState<"posts" | "pages" | "settings" | "notifications">("posts");
@@ -969,7 +1026,7 @@ function BlockLinkMapper({
                             </td>
                             <td className="p-4 text-muted-foreground">{post.tag}</td>
                             <td className="p-4 text-muted-foreground">
-                              {new Date(post.date).toLocaleDateString("pt-BR")}
+                              {formatDate(post.date)}
                             </td>
                             <td className="p-4 text-right space-x-2 whitespace-nowrap">
                               {/* SÍMBOLO GLOBAL PARA EXPANDIR VERSÕES EM OUTROS IDIOMAS */}
@@ -1049,7 +1106,7 @@ function BlockLinkMapper({
 
                                         <div className="flex items-center gap-2 self-end sm:self-auto">
                                           <span className="text-[11px] text-muted-foreground mr-1">
-                                            {new Date(sister.date).toLocaleDateString("pt-BR")}
+                                            {formatDate(sister.date)}
                                           </span>
                                           
                                           {/* BOTÃO PARA EDITAR EM NOVA ABA */}
@@ -2644,6 +2701,14 @@ function BlockLinkMapper({
       )}
 
     </div>
+  );
+}
+
+export default function AdminDashboard(props: AdminDashboardProps) {
+  return (
+    <AdminErrorBoundary>
+      <AdminDashboardContent {...props} />
+    </AdminErrorBoundary>
   );
 }
 
