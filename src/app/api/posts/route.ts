@@ -168,6 +168,9 @@ export async function POST(req: Request) {
 
         const featuredImg =
           extractImageUrl(langData["img-1"]) ||
+          extractImageUrl(output.pt?.["img-1"]) ||
+          extractImageUrl(output.en?.["img-1"]) ||
+          extractImageUrl(output.es?.["img-1"]) ||
           "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=1200";
 
         const blocks: any[] = [];
@@ -179,7 +182,11 @@ export async function POST(req: Request) {
           foundSlugs.forEach(s => extractedMentionedSlugs.add(s));
 
           const processedBlockText = processImagePlaceholdersInHtml(rawBlockText, langData);
-          const rawBlockImg = extractImageUrl(langData[`img-${i + 1}`]);
+          const rawBlockImg =
+            extractImageUrl(langData[`img-${i + 1}`]) ||
+            extractImageUrl(output.pt?.[`img-${i + 1}`]) ||
+            extractImageUrl(output.en?.[`img-${i + 1}`]) ||
+            extractImageUrl(output.es?.[`img-${i + 1}`]);
 
           const hasImgTagInText = processedBlockText.includes("<img");
 

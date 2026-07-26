@@ -76,7 +76,11 @@ export async function savePostAction(data: {
     const lang = data.lang || "pt";
 
     if (data.id) {
-      // Atualização
+      // Obter post atual para capturar translationGroupId
+      const currentPost = await prisma.post.findUnique({ where: { id: data.id } });
+      const translationGroupId = currentPost?.translationGroupId;
+
+      // Atualização do post alvo
       await prisma.post.update({
         where: { id: data.id },
         data: {
@@ -96,6 +100,50 @@ export async function savePostAction(data: {
           date: new Date() // Atualizar data ao editar
         }
       });
+
+      // Sincronizar imagens (Hero e Blocos) com todos os posts do mesmo grupo de tradução (idiomas irmãos)
+      if (translationGroupId) {
+        const sisterPosts = await prisma.post.findMany({
+          where: {
+            translationGroupId,
+            id: { not: data.id }
+          }
+        });
+
+        for (const sister of sisterPosts) {
+          let sisterBlocks: any[] = [];
+          if (Array.isArray(sister.blocks)) {
+            sisterBlocks = sister.blocks;
+          } else if (typeof sister.blocks === "string") {
+            try {
+              sisterBlocks = JSON.parse(sister.blocks);
+            } catch (e) {
+              sisterBlocks = [];
+            }
+          }
+
+          const updatedSisterBlocks = sisterBlocks.map((b: any, idx: number) => {
+            const sourceBlock = data.blocks[idx];
+            if (sourceBlock) {
+              return {
+                ...b,
+                image: sourceBlock.image || "",
+                focalPoint: sourceBlock.focalPoint || "center"
+              };
+            }
+            return b;
+          });
+
+          await prisma.post.update({
+            where: { id: sister.id },
+            data: {
+              img: data.img,
+              imgFocalPoint: data.imgFocalPoint,
+              blocks: updatedSisterBlocks as any
+            }
+          });
+        }
+      }
     } else {
       // Criação
       await prisma.post.create({
