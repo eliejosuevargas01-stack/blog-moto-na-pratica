@@ -105,6 +105,14 @@ export default async function PostPage({ params }: PostPageProps) {
     return notFound();
   }
 
+  const currentLang = post.lang || "pt";
+  const langFilter = {
+    OR: [
+      { lang: currentLang },
+      ...(currentLang === "pt" ? [{ lang: null }] : []),
+    ],
+  };
+
   if (post.translationGroupId) {
     try {
       translations = await prisma.post.findMany({
@@ -119,8 +127,11 @@ export default async function PostPage({ params }: PostPageProps) {
   try {
     related = await prisma.post.findMany({
       where: {
-        tag: post.tag,
-        id: { not: post.id }
+        AND: [
+          langFilter,
+          { id: { not: post.id } },
+          { tag: post.tag }
+        ]
       },
       take: 2,
       orderBy: { createdAt: "desc" }
@@ -132,7 +143,12 @@ export default async function PostPage({ params }: PostPageProps) {
   if (related.length === 0) {
     try {
       related = await prisma.post.findMany({
-        where: { id: { not: post.id } },
+        where: {
+          AND: [
+            langFilter,
+            { id: { not: post.id } }
+          ]
+        },
         take: 2,
         orderBy: { createdAt: "desc" }
       });
@@ -183,8 +199,15 @@ export default async function PostPage({ params }: PostPageProps) {
   const updatedDate = post.updatedAt ? new Date(post.updatedAt) : null;
   const isUpdated = updatedDate && (updatedDate.getTime() - createdDate.getTime() > 24 * 60 * 60 * 1000);
 
-  const formattedCreated = createdDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
-  const formattedUpdated = updatedDate ? updatedDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" }) : "";
+  const dateLocale = currentLang === "en" ? "en-US" : currentLang === "es" ? "es-ES" : "pt-BR";
+  const formattedCreated = createdDate.toLocaleDateString(dateLocale, { day: "2-digit", month: "short", year: "numeric" });
+  const formattedUpdated = updatedDate ? updatedDate.toLocaleDateString(dateLocale, { day: "2-digit", month: "short", year: "numeric" }) : "";
+
+  const recommendedSectionTitle = currentLang === "en" ? "Recommended Posts" : currentLang === "es" ? "Artículos Recomendados" : "Posts recomendados";
+  const backHomeText = currentLang === "en" ? "Back to Home" : currentLang === "es" ? "Volver a Inicio" : "Volver para Home";
+  const readTimeSuffix = currentLang === "en" ? "read time" : currentLang === "es" ? "de lectura" : "de leitura";
+  const viewsSuffix = currentLang === "en" ? "views" : currentLang === "es" ? "visitas" : "visualizações";
+  const updatedPrefix = currentLang === "en" ? "Updated on" : currentLang === "es" ? "Actualizado el" : "Atualizado em";
 
   return (
     <div>
@@ -208,18 +231,18 @@ export default async function PostPage({ params }: PostPageProps) {
             href="/"
             className="flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-white uppercase tracking-wider mb-5 transition-colors w-fit"
           >
-            <ChevronLeft size={14} /> Voltar para Home
+            <ChevronLeft size={14} /> {backHomeText}
           </Link>
           <div className="flex flex-wrap items-center gap-3 mb-3">
             <span className={`text-[11px] font-bold uppercase tracking-widest px-2 py-1 ${TAG_COLORS[post.tag] ?? "bg-secondary text-muted-foreground"}`}>
               {post.tag}
             </span>
-            <span className="flex items-center gap-1 text-[12px] text-muted-foreground"><Clock size={11} /> {post.readTime} de leitura</span>
-            <span className="flex items-center gap-1 text-[12px] text-muted-foreground"><Eye size={11} /> {post.views || 0} visualizações</span>
+            <span className="flex items-center gap-1 text-[12px] text-muted-foreground"><Clock size={11} /> {post.readTime} {readTimeSuffix}</span>
+            <span className="flex items-center gap-1 text-[12px] text-muted-foreground"><Eye size={11} /> {post.views || 0} {viewsSuffix}</span>
             <span className="text-[12px] text-muted-foreground">{formattedCreated}</span>
             {isUpdated && (
               <span className="text-[11px] text-primary/80 italic">
-                (Atualizado em {formattedUpdated})
+                ({updatedPrefix} {formattedUpdated})
               </span>
             )}
           </div>
@@ -277,7 +300,7 @@ export default async function PostPage({ params }: PostPageProps) {
 
           {/* Dynamic Post Tags */}
           <div className="mt-10 pt-8 border-t border-border flex items-center gap-3 flex-wrap">
-            <span className="text-[12px] text-muted-foreground uppercase tracking-wider">Tags do Post:</span>
+            <span className="text-[12px] text-muted-foreground uppercase tracking-wider">Tags:</span>
             {dynamicPostTags.map((tag) => (
               <Link 
                 key={tag} 
@@ -289,42 +312,45 @@ export default async function PostPage({ params }: PostPageProps) {
             ))}
           </div>
 
-          {/* Related posts */}
+          {/* Related posts (filtrados pelo idioma ativo) */}
           {related.length > 0 && (
             <div className="mt-12">
               <div className="flex items-center gap-3 mb-6">
                 <span className="block w-1 h-6 bg-primary" />
-                <h3 style={TEKO} className="text-[22px] font-semibold uppercase tracking-wide">Posts recomendados</h3>
+                <h3 style={TEKO} className="text-[22px] font-semibold uppercase tracking-wide">{recommendedSectionTitle}</h3>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                {related.map((p) => (
-                  <article key={p.id} className="group bg-card border border-border overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-                    <Link href={`/post/${p.slug}`} className="block">
-                      <div className="relative overflow-hidden" style={{ height: "160px" }}>
-                        <img 
-                          src={optimizeImageUrl(p.img, 450, 260)} 
-                          alt={p.title} 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                          style={{ objectPosition: p.imgFocalPoint || "center" }}
-                          loading="lazy"
-                        />
-                        <span className={`absolute top-2 left-2 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 ${TAG_COLORS[p.tag] || "bg-[#252525] text-white"}`}>
-                          {p.tag}
-                        </span>
-                      </div>
-                      <div className="p-4">
-                        <SafeHtml
-                          html={p.title}
-                          tag="h4"
-                          className="text-[20px] font-semibold uppercase leading-tight text-foreground mb-1 group-hover:text-primary transition-colors"
-                        />
-                        <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                          <Clock size={10} /> {p.readTime}
-                        </span>
-                      </div>
-                    </Link>
-                  </article>
-                ))}
+                {related.map((p) => {
+                  const pUrl = p.lang === "en" ? `/en/post/${p.slug}` : p.lang === "es" ? `/es/post/${p.slug}` : `/post/${p.slug}`;
+                  return (
+                    <article key={p.id} className="group bg-card border border-border overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                      <Link href={pUrl} className="block">
+                        <div className="relative overflow-hidden" style={{ height: "160px" }}>
+                          <img 
+                            src={optimizeImageUrl(p.img, 450, 260)} 
+                            alt={stripHtml(p.title)} 
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                            style={{ objectPosition: p.imgFocalPoint || "center" }}
+                            loading="lazy"
+                          />
+                          <span className={`absolute top-2 left-2 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 ${TAG_COLORS[p.tag] || "bg-[#252525] text-white"}`}>
+                            {p.tag}
+                          </span>
+                        </div>
+                        <div className="p-4">
+                          <SafeHtml
+                            html={p.title}
+                            tag="h4"
+                            className="text-[20px] font-semibold uppercase leading-tight text-foreground mb-1 group-hover:text-primary transition-colors"
+                          />
+                          <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                            <Clock size={10} /> {p.readTime}
+                          </span>
+                        </div>
+                      </Link>
+                    </article>
+                  );
+                })}
               </div>
             </div>
           )}
