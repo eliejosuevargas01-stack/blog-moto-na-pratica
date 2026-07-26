@@ -1,10 +1,15 @@
 import { prisma } from "../../../lib/db";
-import { POSTS, TAG_COLORS, TEKO, BODY, optimizeImageUrl } from "../../data";
+import { POSTS, TAG_COLORS, TEKO, BODY, optimizeImageUrl, formatPostUrl } from "../../data";
 import Link from "next/link";
 import { Clock, Tag, ArrowRight } from "lucide-react";
 import Sidebar from "../../components/Sidebar";
 
 export const dynamic = "force-dynamic";
+
+function stripHtml(html: string): string {
+  if (!html) return "";
+  return html.replace(/<[^>]*>/g, "");
+}
 
 interface TagPageProps {
   params: {
@@ -84,14 +89,15 @@ export default async function TagPage({ params }: TagPageProps) {
               {posts.map((post) => {
                 const createdDate = post.createdAt ? new Date(post.createdAt) : (post.date ? new Date(post.date) : new Date());
                 const formattedDate = createdDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
+                const postUrl = formatPostUrl(post.slug, post.lang);
 
                 return (
                   <article key={post.id} className="group bg-card border border-border overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-                    <Link href={`/post/${post.slug}`} className="flex flex-col flex-1">
+                    <Link href={postUrl} className="flex flex-col flex-1">
                       <div className="relative overflow-hidden w-full h-[190px]">
                         <img 
                           src={optimizeImageUrl(post.img, 450, 260)} 
-                          alt={post.title} 
+                          alt={stripHtml(post.title)} 
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                           style={{ objectPosition: post.imgFocalPoint || "center" }}
                           loading="lazy"

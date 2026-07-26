@@ -12,6 +12,14 @@ function generateSlug(title: string): string {
     .replace(/\s+/g, "-");
 }
 
+function cleanSlug(slug?: string): string {
+  if (!slug) return "";
+  return slug
+    .trim()
+    .replace(/^\/?(posts|post)\//i, "")
+    .replace(/^\/+/, "");
+}
+
 function extractImageUrl(imgField: any): string {
   if (!imgField) return "";
   if (typeof imgField === "string") {
@@ -67,11 +75,6 @@ function processImagePlaceholdersInHtml(htmlText: string, langData: any): string
   return cleanBlockHtml(processed);
 }
 
-/**
- * GET /api/posts
- * Permite buscar posts ordenados por mentions, views, likes ou createdAt
- * Exemplo: GET /api/posts?orderBy=mentions&order=asc&limit=10&lang=pt
- */
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
@@ -152,7 +155,7 @@ export async function POST(req: Request) {
         const langData = output[lang];
         if (!langData || !langData.title) continue;
 
-        const finalSlug = langData.slug?.trim() || generateSlug(langData.title);
+        const finalSlug = cleanSlug(langData.slug) || generateSlug(langData.title);
 
         const featuredImg =
           extractImageUrl(langData["img-1"]) ||
@@ -169,7 +172,6 @@ export async function POST(req: Request) {
           const processedBlockText = processImagePlaceholdersInHtml(rawBlockText, langData);
           const rawBlockImg = extractImageUrl(langData[`img-${i + 1}`]);
 
-          // Evita imagem duplicada se o texto HTML já tiver a tag <img> embutida
           const hasImgTagInText = processedBlockText.includes("<img");
 
           blocks.push({
@@ -218,15 +220,24 @@ export async function POST(req: Request) {
           id: post.id,
           lang: post.lang,
           slug: post.slug,
-          url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://motonapratica.online"}${postUrlPath}`,
+          title: post.title,
+          url: `https://motonapratica.online${postUrlPath}`
         });
       }
 
-      // Incrementar mentions no Supabase para todos os slugs citados
+      // INCREMENTAR COLUNA 'mentions' NOS POSTS MENCIONADOS
       if (extractedMentionedSlugs.size > 0) {
         await prisma.post.updateMany({
-          where: { slug: { in: Array.from(extractedMentionedSlugs) } },
-          data: { mentions: { increment: 1 } },
+          where: {
+            slug: {
+              in: Array.from(extractedMentionedSlugs)
+            }
+          },
+          data: {
+            mentions: {
+              increment: 1
+            }
+          }
         });
       }
 
@@ -265,7 +276,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "O título do post é obrigatório." }, { status: 400 });
     }
 
-    const finalSlug = customSlug?.trim() || generateSlug(title);
+    const finalSlug = cleanSlug(customSlug) || generateSlug(title);
     const extractedMentionedSlugs: Set<string> = new Set(explicitMentionedSlugs);
 
     const cleanedBlocks = Array.isArray(blocks) ? blocks.map((b: any) => {
@@ -316,30 +327,36 @@ export async function POST(req: Request) {
 
     if (extractedMentionedSlugs.size > 0) {
       await prisma.post.updateMany({
-        where: { slug: { in: Array.from(extractedMentionedSlugs) } },
-        data: { mentions: { increment: 1 } },
+        where: {
+          slug: {
+            in: Array.from(extractedMentionedSlugs)
+          }
+        },
+        data: {
+          mentions: {
+            increment: 1
+          }
+        }
       });
     }
 
     revalidatePath("/");
     revalidatePath("/posts");
-    revalidatePath("/eventos");
-    revalidatePath(`/post/${finalSlug}`);
+
+    const postUrlPath = lang === "en" ? `/en/post/${post.slug}` : lang === "es" ? `/es/post/${post.slug}` : `/post/${post.slug}`;
 
     return NextResponse.json({
       success: true,
-      message: "Post criado com sucesso!",
+      message: "Post salvo com sucesso!",
       post: {
         id: post.id,
-        title: post.title,
-        slug: post.slug,
         lang: post.lang,
-        mentions: post.mentions,
-        url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://motonapratica.online"}/post/${post.slug}`,
-      },
+        slug: post.slug,
+        title: post.title,
+        url: `https://motonapratica.online${postUrlPath}`
+      }
     });
   } catch (error: any) {
-    console.error("Erro na API de automação de posts:", error);
-    return NextResponse.json({ error: "Erro interno ao processar automação.", details: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Erro ao salvar post", details: error.message }, { status: 500 });
   }
 }

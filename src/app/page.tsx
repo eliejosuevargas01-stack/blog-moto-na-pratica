@@ -1,5 +1,5 @@
 import { prisma } from "../lib/db";
-import { POSTS, CATEGORIES, TAG_COLORS, TEKO, BODY, optimizeImageUrl } from "./data";
+import { POSTS, CATEGORIES, TAG_COLORS, TEKO, BODY, optimizeImageUrl, formatPostUrl } from "./data";
 import Link from "next/link";
 import { Clock, Tag, ChevronRight, ArrowRight, Star, Calendar, MapPin, Wrench } from "lucide-react";
 import Image from "next/image";
@@ -125,11 +125,11 @@ export default async function Home({ searchParams }: HomeProps) {
   const heroTitle = heroPost ? heroPost.title : homeContent.heroTitle;
   const heroSubtitle = heroPost ? heroPost.excerpt : homeContent.heroSubtitle;
   const heroSlug = heroPost ? heroPost.slug : (homeContent.breakingSlug || "fazer-250-solid-grey-2026-6-meses");
-  const heroLangPrefix = heroPost?.lang === "en" ? "/en" : heroPost?.lang === "es" ? "/es" : "";
+  const heroLang = heroPost ? heroPost.lang : currentLang;
 
   const breakingText = breakingPost ? breakingPost.title : homeContent.breakingText;
   const breakingSlug = breakingPost ? breakingPost.slug : (homeContent.breakingSlug || "michelin-pilot-street-2-fazer");
-  const breakingLangPrefix = breakingPost?.lang === "en" ? "/en" : breakingPost?.lang === "es" ? "/es" : "";
+  const breakingLang = breakingPost ? breakingPost.lang : currentLang;
 
   const defaultSectionOrder = ["hero", "breaking", "posts", "banner"];
   const sectionOrder: string[] = Array.isArray(homeContent.sectionOrder) && homeContent.sectionOrder.length > 0 
@@ -163,7 +163,7 @@ export default async function Home({ searchParams }: HomeProps) {
           {heroSubtitle}
         </p>
         <Link
-          href={`${heroLangPrefix}/post/${heroSlug}`}
+          href={formatPostUrl(heroSlug, heroLang)}
           className="flex items-center gap-2 bg-primary hover:bg-[#A00B22] text-white text-[14px] font-bold uppercase tracking-wider px-6 py-3 transition-colors w-fit"
         >
           {t.hero.readFull} <ArrowRight size={15} />
@@ -177,7 +177,7 @@ export default async function Home({ searchParams }: HomeProps) {
       <span style={TEKO} className="text-white text-[15px] font-semibold uppercase tracking-widest shrink-0 bg-[#E31E24] px-2 py-0.5">{t.ticker.badge}</span>
       <span className="text-white text-[14px] truncate" dangerouslySetInnerHTML={{ __html: breakingText }} />
       <Link
-        href={`${breakingLangPrefix}/post/${breakingSlug}`}
+        href={formatPostUrl(breakingSlug, breakingLang)}
         className="text-white/80 hover:text-white text-[13px] font-semibold uppercase ml-auto shrink-0 flex items-center gap-1"
       >
         {t.ticker.read} <ChevronRight size={13} />
@@ -214,7 +214,7 @@ export default async function Home({ searchParams }: HomeProps) {
             {/* Featured Post Card (Large) */}
             {featuredPost && (
               <article className="group bg-card border border-border overflow-hidden mb-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
-                <Link href={`${featuredPost.lang === "en" ? "/en" : featuredPost.lang === "es" ? "/es" : ""}/post/${featuredPost.slug}`} className="block">
+                <Link href={formatPostUrl(featuredPost.slug, featuredPost.lang)} className="block">
                   <div className="relative overflow-hidden w-full h-[280px]">
                     <img 
                       src={optimizeImageUrl(featuredPost.img, 750, 420)} 
@@ -254,7 +254,7 @@ export default async function Home({ searchParams }: HomeProps) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-10">
                 {gridPosts.map((post) => (
                   <article key={post.id} className="group bg-card border border-border overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-                    <Link href={`${post.lang === "en" ? "/en" : post.lang === "es" ? "/es" : ""}/post/${post.slug}`} className="flex flex-col flex-1">
+                    <Link href={formatPostUrl(post.slug, post.lang)} className="flex flex-col flex-1">
                       <div className="relative overflow-hidden w-full h-[185px]">
                         <img 
                           src={optimizeImageUrl(post.img, 450, 260)} 

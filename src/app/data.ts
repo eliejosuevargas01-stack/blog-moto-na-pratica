@@ -267,3 +267,11 @@ export function slugify(text: string): string {
     .replace(/[^a-z0-9\u00C0-\u00FF]+/gi, "-") // preserve accented characters but replace spaces/symbols
     .replace(/^-+|-+$/g, "");
 }
+
+export function formatPostUrl(slug: string, lang?: string | null): string {
+  if (!slug) return "/";
+  const clean = slug.trim().replace(/^\/?(posts|post)\//i, "").replace(/^\/+/, "");
+  if (lang === "en") return `/en/post/${clean}`;
+  if (lang === "es") return `/es/post/${clean}`;
+  return `/post/${clean}`;
+}

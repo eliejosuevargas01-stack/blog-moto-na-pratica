@@ -1,5 +1,5 @@
 import { prisma } from "../../lib/db";
-import { POSTS, TAG_COLORS, TEKO, BODY, optimizeImageUrl } from "../data";
+import { POSTS, TAG_COLORS, TEKO, BODY, optimizeImageUrl, formatPostUrl } from "../data";
 import Link from "next/link";
 import { Clock, Search, ArrowRight, Tag } from "lucide-react";
 import Sidebar from "../components/Sidebar";
@@ -113,7 +113,7 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
 
                 const formattedCreated = createdDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
                 const formattedUpdated = updatedDate ? updatedDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" }) : "";
-                const postUrlPath = post.lang === "en" ? `/en/post/${post.slug}` : post.lang === "es" ? `/es/post/${post.slug}` : `/post/${post.slug}`;
+                const postUrlPath = formatPostUrl(post.slug, post.lang);
 
                 return (
                   <article key={post.id} className="group bg-card border border-border overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">

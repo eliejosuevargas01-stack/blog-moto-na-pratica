@@ -1,5 +1,5 @@
 import { prisma } from "../../lib/db";
-import { POSTS, TAG_COLORS, TEKO, BODY, optimizeUnsplashUrl } from "../data";
+import { POSTS, TAG_COLORS, TEKO, BODY, optimizeUnsplashUrl, formatPostUrl } from "../data";
 import Sidebar from "./Sidebar";
 import Link from "next/link";
 import { Clock, ArrowRight, ChevronRight, Star, Wrench, Navigation, ShieldCheck } from "lucide-react";
@@ -98,31 +98,30 @@ export default async function CategoryView({ tag, title, description, heroImg, i
         <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-3 flex items-center gap-2 text-[12px] text-muted-foreground">
           <Link href="/" className="hover:text-primary transition-colors uppercase tracking-wide">{t.nav.home}</Link>
           <span>/</span>
-          <span className="text-foreground uppercase tracking-wide">{title}</span>
+          <span className="text-foreground font-semibold uppercase tracking-wide">{title}</span>
         </div>
       </div>
 
-      {/* CONTENT */}
+      {/* CONTENT AREA */}
       <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-16 grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-14">
         <div>
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-3">
-              <span className="block w-1 h-7 bg-primary" />
-              <h2 style={TEKO} className="text-[26px] font-semibold uppercase tracking-wide">
-                {posts.length > 0 ? `${posts.length} post${posts.length > 1 ? "s" : ""}` : "Posts"} {currentLang === "en" ? "in" : currentLang === "es" ? "en" : "em"} {title}
-              </h2>
-            </div>
+          <div className="flex items-center gap-3 mb-8">
+            <span className="block w-1 h-6 bg-primary" />
+            <h2 style={TEKO} className="text-[24px] font-semibold uppercase tracking-wide">
+              {postsInHeader}
+            </h2>
           </div>
 
           {posts.length > 0 ? (
-            <div className="space-y-5">
+            <div className="space-y-6">
+              {/* Main featured post of category */}
               {firstPost && (
                 <article className="group bg-card border border-border overflow-hidden flex flex-col sm:flex-row transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-                  <Link href={`${firstPost.lang === "en" ? "/en" : firstPost.lang === "es" ? "/es" : ""}/post/${firstPost.slug}`} className="flex flex-col sm:flex-row flex-1">
+                  <Link href={formatPostUrl(firstPost.slug, firstPost.lang)} className="flex flex-col sm:flex-row flex-1">
                     <div className="relative overflow-hidden shrink-0 sm:w-[280px]" style={{ height: "200px" }}>
                        <img 
                          src={optimizeUnsplashUrl(firstPost.img, 800, 450)} 
-                         alt={firstPost.title} 
+                         alt={stripHtml(firstPost.title)} 
                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                          style={{ objectPosition: firstPost.imgFocalPoint || "center" }}
                        />
@@ -146,11 +145,12 @@ export default async function CategoryView({ tag, title, description, heroImg, i
                 </article>
               )}
 
+              {/* Grid of remaining category posts */}
               {restPosts.length > 0 && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-2">
                   {restPosts.map((post) => (
                     <article key={post.id} className="group bg-card border border-border overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-                      <Link href={`${post.lang === "en" ? "/en" : post.lang === "es" ? "/es" : ""}/post/${post.slug}`} className="flex flex-col flex-1">
+                      <Link href={formatPostUrl(post.slug, post.lang)} className="flex flex-col flex-1">
                         <div className="relative overflow-hidden" style={{ height: "180px" }}>
                            <img 
                              src={optimizeUnsplashUrl(post.img, 600, 340)} 
@@ -191,6 +191,7 @@ export default async function CategoryView({ tag, title, description, heroImg, i
             </div>
           )}
 
+          {/* See Also section */}
           {allOthers.length > 0 && (
             <div className="mt-14">
               <div className="flex items-center gap-3 mb-6">
@@ -198,23 +199,23 @@ export default async function CategoryView({ tag, title, description, heroImg, i
                 <h3 style={TEKO} className="text-[22px] font-semibold uppercase tracking-wide">{seeAlsoTitle}</h3>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {allOthers.map((post) => (
-                  <article key={post.id} className="group bg-card border border-border overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
-                    <Link href={`${post.lang === "en" ? "/en" : post.lang === "es" ? "/es" : ""}/post/${post.slug}`}>
+                {allOthers.map((o) => (
+                  <article key={o.id} className="group bg-card border border-border overflow-hidden transition-all duration-300 hover:-translate-y-1">
+                    <Link href={formatPostUrl(o.slug, o.lang)}>
                       <div className="relative overflow-hidden" style={{ height: "130px" }}>
                         <img 
-                          src={optimizeUnsplashUrl(post.img, 450, 260)} 
-                          alt={stripHtml(post.title)} 
+                          src={optimizeUnsplashUrl(o.img, 400, 240)} 
+                          alt={stripHtml(o.title)} 
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                          style={{ objectPosition: post.imgFocalPoint || "center" }}
+                          style={{ objectPosition: o.imgFocalPoint || "center" }}
                         />
-                        <span className={`absolute top-2 left-2 text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 ${TAG_COLORS[post.tag] || "bg-[#252525]"}`}>{post.tag}</span>
+                        <span className={`absolute top-2 left-2 text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 ${TAG_COLORS[o.tag] || "bg-[#252525]"}`}>{o.tag}</span>
                       </div>
                       <div className="p-3">
                         <h4 
                           style={TEKO} 
-                          className="text-[17px] font-semibold uppercase leading-tight text-foreground group-hover:text-primary transition-colors"
-                          dangerouslySetInnerHTML={{ __html: post.title }}
+                          className="text-[17px] font-semibold uppercase leading-tight text-foreground group-hover:text-primary transition-colors line-clamp-2"
+                          dangerouslySetInnerHTML={{ __html: o.title }}
                         />
                       </div>
                     </Link>
@@ -225,6 +226,7 @@ export default async function CategoryView({ tag, title, description, heroImg, i
           )}
         </div>
 
+        {/* SIDEBAR */}
         <Sidebar />
       </div>
     </div>
