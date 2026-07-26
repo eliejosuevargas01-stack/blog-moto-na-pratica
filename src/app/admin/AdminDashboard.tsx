@@ -16,7 +16,7 @@ import { TEKO, BODY } from "../data";
 import { 
   Plus, Trash2, Save, Upload, LogOut, FileText, Layout, ArrowLeft, 
   Eye, Edit, Wrench, Sliders, Bell, Mail, ArrowUp, ArrowDown, Users, Heart, Share2, Copy, Check, Lock, GripVertical,
-  Globe, ChevronDown, ChevronUp, Languages
+  Globe, ChevronDown, ChevronUp, Languages, ExternalLink, CornerDownRight
 } from "lucide-react";
 import { plugins } from "../../plugins";
 
@@ -282,7 +282,19 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
     getSubscribersAction().then(res => {
       if (res.success && res.subscribers) setSubscribers(res.subscribers);
     });
-  }, []);
+
+    // Abrir edição automaticamente se houver parâmetro ?edit=id na URL
+    if (typeof window !== "undefined" && initialPosts.length > 0) {
+      const params = new URLSearchParams(window.location.search);
+      const editId = params.get("edit");
+      if (editId) {
+        const targetPost = initialPosts.find(p => p.id === editId);
+        if (targetPost) {
+          startEditPost(targetPost);
+        }
+      }
+    }
+  }, [initialPosts]);
 
 
   const [activePlugins, setActivePlugins] = useState<Record<string, boolean>>(() => {
@@ -931,104 +943,111 @@ function BlockLinkMapper({
                               {new Date(post.date).toLocaleDateString("pt-BR")}
                             </td>
                             <td className="p-4 text-right space-x-2 whitespace-nowrap">
-                              {/* BOTÃO EXPANSOR DE IDIOMAS */}
+                              {/* SÍMBOLO GLOBAL PARA EXPANDIR VERSÕES EM OUTROS IDIOMAS */}
                               {sisterPosts.length > 0 ? (
                                 <button
                                   onClick={() => toggleExpandPost(post.id)}
-                                  className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-sm transition-all border shadow-sm ${
+                                  className={`inline-flex items-center justify-center p-2 rounded-sm border transition-all ${
                                     isExpanded 
-                                      ? "bg-blue-600 border-blue-500 text-white" 
-                                      : "bg-blue-950/80 hover:bg-blue-900 border-blue-700/60 text-blue-300"
+                                      ? "bg-blue-600 border-blue-500 text-white shadow-sm" 
+                                      : "bg-[#1C1C1C] hover:bg-blue-950 hover:border-blue-700/60 text-blue-400 border-border"
                                   }`}
-                                  title="Ver e gerenciar edições deste post em outros idiomas"
+                                  title={`Ver versões em outros idiomas (${sisterLangs.join(", ")})`}
                                 >
-                                  <Globe size={13} />
-                                  <span>{sisterLangs.join(" · ")} ({sisterPosts.length})</span>
-                                  {isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                                  <Globe size={15} />
                                 </button>
                               ) : (
-                                <span className="text-[11px] text-muted-foreground/50 italic px-2 py-1 bg-[#161616] border border-border/40 rounded-sm">
-                                  Apenas PT
-                                </span>
+                                <button
+                                  disabled
+                                  className="inline-flex items-center justify-center p-2 rounded-sm border border-border/30 bg-[#141414] text-muted-foreground/30 cursor-not-allowed"
+                                  title="Sem traduções vinculadas"
+                                >
+                                  <Globe size={15} />
+                                </button>
                               )}
 
-                              {/* BOTÕES PADRÃO DE AÇÃO */}
+                              {/* BOTÕES PADRÃO DE AÇÃO DO POST PRINCIPAL (PT) */}
                               <button
                                 onClick={() => startEditPost(post)}
-                                className="inline-flex items-center gap-1 bg-secondary hover:bg-primary/20 hover:text-primary border border-border p-1.5 rounded-sm text-muted-foreground transition-colors"
-                                title="Editar post em Português"
+                                className="inline-flex items-center gap-1 bg-secondary hover:bg-primary/20 hover:text-primary border border-border p-2 rounded-sm text-muted-foreground transition-colors"
+                                title="Editar post principal em Português"
                               >
-                                <Edit size={13} />
+                                <Edit size={14} />
                               </button>
                               <button
                                 onClick={() => handleDeletePost(post.id)}
-                                className="inline-flex items-center gap-1 bg-secondary hover:bg-primary hover:text-white border border-border p-1.5 rounded-sm text-muted-foreground transition-colors"
-                                title="Excluir post em Português"
+                                className="inline-flex items-center gap-1 bg-secondary hover:bg-primary hover:text-white border border-border p-2 rounded-sm text-muted-foreground transition-colors"
+                                title="Excluir post principal em Português"
                               >
-                                <Trash2 size={13} />
+                                <Trash2 size={14} />
                               </button>
                             </td>
                           </tr>
 
-                          {/* PAINEL EXPANDIDO COM VERSÕES EM OUTROS IDIOMAS */}
+                          {/* SUB-LINHA EXPANDIDA (VERSÕES FILHAS EM OUTROS IDIOMAS PUXADAS PARA A DIREITA) */}
                           {isExpanded && (
                             <tr className="bg-[#121212] border-b border-border">
-                              <td colSpan={5} className="p-4 pl-8">
-                                <div className="bg-[#181818] border border-blue-900/40 rounded-sm p-4 space-y-3">
-                                  <div className="flex items-center justify-between border-b border-border/50 pb-2">
-                                    <span className="text-[12px] font-bold text-blue-400 uppercase tracking-wider flex items-center gap-2">
-                                      <Languages size={15} /> Versões Traduzidas Correspondentes ({sisterPosts.length})
-                                    </span>
-                                    <span className="text-[11px] text-muted-foreground font-mono">
-                                      ID do Grupo: {post.translationGroupId || "N/A"}
-                                    </span>
+                              <td colSpan={5} className="py-3 pr-4 pl-12 sm:pl-16">
+                                <div className="space-y-2 border-l-2 border-blue-600/60 pl-4 py-1">
+                                  <div className="text-[11px] font-bold text-blue-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                    <Languages size={13} /> Versões Traduzidas Vinculadas (Filhos)
                                   </div>
 
-                                  <div className="space-y-2">
-                                    {sisterPosts.map(sister => {
-                                      const langCode = sister.lang || "en";
-                                      const langBadgeClass =
-                                        langCode === "en"
-                                          ? "bg-blue-950/80 border-blue-800 text-blue-400"
-                                          : "bg-amber-950/80 border-amber-800 text-amber-400";
-                                      const langFlag = langCode === "en" ? "🇬🇧 English (EN)" : "🇪🇸 Español (ES)";
-                                      const urlPath = langCode === "en" ? `/en/post/${sister.slug}` : `/es/post/${sister.slug}`;
+                                  {sisterPosts.map(sister => {
+                                    const langCode = sister.lang || "en";
+                                    const langBadgeClass =
+                                      langCode === "en"
+                                        ? "bg-blue-950/90 border-blue-800 text-blue-300"
+                                        : "bg-amber-950/90 border-amber-800 text-amber-300";
+                                    const langFlag = langCode === "en" ? "🇬🇧 EN" : "🇪🇸 ES";
+                                    const urlPath = langCode === "en" ? `/en/post/${sister.slug}` : `/es/post/${sister.slug}`;
 
-                                      return (
-                                        <div key={sister.id} className="flex items-center justify-between bg-[#202020] border border-border/50 p-3 rounded-sm hover:border-border transition-colors">
-                                          <div className="flex items-center gap-3">
-                                            <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border rounded-sm ${langBadgeClass}`}>
-                                              {langFlag}
-                                            </span>
-                                            <div>
-                                              <div className="text-[13px] font-medium text-foreground">{stripHtml(sister.title)}</div>
-                                              <div className="text-[11px] text-muted-foreground font-mono">{urlPath}</div>
-                                            </div>
-                                          </div>
-
-                                          <div className="flex items-center gap-3">
-                                            <span className="text-[11px] text-muted-foreground">
-                                              {new Date(sister.date).toLocaleDateString("pt-BR")}
-                                            </span>
-                                            <button
-                                              onClick={() => startEditPost(sister)}
-                                              className="inline-flex items-center gap-1.5 bg-secondary hover:bg-primary/20 hover:text-primary border border-border px-3 py-1 rounded-sm text-[12px] font-bold text-muted-foreground transition-colors"
-                                              title={`Editar versão em ${langCode.toUpperCase()}`}
-                                            >
-                                              <Edit size={13} /> Editar {langCode.toUpperCase()}
-                                            </button>
-                                            <button
-                                              onClick={() => handleDeletePost(sister.id)}
-                                              className="inline-flex items-center gap-1.5 bg-secondary hover:bg-primary hover:text-white border border-border px-2.5 py-1 rounded-sm text-[12px] font-bold text-muted-foreground transition-colors"
-                                              title={`Excluir versão em ${langCode.toUpperCase()}`}
-                                            >
-                                              <Trash2 size={13} />
-                                            </button>
+                                    return (
+                                      <div 
+                                        key={sister.id} 
+                                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#1B1B1B] border border-border/70 p-3 rounded-sm hover:border-blue-900/60 transition-colors shadow-sm ml-2"
+                                      >
+                                        <div className="flex items-start sm:items-center gap-2.5">
+                                          <CornerDownRight size={15} className="text-blue-500 shrink-0 mt-0.5 sm:mt-0" />
+                                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border rounded-sm ${langBadgeClass}`}>
+                                            {langFlag}
+                                          </span>
+                                          <div>
+                                            <div className="text-[13px] font-medium text-foreground">{stripHtml(sister.title)}</div>
+                                            <div className="text-[11px] text-muted-foreground font-mono">{urlPath}</div>
                                           </div>
                                         </div>
-                                      );
-                                    })}
-                                  </div>
+
+                                        <div className="flex items-center gap-2 self-end sm:self-auto">
+                                          <span className="text-[11px] text-muted-foreground mr-1">
+                                            {new Date(sister.date).toLocaleDateString("pt-BR")}
+                                          </span>
+                                          
+                                          {/* BOTÃO PARA EDITAR EM NOVA ABA */}
+                                          <a
+                                            href={`/admin?edit=${sister.id}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-1.5 bg-blue-950/80 hover:bg-blue-900 text-blue-300 border border-blue-700/60 px-3 py-1.5 rounded-sm text-[12px] font-bold transition-all shadow-sm"
+                                            title={`Editar versão em ${langCode.toUpperCase()} em uma nova aba`}
+                                          >
+                                            <Edit size={13} />
+                                            <span>Editar {langCode.toUpperCase()}</span>
+                                            <ExternalLink size={12} className="opacity-70" />
+                                          </a>
+
+                                          {/* BOTÃO PARA EXCLUIR */}
+                                          <button
+                                            onClick={() => handleDeletePost(sister.id)}
+                                            className="inline-flex items-center gap-1 bg-secondary hover:bg-primary hover:text-white border border-border p-1.5 rounded-sm text-muted-foreground transition-colors"
+                                            title={`Excluir versão em ${langCode.toUpperCase()}`}
+                                          >
+                                            <Trash2 size={13} />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               </td>
                             </tr>
