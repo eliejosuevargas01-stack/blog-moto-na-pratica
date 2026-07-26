@@ -21,11 +21,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validar tamanho do arquivo (máx 10MB antes de compressão)
-    const maxSize = 10 * 1024 * 1024;
+    // Validar tamanho do arquivo (máx 50MB antes de compressão)
+    const maxSize = 50 * 1024 * 1024;
     if (file.size > maxSize) {
       return NextResponse.json(
-        { error: "O tamanho máximo permitido é 10MB." },
+        { error: "O tamanho máximo permitido é 50MB." },
         { status: 400 }
       );
     }
