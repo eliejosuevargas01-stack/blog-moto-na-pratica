@@ -459,6 +459,22 @@ function AdminDashboardContent({ initialPosts, initialPages }: AdminDashboardPro
     setIsGalleryModalOpen(false);
   };
 
+  const handleDeleteGalleryImage = async (imgUrl: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm("Deseja realmente excluir esta imagem da galeria?")) return;
+
+    try {
+      await fetch("/api/upload", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: imgUrl })
+      });
+      setGalleryImages(prev => prev.filter(url => url !== imgUrl));
+    } catch (err) {
+      console.error("Erro ao excluir imagem da galeria:", err);
+    }
+  };
+
   // --- CONTROLE DE POSTS ---
   const [editingPost, setEditingPost] = useState<any | null>(null); // null significa listagem, {} significa novo post
   const [postFilterLang, setPostFilterLang] = useState<"all" | "pt" | "en" | "es">("all");
@@ -2658,6 +2674,17 @@ function BlockLinkMapper({
                             onClick={() => selectGalleryImage(imgUrl)}
                             className="group relative bg-[#1B1B1B] border border-border hover:border-primary rounded-sm overflow-hidden cursor-pointer transition-all duration-150 hover:shadow-lg flex flex-col h-[135px]"
                           >
+                            <div className="absolute top-1.5 right-1.5 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                type="button"
+                                onClick={(e) => handleDeleteGalleryImage(imgUrl, e)}
+                                className="p-1.5 bg-red-600/90 hover:bg-red-600 text-white rounded-sm transition-colors shadow-md flex items-center justify-center"
+                                title="Excluir imagem da galeria"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+
                             <div className="relative flex-1 bg-black/40 overflow-hidden flex items-center justify-center">
                               <img
                                 src={imgUrl}

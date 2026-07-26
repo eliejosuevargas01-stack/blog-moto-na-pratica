@@ -119,3 +119,29 @@ export async function GET() {
     return NextResponse.json({ images: [] });
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const { url } = await request.json();
+    if (!url || typeof url !== "string") {
+      return NextResponse.json({ error: "URL inválida." }, { status: 400 });
+    }
+
+    // Se for uma imagem salva na pasta local /uploads/
+    if (url.startsWith("/uploads/")) {
+      const filename = path.basename(url);
+      const filePath = path.join(process.cwd(), "uploads", filename);
+      try {
+        const { unlink } = await import("fs/promises");
+        await unlink(filePath);
+      } catch (err: any) {
+        console.warn("Arquivo não encontrado no disco ou já removido:", err.message);
+      }
+    }
+
+    return NextResponse.json({ success: true, message: "Imagem excluída da galeria." });
+  } catch (error: any) {
+    console.error("Erro ao deletar imagem da galeria:", error);
+    return NextResponse.json({ error: "Erro interno ao deletar imagem." }, { status: 500 });
+  }
+}
