@@ -34,9 +34,14 @@ export async function GET(
 
     // Suportar conversão e redimensionamento para formatos de imagem comuns
     if (ext === ".jpg" || ext === ".jpeg" || ext === ".png" || ext === ".webp") {
-      // Nome do arquivo em cache ex: foto-123.w600.webp
+      // Guardar arquivos de cache em uma pasta oculta uploads/.cache para não poluir a galeria
+      const cacheDir = path.join(UPLOADS_DIR, ".cache");
+      if (!fs.existsSync(cacheDir)) {
+        fs.mkdirSync(cacheDir, { recursive: true });
+      }
+
       const cacheFilename = filename.replace(/\.(jpe?g|png|webp)$/i, "") + `.w${targetWidth}.webp`;
-      const cachePath = path.join(UPLOADS_DIR, cacheFilename);
+      const cachePath = path.join(cacheDir, cacheFilename);
 
       // Checar se já existe versão correspondente em cache no disco
       if (!fs.existsSync(cachePath)) {

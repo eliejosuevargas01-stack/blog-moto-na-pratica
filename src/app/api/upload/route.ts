@@ -76,8 +76,10 @@ export async function GET() {
     const uploadDir = path.join(process.cwd(), "uploads");
     try {
       const files = await readdir(uploadDir);
-      // Ordenar por data de modificação ou nome (mais recentes primeiro)
-      const validFiles = files.filter(file => /\.(webp|jpg|jpeg|png|gif|avif)$/i.test(file));
+      // Filtras apenas imagens originais e ignorar arquivos de cache (.w300.webp, etc) e pastas ocultas
+      const validFiles = files.filter(
+        file => /\.(webp|jpg|jpeg|png|gif|avif)$/i.test(file) && !/\.w\d+\./i.test(file) && !file.startsWith(".")
+      );
       validFiles.forEach(file => imagesSet.add(`/uploads/${file}`));
     } catch (e) {
       // Diretório ainda não existe
@@ -177,8 +179,9 @@ export async function DELETE(request: Request) {
       let deletedCount = 0;
       try {
         const files = await readdir(uploadDir);
-        const { unlink } = await import("fs/promises");
+        const { unlink, rm } = await import("fs/promises");
         for (const file of files) {
+          if (file.startsWith(".")) continue;
           if (/\.(webp|jpg|jpeg|png|gif|avif)$/i.test(file)) {
             try {
               await unlink(path.join(uploadDir, file));
@@ -186,6 +189,11 @@ export async function DELETE(request: Request) {
             } catch (e) {}
           }
         }
+        // Deletar pasta de cache se existir
+        const cacheDir = path.join(uploadDir, ".cache");
+        try {
+          await rm(cacheDir, { recursive: true, force: true });
+        } catch (e) {}
       } catch (e) {}
 
       return NextResponse.json({
