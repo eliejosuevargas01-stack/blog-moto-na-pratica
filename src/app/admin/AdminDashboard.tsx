@@ -475,6 +475,52 @@ function AdminDashboardContent({ initialPosts, initialPages }: AdminDashboardPro
     }
   };
 
+  const handlePurgeUnusedImages = async () => {
+    if (!confirm("Deseja verificar o servidor e excluir todas as imagens da pasta /uploads que NÃO estejam em uso nos posts ou páginas?")) return;
+
+    setGalleryLoading(true);
+    try {
+      const res = await fetch("/api/upload", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "purge_unused" })
+      });
+      const data = await res.json();
+      alert(data.message || "Limpeza de imagens não utilizadas concluída!");
+      const gRes = await fetch("/api/upload");
+      const gData = await gRes.json();
+      if (gData.images && Array.isArray(gData.images)) {
+        setGalleryImages(gData.images);
+      }
+    } catch (err) {
+      console.error("Erro ao purgar imagens:", err);
+      alert("Erro ao realizar a limpeza das imagens.");
+    } finally {
+      setGalleryLoading(false);
+    }
+  };
+
+  const handlePurgeAllImages = async () => {
+    if (!confirm("⚠️ ATENÇÃO: Tem certeza que deseja apagar TODAS as imagens salvas no servidor? Esta ação não pode ser desfeita.")) return;
+
+    setGalleryLoading(true);
+    try {
+      const res = await fetch("/api/upload", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "purge_all" })
+      });
+      const data = await res.json();
+      alert(data.message || "Galeria zerada com sucesso!");
+      setGalleryImages([]);
+    } catch (err) {
+      console.error("Erro ao zerar galeria:", err);
+      alert("Erro ao zerar galeria.");
+    } finally {
+      setGalleryLoading(false);
+    }
+  };
+
   // --- CONTROLE DE POSTS ---
   const [editingPost, setEditingPost] = useState<any | null>(null); // null significa listagem, {} significa novo post
   const [postFilterLang, setPostFilterLang] = useState<"all" | "pt" | "en" | "es">("all");
@@ -2624,8 +2670,8 @@ function BlockLinkMapper({
               </button>
             </div>
 
-            {/* Barra de Pesquisa */}
-            <div className="p-4 border-b border-border bg-[#1A1A1A] flex items-center gap-3">
+            {/* Barra de Pesquisa e Ações de Limpeza */}
+            <div className="p-4 border-b border-border bg-[#1A1A1A] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
               <div className="relative flex-1">
                 <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
@@ -2636,9 +2682,30 @@ function BlockLinkMapper({
                   className="w-full bg-[#222222] border border-border rounded-sm text-[13px] text-foreground pl-9 pr-4 py-2 outline-none focus:border-primary/50"
                 />
               </div>
-              <span className="text-[12px] text-muted-foreground whitespace-nowrap font-mono hidden sm:inline">
-                {galleryImages.length} imagens na biblioteca
-              </span>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handlePurgeUnusedImages}
+                  disabled={galleryLoading}
+                  className="px-3 py-2 bg-amber-950/80 hover:bg-amber-900 border border-amber-700/60 text-amber-300 text-[11px] font-bold uppercase rounded-sm transition-all shadow-sm whitespace-nowrap"
+                  title="Excluir do servidor todas as imagens da pasta /uploads que não estejam em uso"
+                >
+                  🧹 Limpar Não Utilizadas
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePurgeAllImages}
+                  disabled={galleryLoading}
+                  className="px-3 py-2 bg-red-950/80 hover:bg-red-900 border border-red-700/60 text-red-300 text-[11px] font-bold uppercase rounded-sm transition-all shadow-sm whitespace-nowrap"
+                  title="Apagar todas as imagens da pasta /uploads"
+                >
+                  🗑️ Zerar Galeria
+                </button>
+                <span className="text-[11px] text-muted-foreground whitespace-nowrap font-mono hidden md:inline ml-2">
+                  {galleryImages.length} mídias
+                </span>
+              </div>
             </div>
 
             {/* Grid de Imagens */}

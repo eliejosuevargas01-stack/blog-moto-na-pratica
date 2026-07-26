@@ -86,24 +86,125 @@ export async function GET() {
 
 export async function DELETE(request: Request) {
   try {
-    const { url } = await request.json();
-    if (!url || typeof url !== "string") {
-      return NextResponse.json({ error: "URL inválida." }, { status: 400 });
-    }
+    const { url, action } = await request.json();
+    const uploadDir = path.join(process.cwd(), "uploads");
 
-    // Se for uma imagem salva na pasta local /uploads/
-    if (url.startsWith("/uploads/")) {
-      const filename = path.basename(url);
-      const filePath = path.join(process.cwd(), "uploads", filename);
+    // AÇÃO 1: Purgar imagens do disco que não estejam vinculadas a nenhum post ou página
+    if (action === "purge_unused") {
+      const { PrismaClient } = await import("@prisma/client");
+      const prisma = new PrismaClient();
+      const usedImagesSet = new Set<string>();
+
       try {
-        const { unlink } = await import("fs/promises");
-        await unlink(filePath);
-      } catch (err: any) {
-        console.warn("Arquivo não encontrado no disco ou já removido:", err.message);
+        const posts = await prisma.post.findMany({ select: { img: true, blocks: true } });
+        for (const p of posts) {
+          if (p.img && typeof p.img === "string") {
+            const fname = p.img.split("/uploads/").pop()?.split("?")[0];
+            if (fname) usedImagesSet.add(fname);
+          }
+          if (p.blocks) {
+            let bList: any[] = [];
+            if (Array.isArray(p.blocks)) bList = p.blocks;
+            else if (typeof p.blocks === "string") {
+              try { bList = JSON.parse(p.blocks); } catch (e) {}
+            }
+            for (const b of bList) {
+              if (b && typeof b.image === "string") {
+                const fname = b.image.split("/uploads/").pop()?.split("?")[0];
+                if (fname) usedImagesSet.add(fname);
+              }
+              if (b && typeof b.text === "string" && b.text.includes("/uploads/")) {
+                const matches = b.text.match(/\/uploads\/[a-zA-Z0-9._-]+/g);
+                if (matches) {
+                  matches.forEach(m => {
+                    const fname = m.split("/uploads/").pop();
+                    if (fname) usedImagesSet.add(fname);
+                  });
+                }
+              }
+            }
+          }
+        }
+
+        const pages = await prisma.page.findMany({ select: { content: true } });
+        for (const pg of pages) {
+          if (pg.content) {
+            const contentStr = typeof pg.content === "string" ? pg.content : JSON.stringify(pg.content);
+            const matches = contentStr.match(/\/uploads\/[a-zA-Z0-9._-]+/g);
+            if (matches) {
+              matches.forEach(m => {
+                const fname = m.split("/uploads/").pop();
+                if (fname) usedImagesSet.add(fname);
+              });
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Erro ao verificar imagens em uso:", err);
+      } finally {
+        await prisma.$disconnect();
       }
+
+      let deletedCount = 0;
+      try {
+        const files = await readdir(uploadDir);
+        const { unlink } = await import("fs/promises");
+        for (const file of files) {
+          if (/\.(webp|jpg|jpeg|png|gif|avif)$/i.test(file) && !usedImagesSet.has(file)) {
+            try {
+              await unlink(path.join(uploadDir, file));
+              deletedCount++;
+            } catch (e) {}
+          }
+        }
+      } catch (e) {}
+
+      return NextResponse.json({
+        success: true,
+        count: deletedCount,
+        message: `${deletedCount} imagens não utilizadas foram deletadas do servidor.`
+      });
     }
 
-    return NextResponse.json({ success: true, message: "Imagem excluída da galeria." });
+    // AÇÃO 2: Zerar completamente todas as imagens do volume /uploads
+    if (action === "purge_all") {
+      let deletedCount = 0;
+      try {
+        const files = await readdir(uploadDir);
+        const { unlink } = await import("fs/promises");
+        for (const file of files) {
+          if (/\.(webp|jpg|jpeg|png|gif|avif)$/i.test(file)) {
+            try {
+              await unlink(path.join(uploadDir, file));
+              deletedCount++;
+            } catch (e) {}
+          }
+        }
+      } catch (e) {}
+
+      return NextResponse.json({
+        success: true,
+        count: deletedCount,
+        message: `Galeria zerada. ${deletedCount} imagens foram deletadas.`
+      });
+    }
+
+    // AÇÃO 3: Exclusão individual por URL
+    if (url && typeof url === "string") {
+      if (url.startsWith("/uploads/")) {
+        const filename = path.basename(url);
+        const filePath = path.join(uploadDir, filename);
+        try {
+          const { unlink } = await import("fs/promises");
+          await unlink(filePath);
+        } catch (err: any) {
+          console.warn("Arquivo não encontrado no disco ou já removido:", err.message);
+        }
+      }
+      return NextResponse.json({ success: true, message: "Imagem excluída da galeria." });
+    }
+
+    return NextResponse.json({ error: "Parâmetros de requisição inválidos." }, { status: 400 });
   } catch (error: any) {
     console.error("Erro ao deletar imagem da galeria:", error);
     return NextResponse.json({ error: "Erro interno ao deletar imagem." }, { status: 500 });
