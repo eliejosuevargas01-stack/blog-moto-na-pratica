@@ -15,7 +15,8 @@ import {
 import { TEKO, BODY } from "../data";
 import { 
   Plus, Trash2, Save, Upload, LogOut, FileText, Layout, ArrowLeft, 
-  Eye, Edit, Wrench, Sliders, Bell, Mail, ArrowUp, ArrowDown, Users, Heart, Share2, Copy, Check, Lock, GripVertical
+  Eye, Edit, Wrench, Sliders, Bell, Mail, ArrowUp, ArrowDown, Users, Heart, Share2, Copy, Check, Lock, GripVertical,
+  Globe, ChevronDown, ChevronUp, Languages
 } from "lucide-react";
 import { plugins } from "../../plugins";
 
@@ -363,6 +364,15 @@ export default function AdminDashboard({ initialPosts, initialPages }: AdminDash
   // --- CONTROLE DE POSTS ---
   const [editingPost, setEditingPost] = useState<any | null>(null); // null significa listagem, {} significa novo post
   const [postFilterLang, setPostFilterLang] = useState<"all" | "pt" | "en" | "es">("all");
+  const [expandedPostIds, setExpandedPostIds] = useState<Record<string, boolean>>({});
+
+  const toggleExpandPost = (postId: string) => {
+    setExpandedPostIds(prev => ({
+      ...prev,
+      [postId]: !prev[postId]
+    }));
+  };
+
   const [postForm, setPostForm] = useState({
     id: "",
     title: "",
@@ -864,7 +874,7 @@ function BlockLinkMapper({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
               <h2 style={TEKO} className="text-[26px] uppercase tracking-wide">Gerenciar Artigos</h2>
-              <p className="text-[12px] text-muted-foreground">Filtre ou gerencie posts por idioma de publicação</p>
+              <p className="text-[12px] text-muted-foreground">Exibindo artigos em Português. Expanda a ação de cada post para ver e editar as versões em Inglês e Espanhol.</p>
             </div>
             <button
               onClick={startNewPost}
@@ -874,110 +884,162 @@ function BlockLinkMapper({
             </button>
           </div>
 
-          {/* FILTRO DE IDIOMAS */}
-          <div className="flex items-center gap-2 mb-6 bg-[#161616] p-1.5 border border-border rounded-sm w-fit overflow-x-auto">
-            <button
-              onClick={() => setPostFilterLang("all")}
-              className={`px-3 py-1.5 text-[12px] font-bold uppercase rounded-sm transition-all ${
-                postFilterLang === "all"
-                  ? "bg-primary text-white shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-white/[0.04]"
-              }`}
-            >
-              Todos ({posts.length})
-            </button>
-            <button
-              onClick={() => setPostFilterLang("pt")}
-              className={`px-3 py-1.5 text-[12px] font-bold uppercase rounded-sm flex items-center gap-1.5 transition-all ${
-                postFilterLang === "pt"
-                  ? "bg-emerald-600 text-white shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-white/[0.04]"
-              }`}
-            >
-              <span>🇵🇹</span> Português ({posts.filter(p => (p.lang || "pt") === "pt").length})
-            </button>
-            <button
-              onClick={() => setPostFilterLang("en")}
-              className={`px-3 py-1.5 text-[12px] font-bold uppercase rounded-sm flex items-center gap-1.5 transition-all ${
-                postFilterLang === "en"
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-white/[0.04]"
-              }`}
-            >
-              <span>🇬🇧</span> English ({posts.filter(p => p.lang === "en").length})
-            </button>
-            <button
-              onClick={() => setPostFilterLang("es")}
-              className={`px-3 py-1.5 text-[12px] font-bold uppercase rounded-sm flex items-center gap-1.5 transition-all ${
-                postFilterLang === "es"
-                  ? "bg-amber-600 text-white shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-white/[0.04]"
-              }`}
-            >
-              <span>🇪🇸</span> Español ({posts.filter(p => p.lang === "es").length})
-            </button>
-          </div>
-
           <div className="bg-card border border-border rounded-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-[13px]">
                 <thead>
                   <tr className="border-b border-border bg-[#1A1A1A] text-muted-foreground uppercase tracking-wider">
                     <th className="p-4 font-semibold">Idioma</th>
-                    <th className="p-4 font-semibold">Título</th>
+                    <th className="p-4 font-semibold">Título Principal (PT)</th>
                     <th className="p-4 font-semibold">Categoria</th>
                     <th className="p-4 font-semibold">Data</th>
-                    <th className="p-4 font-semibold text-right">Ações</th>
+                    <th className="p-4 font-semibold text-right">Ações & Traduções</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {posts
-                    .filter(post => postFilterLang === "all" || (post.lang || "pt") === postFilterLang)
+                    .filter(post => (post.lang || "pt") === "pt")
                     .map((post) => {
-                      const langCode = post.lang || "pt";
-                      const langBadgeClass =
-                        langCode === "en"
-                          ? "bg-blue-950/70 border-blue-800/80 text-blue-400"
-                          : langCode === "es"
-                          ? "bg-amber-950/70 border-amber-800/80 text-amber-400"
-                          : "bg-emerald-950/70 border-emerald-800/80 text-emerald-400";
-                      const langLabel = langCode === "en" ? "EN 🇬🇧" : langCode === "es" ? "ES 🇪🇸" : "PT 🇵🇹";
+                      // Identificar posts correspondentes em outros idiomas (grupo de tradução ou slug base)
+                      const sisterPosts = posts.filter(p => {
+                        if (p.id === post.id) return false;
+                        if (post.translationGroupId && p.translationGroupId) {
+                          return p.translationGroupId === post.translationGroupId;
+                        }
+                        const cleanPtBase = post.slug.replace(/-(pt|en|es)$/i, "").replace(/-(avaliacao|review|analisis|resumen)$/i, "");
+                        const cleanPBase = p.slug.replace(/-(pt|en|es)$/i, "").replace(/-(avaliacao|review|analisis|resumen)$/i, "");
+                        return cleanPtBase === cleanPBase;
+                      });
+
+                      const isExpanded = !!expandedPostIds[post.id];
+                      const sisterLangs = Array.from(new Set(sisterPosts.map(s => (s.lang || "en").toUpperCase())));
 
                       return (
-                        <tr key={post.id} className="hover:bg-white/[0.02] transition-colors">
-                          <td className="p-4">
-                            <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border rounded-sm ${langBadgeClass}`}>
-                              {langLabel}
-                            </span>
-                          </td>
-                          <td className="p-4 font-medium text-foreground">{stripHtml(post.title)}</td>
-                          <td className="p-4 text-muted-foreground">{post.tag}</td>
-                          <td className="p-4 text-muted-foreground">
-                            {new Date(post.date).toLocaleDateString("pt-BR")}
-                          </td>
-                          <td className="p-4 text-right space-x-2">
-                            <button
-                              onClick={() => startEditPost(post)}
-                              className="inline-flex items-center gap-1 bg-secondary hover:bg-primary/20 hover:text-primary border border-border p-1.5 rounded-sm text-muted-foreground transition-colors"
-                              title="Editar"
-                            >
-                              <Edit size={13} />
-                            </button>
-                            <button
-                              onClick={() => handleDeletePost(post.id)}
-                              className="inline-flex items-center gap-1 bg-secondary hover:bg-primary hover:text-white border border-border p-1.5 rounded-sm text-muted-foreground transition-colors"
-                              title="Excluir"
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          </td>
-                        </tr>
+                        <React.Fragment key={post.id}>
+                          <tr className={`hover:bg-white/[0.02] transition-colors ${isExpanded ? "bg-white/[0.03]" : ""}`}>
+                            <td className="p-4">
+                              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border rounded-sm bg-emerald-950/70 border-emerald-800/80 text-emerald-400">
+                                PT 🇵🇹
+                              </span>
+                            </td>
+                            <td className="p-4 font-medium text-foreground">
+                              {stripHtml(post.title)}
+                              <div className="text-[11px] text-muted-foreground font-mono">/post/{post.slug}</div>
+                            </td>
+                            <td className="p-4 text-muted-foreground">{post.tag}</td>
+                            <td className="p-4 text-muted-foreground">
+                              {new Date(post.date).toLocaleDateString("pt-BR")}
+                            </td>
+                            <td className="p-4 text-right space-x-2 whitespace-nowrap">
+                              {/* BOTÃO EXPANSOR DE IDIOMAS */}
+                              {sisterPosts.length > 0 ? (
+                                <button
+                                  onClick={() => toggleExpandPost(post.id)}
+                                  className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-sm transition-all border shadow-sm ${
+                                    isExpanded 
+                                      ? "bg-blue-600 border-blue-500 text-white" 
+                                      : "bg-blue-950/80 hover:bg-blue-900 border-blue-700/60 text-blue-300"
+                                  }`}
+                                  title="Ver e gerenciar edições deste post em outros idiomas"
+                                >
+                                  <Globe size={13} />
+                                  <span>{sisterLangs.join(" · ")} ({sisterPosts.length})</span>
+                                  {isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                                </button>
+                              ) : (
+                                <span className="text-[11px] text-muted-foreground/50 italic px-2 py-1 bg-[#161616] border border-border/40 rounded-sm">
+                                  Apenas PT
+                                </span>
+                              )}
+
+                              {/* BOTÕES PADRÃO DE AÇÃO */}
+                              <button
+                                onClick={() => startEditPost(post)}
+                                className="inline-flex items-center gap-1 bg-secondary hover:bg-primary/20 hover:text-primary border border-border p-1.5 rounded-sm text-muted-foreground transition-colors"
+                                title="Editar post em Português"
+                              >
+                                <Edit size={13} />
+                              </button>
+                              <button
+                                onClick={() => handleDeletePost(post.id)}
+                                className="inline-flex items-center gap-1 bg-secondary hover:bg-primary hover:text-white border border-border p-1.5 rounded-sm text-muted-foreground transition-colors"
+                                title="Excluir post em Português"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </td>
+                          </tr>
+
+                          {/* PAINEL EXPANDIDO COM VERSÕES EM OUTROS IDIOMAS */}
+                          {isExpanded && (
+                            <tr className="bg-[#121212] border-b border-border">
+                              <td colSpan={5} className="p-4 pl-8">
+                                <div className="bg-[#181818] border border-blue-900/40 rounded-sm p-4 space-y-3">
+                                  <div className="flex items-center justify-between border-b border-border/50 pb-2">
+                                    <span className="text-[12px] font-bold text-blue-400 uppercase tracking-wider flex items-center gap-2">
+                                      <Languages size={15} /> Versões Traduzidas Correspondentes ({sisterPosts.length})
+                                    </span>
+                                    <span className="text-[11px] text-muted-foreground font-mono">
+                                      ID do Grupo: {post.translationGroupId || "N/A"}
+                                    </span>
+                                  </div>
+
+                                  <div className="space-y-2">
+                                    {sisterPosts.map(sister => {
+                                      const langCode = sister.lang || "en";
+                                      const langBadgeClass =
+                                        langCode === "en"
+                                          ? "bg-blue-950/80 border-blue-800 text-blue-400"
+                                          : "bg-amber-950/80 border-amber-800 text-amber-400";
+                                      const langFlag = langCode === "en" ? "🇬🇧 English (EN)" : "🇪🇸 Español (ES)";
+                                      const urlPath = langCode === "en" ? `/en/post/${sister.slug}` : `/es/post/${sister.slug}`;
+
+                                      return (
+                                        <div key={sister.id} className="flex items-center justify-between bg-[#202020] border border-border/50 p-3 rounded-sm hover:border-border transition-colors">
+                                          <div className="flex items-center gap-3">
+                                            <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border rounded-sm ${langBadgeClass}`}>
+                                              {langFlag}
+                                            </span>
+                                            <div>
+                                              <div className="text-[13px] font-medium text-foreground">{stripHtml(sister.title)}</div>
+                                              <div className="text-[11px] text-muted-foreground font-mono">{urlPath}</div>
+                                            </div>
+                                          </div>
+
+                                          <div className="flex items-center gap-3">
+                                            <span className="text-[11px] text-muted-foreground">
+                                              {new Date(sister.date).toLocaleDateString("pt-BR")}
+                                            </span>
+                                            <button
+                                              onClick={() => startEditPost(sister)}
+                                              className="inline-flex items-center gap-1.5 bg-secondary hover:bg-primary/20 hover:text-primary border border-border px-3 py-1 rounded-sm text-[12px] font-bold text-muted-foreground transition-colors"
+                                              title={`Editar versão em ${langCode.toUpperCase()}`}
+                                            >
+                                              <Edit size={13} /> Editar {langCode.toUpperCase()}
+                                            </button>
+                                            <button
+                                              onClick={() => handleDeletePost(sister.id)}
+                                              className="inline-flex items-center gap-1.5 bg-secondary hover:bg-primary hover:text-white border border-border px-2.5 py-1 rounded-sm text-[12px] font-bold text-muted-foreground transition-colors"
+                                              title={`Excluir versão em ${langCode.toUpperCase()}`}
+                                            >
+                                              <Trash2 size={13} />
+                                            </button>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
                       );
                     })}
-                  {posts.filter(post => postFilterLang === "all" || (post.lang || "pt") === postFilterLang).length === 0 && (
+                  {posts.filter(post => (post.lang || "pt") === "pt").length === 0 && (
                     <tr>
                       <td colSpan={5} className="p-8 text-center text-muted-foreground">
-                        Nenhum post encontrado neste filtro de idioma.
+                        Nenhum post em Português encontrado. Clique em "Novo Artigo" para começar!
                       </td>
                     </tr>
                   )}
