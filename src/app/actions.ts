@@ -219,20 +219,32 @@ export async function savePostAction(data: {
 export async function deletePostAction(id: string) {
   try {
     const post = await prisma.post.findUnique({ where: { id } });
-    await prisma.post.delete({ where: { id } });
+    if (!post) {
+      return { error: "Post não encontrado." };
+    }
+
+    // Se o post possuir um translationGroupId, deleta todo o grupo (PT, EN, ES)
+    if (post.translationGroupId) {
+      await prisma.post.deleteMany({
+        where: { translationGroupId: post.translationGroupId }
+      });
+    } else {
+      await prisma.post.delete({ where: { id } });
+    }
 
     revalidatePath("/");
+    revalidatePath("/posts");
     revalidatePath("/reviews");
     revalidatePath("/manutencao");
     revalidatePath("/rotas");
     revalidatePath("/equipamentos");
-    if (post) revalidatePath(`/post/${post.slug}`);
+    if (post.slug) revalidatePath(`/post/${post.slug}`);
     revalidatePath("/sitemap.xml");
 
     return { success: true };
   } catch (error) {
     console.error("Erro ao deletar post:", error);
-    return { error: "Erro ao deletar post." };
+    return { error: "Erro ao deletar post e suas traduções." };
   }
 }
 
