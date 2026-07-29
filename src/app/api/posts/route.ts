@@ -164,7 +164,8 @@ export async function POST(req: Request) {
         const langData = output[lang];
         if (!langData || !langData.title) continue;
 
-        const finalSlug = cleanSlug(langData.slug) || generateSlug(langData.title);
+        // Gerar slug automaticamente a partir do título (ignorando qualquer slug enviado pelo n8n)
+        const finalSlug = generateSlug(langData.title);
 
         const featuredImg =
           extractImageUrl(langData["img-1"]) ||
@@ -292,7 +293,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "O título do post é obrigatório." }, { status: 400 });
     }
 
-    const finalSlug = cleanSlug(customSlug) || generateSlug(title);
+    // Gerar slug automaticamente a partir do título (ignorando qualquer slug enviado)
+    const finalSlug = generateSlug(title);
     const extractedMentionedSlugs: Set<string> = new Set(explicitMentionedSlugs);
 
     const cleanedBlocks = Array.isArray(blocks) ? blocks.map((b: any) => {
