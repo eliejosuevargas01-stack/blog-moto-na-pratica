@@ -12,6 +12,26 @@ function generateSlug(title: string): string {
     .replace(/\s+/g, "-");
 }
 
+async function generateUniqueSlug(title: string, existingId?: string): Promise<string> {
+  const baseSlug = generateSlug(title) || `post-${Date.now()}`;
+  let slug = baseSlug;
+  let counter = 1;
+
+  while (true) {
+    const existing = await prisma.post.findUnique({
+      where: { slug },
+      select: { id: true }
+    });
+
+    if (!existing || (existingId && existing.id === existingId)) {
+      return slug;
+    }
+
+    counter++;
+    slug = `${baseSlug}-${counter}`;
+  }
+}
+
 function cleanSlug(slug?: string): string {
   if (!slug) return "";
   return slug
@@ -164,8 +184,8 @@ export async function POST(req: Request) {
         const langData = output[lang];
         if (!langData || !langData.title) continue;
 
-        // Gerar slug automaticamente a partir do título (ignorando qualquer slug enviado pelo n8n)
-        const finalSlug = generateSlug(langData.title);
+        // Gerar slug automaticamente e garantindo unicidade (-2, -3 se já existir no banco)
+        const finalSlug = await generateUniqueSlug(langData.title);
 
         const featuredImg =
           extractImageUrl(langData["img-1"]) ||
@@ -293,8 +313,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "O título do post é obrigatório." }, { status: 400 });
     }
 
-    // Gerar slug automaticamente a partir do título (ignorando qualquer slug enviado)
-    const finalSlug = generateSlug(title);
+    // Gerar slug automaticamente e garantindo unicidade (-2, -3 se já existir)
+    const finalSlug = await generateUniqueSlug(title);
     const extractedMentionedSlugs: Set<string> = new Set(explicitMentionedSlugs);
 
     const cleanedBlocks = Array.isArray(blocks) ? blocks.map((b: any) => {
