@@ -12,3 +12,5 @@ pnpm-debug.log*
 .pnpm-debug.log*
 *.log
 .aider*
+/uploads
+

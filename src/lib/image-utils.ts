@@ -34,9 +34,21 @@ export async function processImageBase64(base64Str: string): Promise<string> {
   const cleanBase64 = base64Str.replace(/^data:image\/[a-z0-9\+\-]+;base64,/i, "").trim();
   const inputBuffer = Buffer.from(cleanBase64, "base64");
 
-  if (!inputBuffer || inputBuffer.length === 0) {
-    throw new Error("Buffer de imagem inválido ou vazio.");
+  return await saveOptimizedImageBuffer(inputBuffer);
+}
+
+export async function saveAudioBuffer(inputBuffer: Buffer, extension: string = "mp3"): Promise<string> {
+  const fileHash = createHash("md5").update(inputBuffer).digest("hex");
+  const ext = extension.replace(/^\./, "") || "mp3";
+  const filename = `audio-${fileHash}.${ext}`;
+  const uploadDir = path.join(process.cwd(), "uploads");
+  const filePath = path.join(uploadDir, filename);
+
+  await mkdir(uploadDir, { recursive: true });
+
+  if (!existsSync(filePath)) {
+    await writeFile(filePath, inputBuffer);
   }
 
-  return await saveOptimizedImageBuffer(inputBuffer);
+  return `https://motonapratica.online/uploads/${filename}`;
 }

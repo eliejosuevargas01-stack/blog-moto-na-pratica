@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/db";
 import { revalidatePath } from "next/cache";
-import { processImageBase64 } from "@/lib/image-utils";
+import { processImageBase64, saveAudioBuffer } from "@/lib/image-utils";
 
 function generateSlug(title: string): string {
   return title
@@ -228,6 +228,27 @@ export async function POST(req: Request) {
 
       const langs = ["pt", "en", "es"];
 
+      // Buscar posts existentes do mesmo translationGroupId para aproveitar imagens reais já cadastradas
+      const existingGroupPosts = translationGroupId ? await prisma.post.findMany({
+        where: { translationGroupId },
+        select: { img: true, blocks: true }
+      }) : [];
+
+      let dbRealFeaturedImg: string | null = null;
+      const dbRealBlockImgs: Record<number, string> = {};
+
+      for (const p of existingGroupPosts) {
+        if (p.img && typeof p.img === "string" && !p.img.includes("unsplash.com")) {
+          dbRealFeaturedImg = p.img;
+        }
+        const bList = Array.isArray(p.blocks) ? (p.blocks as any[]) : [];
+        bList.forEach((b: any, idx: number) => {
+          if (b && typeof b.image === "string" && b.image && !b.image.includes("unsplash.com") && !dbRealBlockImgs[idx]) {
+            dbRealBlockImgs[idx] = b.image;
+          }
+        });
+      }
+
       for (const lang of langs) {
         const langData = output[lang];
         if (!langData || !langData.title) continue;
@@ -240,6 +261,7 @@ export async function POST(req: Request) {
           extractImageUrl(output.pt?.["img-1"]) ||
           extractImageUrl(output.en?.["img-1"]) ||
           extractImageUrl(output.es?.["img-1"]) ||
+          dbRealFeaturedImg ||
           "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=1200";
 
         const blocks: any[] = [];
@@ -255,7 +277,8 @@ export async function POST(req: Request) {
             extractImageUrl(langData[`img-${i + 1}`]) ||
             extractImageUrl(output.pt?.[`img-${i + 1}`]) ||
             extractImageUrl(output.en?.[`img-${i + 1}`]) ||
-            extractImageUrl(output.es?.[`img-${i + 1}`]);
+            extractImageUrl(output.es?.[`img-${i + 1}`]) ||
+            dbRealBlockImgs[i - 1] || "";
 
           const hasImgTagInText = processedBlockText.includes("<img");
 
@@ -270,6 +293,7 @@ export async function POST(req: Request) {
 
         const rawPostTag = langData.tag || langData.type || langData.category || body.tag || body.type || body.category || output.tag || output.type || output.category;
         const postTag = normalizePostTag(rawPostTag, langData.title);
+        const finalAudioUrl = langData.audioUrl || langData.audio_url || langData.audio || output.audioUrl || output.audio_url || output.audio || null;
 
         const post = await prisma.post.upsert({
           where: { slug: finalSlug },
@@ -279,6 +303,7 @@ export async function POST(req: Request) {
             excerpt: langData.summary || langData.title,
             readTime: "5 min",
             img: featuredImg,
+            audioUrl: finalAudioUrl,
             blocks,
             seoTitle: langData["meta-title"] || langData.title,
             seoDescription: langData["meta-description"] || langData.summary,
@@ -294,6 +319,7 @@ export async function POST(req: Request) {
             excerpt: langData.summary || langData.title,
             readTime: "5 min",
             img: featuredImg,
+            audioUrl: finalAudioUrl,
             imgFocalPoint: "center",
             blocks,
             seoTitle: langData["meta-title"] || langData.title,
@@ -388,6 +414,7 @@ export async function POST(req: Request) {
 
     const rawSingleTag = body.tag || body.type || body.category || body.post_type || body.postType;
     const finalTag = normalizePostTag(rawSingleTag, title);
+    const singleAudioUrl = body.audioUrl || body.audio_url || body.audio || body.narrationUrl || null;
 
     const post = await prisma.post.upsert({
       where: { slug: finalSlug },
@@ -396,6 +423,7 @@ export async function POST(req: Request) {
         category: finalTag,
         title,
         excerpt: excerpt || title,
+        audioUrl: singleAudioUrl,
         blocks: cleanedBlocks,
         seoTitle: seoTitle || title,
         seoDescription: seoDescription || excerpt,
@@ -412,6 +440,7 @@ export async function POST(req: Request) {
         readTime,
         img,
         imgFocalPoint,
+        audioUrl: singleAudioUrl,
         blocks: cleanedBlocks,
         seoTitle: seoTitle || title,
         seoDescription: seoDescription || excerpt,
@@ -471,17 +500,69 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: "Não autorizado. Chave de API inválida (x-api-key)." }, { status: 401 });
     }
 
-    const body = await req.json();
-    const { id, post_id, postId, slug, position, pos, imgKey, image, img, alt, altText, alt_text, caption, legenda, focalPoint, focal_point } = body;
+    const contentType = req.headers.get("content-type") || "";
+    let body: any = {};
+    let fileFromFormData: File | null = null;
+
+    if (contentType.includes("multipart/form-data")) {
+      const formData = await req.formData();
+      formData.forEach((value, key) => {
+        if (value instanceof File) {
+          if (key === "audio" || key === "file") fileFromFormData = value;
+          else if (key === "image" || key === "img") body[key] = value;
+        } else {
+          body[key] = value;
+        }
+      });
+    } else {
+      try {
+        body = await req.json();
+      } catch (e) {
+        body = {};
+      }
+    }
+
+    const {
+      id, post_id, postId, slug,
+      position, pos, imgKey,
+      image, img,
+      audioUrl, audio_url, audio, narrationUrl,
+      lang,
+      alt, altText, alt_text, caption, legenda, focalPoint, focal_point
+    } = body;
 
     const targetIdentifier = id || post_id || postId || slug;
     if (!targetIdentifier) {
       return NextResponse.json({ error: "É necessário fornecer o id ou slug do post ('id', 'post_id' ou 'slug')." }, { status: 400 });
     }
 
-    const imageUrl = image || img;
-    if (!imageUrl) {
-      return NextResponse.json({ error: "É necessário fornecer a imagem ('image' ou 'img'). Pode ser URL pública ou Base64." }, { status: 400 });
+    const rawAudioInput = fileFromFormData || audio || audioUrl || audio_url || narrationUrl;
+    let finalAudioUrl: string | null = null;
+
+    if (rawAudioInput) {
+      if (typeof rawAudioInput === "string") {
+        if (rawAudioInput.startsWith("http://") || rawAudioInput.startsWith("https://")) {
+          finalAudioUrl = rawAudioInput;
+        } else {
+          // Processar string Base64 de áudio
+          const matches = rawAudioInput.match(/^data:audio\/([a-z0-9\+\-]+);base64,/i);
+          const ext = matches ? (matches[1] === "mpeg" ? "mp3" : matches[1]) : "mp3";
+          const cleanBase64 = rawAudioInput.replace(/^data:audio\/[a-z0-9\+\-]+;base64,/i, "").trim();
+          const buffer = Buffer.from(cleanBase64, "base64");
+          finalAudioUrl = await saveAudioBuffer(buffer, ext);
+        }
+      } else if (typeof rawAudioInput === "object" && rawAudioInput && "arrayBuffer" in rawAudioInput) {
+        const fileObj = rawAudioInput as File;
+        const bytes = await fileObj.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+        const ext = fileObj.name ? (fileObj.name.split(".").pop() || "mp3") : "mp3";
+        finalAudioUrl = await saveAudioBuffer(buffer, ext);
+      }
+    }
+
+    const imageUrl = typeof image === "string" ? image : (typeof img === "string" ? img : null);
+    if (!imageUrl && !finalAudioUrl) {
+      return NextResponse.json({ error: "É necessário fornecer uma imagem ('image') ou um áudio ('audio')." }, { status: 400 });
     }
 
     let finalImageUrl = imageUrl;
@@ -494,7 +575,7 @@ export async function PATCH(req: Request) {
       }
     }
 
-    const postsToUpdate = await prisma.post.findMany({
+    const initialPosts = await prisma.post.findMany({
       where: {
         OR: [
           { id: targetIdentifier },
@@ -504,8 +585,27 @@ export async function PATCH(req: Request) {
       }
     });
 
-    if (postsToUpdate.length === 0) {
+    if (initialPosts.length === 0) {
       return NextResponse.json({ error: "Nenhum post encontrado com o id, slug ou translationGroupId fornecido." }, { status: 404 });
+    }
+
+    const groupIds = Array.from(new Set(initialPosts.map(p => p.translationGroupId).filter(Boolean))) as string[];
+    let postsToUpdate = await prisma.post.findMany({
+      where: {
+        OR: [
+          { id: { in: initialPosts.map(p => p.id) } },
+          ...(groupIds.length > 0 ? [{ translationGroupId: { in: groupIds } }] : [])
+        ]
+      }
+    });
+
+    // Se o parâmetro 'lang' for informado (ex: 'pt', 'en', 'es'), filtrar posts para aplicar a essa língua específica
+    const targetLang = lang ? String(lang).trim().toLowerCase() : null;
+    if (targetLang && finalAudioUrl && !imageUrl) {
+      const langFiltered = postsToUpdate.filter(p => p.lang === targetLang);
+      if (langFiltered.length > 0) {
+        postsToUpdate = langFiltered;
+      }
     }
 
     const rawPos = position !== undefined ? position : (pos !== undefined ? pos : imgKey);
@@ -523,8 +623,19 @@ export async function PATCH(req: Request) {
     const metaFocal = focalPoint || focal_point;
 
     for (const post of postsToUpdate) {
-      if (posNum === 1) {
-        const updateData: any = { img: finalImageUrl };
+      const updateData: any = {};
+      if (finalAudioUrl) updateData.audioUrl = finalAudioUrl;
+
+      if (!imageUrl && finalAudioUrl) {
+        const updated = await prisma.post.update({
+          where: { id: post.id },
+          data: updateData
+        });
+        revalidatePath("/");
+        revalidatePath(`/post/${updated.slug}`);
+        updatedPostsInfo.push({ id: post.id, lang: post.lang, slug: post.slug, audioUrl: finalAudioUrl });
+      } else if (posNum === 1) {
+        if (finalImageUrl) updateData.img = finalImageUrl;
         if (metaFocal) updateData.imgFocalPoint = metaFocal;
 
         const updated = await prisma.post.update({
@@ -541,14 +652,14 @@ export async function PATCH(req: Request) {
         if (blockIndex >= 0 && blockIndex < rawBlocks.length) {
           const updatedBlocks = [...rawBlocks];
           const targetBlock = { ...updatedBlocks[blockIndex] };
-          targetBlock.image = finalImageUrl;
+          if (finalImageUrl) targetBlock.image = finalImageUrl;
           if (metaAlt) targetBlock.alt = metaAlt;
           if (metaCaption) targetBlock.caption = metaCaption;
           if (metaFocal) targetBlock.focalPoint = metaFocal;
 
           const blockAltText = metaAlt || `Imagem ${posNum}`;
 
-          if (targetBlock.text) {
+          if (targetBlock.text && finalImageUrl) {
             const placeholderRegex = new RegExp(`[\\{\\[]\\s*(?:id|img|image)\\s*=\\s*${posNum}\\s*[\\}\\]]`, "gi");
             if (metaCaption) {
               targetBlock.text = targetBlock.text.replace(
@@ -567,7 +678,10 @@ export async function PATCH(req: Request) {
 
           const updated = await prisma.post.update({
             where: { id: post.id },
-            data: { blocks: updatedBlocks }
+            data: {
+              ...updateData,
+              blocks: updatedBlocks
+            }
           });
 
           revalidatePath("/");
@@ -579,19 +693,21 @@ export async function PATCH(req: Request) {
 
     if (updatedPostsInfo.length === 0) {
       return NextResponse.json({
-        error: `Posição ${posNum} inválida para os posts encontrados.`
+        error: `Nenhum post pôde ser atualizado para os critérios informados.`
       }, { status: 400 });
     }
 
     return NextResponse.json({
       success: true,
-      message: `Imagem da Posição ${posNum} anexada com sucesso a ${updatedPostsInfo.length} post(s)!`,
+      message: finalAudioUrl && !imageUrl
+        ? `Áudio de narração anexado com sucesso a ${updatedPostsInfo.length} post(s)!`
+        : `Conteúdo anexado com sucesso a ${updatedPostsInfo.length} post(s)!`,
+      audioUrl: finalAudioUrl,
       imageUrl: finalImageUrl,
-      position: posNum,
       updatedPosts: updatedPostsInfo
     });
 
   } catch (error: any) {
-    return NextResponse.json({ error: "Erro ao anexar imagem ao post", details: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Erro ao anexar arquivo ao post", details: error.message }, { status: 500 });
   }
 }

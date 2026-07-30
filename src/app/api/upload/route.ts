@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { readdir } from "fs/promises";
 import path from "path";
-import { saveOptimizedImageBuffer, processImageBase64 } from "@/lib/image-utils";
+import { saveOptimizedImageBuffer, processImageBase64, saveAudioBuffer } from "@/lib/image-utils";
 
 export async function POST(request: Request) {
   try {
@@ -9,12 +9,20 @@ export async function POST(request: Request) {
 
     if (contentType.includes("application/json")) {
       const json = await request.json();
-      const base64Str = json.image || json.file || json.base64;
+      const base64Str = json.image || json.file || json.base64 || json.audio;
       if (!base64Str || typeof base64Str !== "string") {
         return NextResponse.json(
-          { error: "Nenhuma string base64 válida enviada no JSON (use o campo 'image', 'file' ou 'base64')." },
+          { error: "Nenhuma string base64 válida enviada no JSON (use 'image', 'file', 'audio' ou 'base64')." },
           { status: 400 }
         );
+      }
+
+      if (json.audio || (json.type && json.type.startsWith("audio"))) {
+        const cleanBase64 = base64Str.replace(/^data:audio\/[a-z0-9\+\-]+;base64,/i, "").trim();
+        const inputBuffer = Buffer.from(cleanBase64, "base64");
+        const ext = json.ext || "mp3";
+        const audioUrl = await saveAudioBuffer(inputBuffer, ext);
+        return NextResponse.json({ url: audioUrl });
       }
 
       const imageUrl = await processImageBase64(base64Str);
@@ -27,24 +35,32 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Nenhum arquivo enviado." }, { status: 400 });
       }
 
-      const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"];
-      if (!allowedTypes.includes(file.type)) {
+      const isAudio = file.type.startsWith("audio/") || /\.(mp3|wav|ogg|m4a|aac|webm)$/i.test(file.name);
+      const allowedImageTypes = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"];
+
+      if (!isAudio && !allowedImageTypes.includes(file.type)) {
         return NextResponse.json(
-          { error: "Apenas imagens (JPEG, PNG, WEBP, AVIF, GIF) são permitidas." },
+          { error: "Apenas imagens (JPEG, PNG, WEBP, AVIF, GIF) e áudios (MP3, WAV, OGG, M4A, AAC, WEBM) são permitidos." },
           { status: 400 }
         );
       }
 
-      const maxSize = 50 * 1024 * 1024;
+      const maxSize = 100 * 1024 * 1024; // Max 100MB
       if (file.size > maxSize) {
         return NextResponse.json(
-          { error: "O tamanho máximo permitido é 50MB." },
+          { error: "O tamanho máximo permitido é 100MB." },
           { status: 400 }
         );
       }
 
       const bytes = await file.arrayBuffer();
       const inputBuffer = Buffer.from(bytes);
+
+      if (isAudio) {
+        const ext = file.name.split(".").pop() || "mp3";
+        const audioUrl = await saveAudioBuffer(inputBuffer, ext);
+        return NextResponse.json({ url: audioUrl });
+      }
 
       const imageUrl = await saveOptimizedImageBuffer(inputBuffer);
       return NextResponse.json({ url: imageUrl });

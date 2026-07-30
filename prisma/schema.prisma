@@ -18,6 +18,7 @@ model Post {
   readTime       String   // Ex: "8 min"
   img            String   // Imagem destacada (URL ou caminho do upload local)
   imgFocalPoint  String   @default("center") // Ponto focal CSS da imagem (ex: "center", "top", "50% 50%")
+  audioUrl       String?  // URL do áudio de narração do post (MP3, WAV, etc.)
 
   // Blocos dinâmicos de Texto/Imagem: [{ text: string, image: string, focalPoint: string }]
   blocks         Json     

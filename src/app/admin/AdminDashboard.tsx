@@ -313,6 +313,11 @@ class AdminErrorBoundary extends React.Component<{ children: React.ReactNode }, 
   }
 }
 
+interface AdminDashboardProps {
+  initialPosts: any[];
+  initialPages: any[];
+}
+
 function AdminDashboardContent({ initialPosts, initialPages }: AdminDashboardProps) {
   const [posts, setPosts] = useState(initialPosts);
   const [pages, setPages] = useState(initialPages.length > 0 ? initialPages : DEFAULT_FALLBACK_PAGES);
@@ -543,6 +548,7 @@ function AdminDashboardContent({ initialPosts, initialPages }: AdminDashboardPro
     readTime: "5 min",
     img: "",
     imgFocalPoint: "center",
+    audioUrl: "",
     blocks: [
       { text: "", image: "", focalPoint: "center" },
       { text: "", image: "", focalPoint: "center" },
@@ -575,7 +581,7 @@ function AdminDashboardContent({ initialPosts, initialPages }: AdminDashboardPro
       const data = await res.json();
       if (data.url) {
         callback(data.url);
-        setMessage({ type: "success", text: "Imagem enviada com sucesso!" });
+        setMessage({ type: "success", text: "Arquivo enviado com sucesso!" });
       } else {
         setMessage({ type: "error", text: data.error || "Erro no upload." });
       }
@@ -598,6 +604,7 @@ function AdminDashboardContent({ initialPosts, initialPages }: AdminDashboardPro
       readTime: "5 min",
       img: "",
       imgFocalPoint: "center",
+      audioUrl: "",
       blocks: [
         { text: "", image: "", focalPoint: "center" },
         { text: "", image: "", focalPoint: "center" },
@@ -639,6 +646,7 @@ function AdminDashboardContent({ initialPosts, initialPages }: AdminDashboardPro
       readTime: post.readTime,
       img: post.img,
       imgFocalPoint: post.imgFocalPoint || "center",
+      audioUrl: post.audioUrl || "",
       blocks: parsedBlocks,
       seoTitle: post.seoTitle || "",
       seoDescription: post.seoDescription || "",
@@ -1378,6 +1386,47 @@ function BlockLinkMapper({
                   value={postForm.imgFocalPoint}
                   onChange={(val) => setPostForm({ ...postForm, imgFocalPoint: val })}
                 />
+              </div>
+
+              {/* ÁUDIO DE NARRAÇÃO DO POST */}
+              <div className="border-t border-border/40 pt-5 mt-5 space-y-3 col-span-1 md:col-span-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold">
+                    🎙️ Áudio de Narração do Post (MP3, WAV, OGG, M4A)
+                  </label>
+                  {postForm.audioUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setPostForm({ ...postForm, audioUrl: "" })}
+                      className="text-[11px] text-red-400 hover:underline uppercase font-bold"
+                    >
+                      Remover Áudio
+                    </button>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 items-center">
+                  <input
+                    type="text"
+                    value={postForm.audioUrl || ""}
+                    onChange={(e) => setPostForm({ ...postForm, audioUrl: e.target.value })}
+                    placeholder="https://motonapratica.online/uploads/audio-narracao.mp3"
+                    className="w-full bg-[#222222] border border-border rounded-sm text-[13px] text-foreground px-4 py-2 font-mono"
+                  />
+                  <label className="bg-secondary hover:bg-white/[0.04] text-muted-foreground hover:text-foreground text-[12px] font-bold uppercase tracking-wider px-4 py-2 border border-border rounded-sm cursor-pointer flex items-center justify-center gap-2 transition-all">
+                    <Upload size={14} /> Upload Áudio
+                    <input
+                      type="file"
+                      accept="audio/*,.mp3,.wav,.ogg,.m4a,.webm"
+                      className="hidden"
+                      onChange={(e) => handleFileUpload(e, (url) => setPostForm({ ...postForm, audioUrl: url }))}
+                    />
+                  </label>
+                </div>
+                {postForm.audioUrl && (
+                  <div className="p-3 bg-[#111111] border border-primary/30 rounded flex items-center gap-3">
+                    <span className="text-xs text-primary font-mono truncate">▶ {postForm.audioUrl}</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -54,6 +54,7 @@ export async function savePostAction(data: {
   readTime: string;
   img: string;
   imgFocalPoint: string;
+  audioUrl?: string | null;
   blocks: { text: string; image: string; focalPoint: string }[];
   seoTitle?: string;
   seoDescription?: string;
@@ -92,6 +93,7 @@ export async function savePostAction(data: {
           readTime: data.readTime,
           img: data.img,
           imgFocalPoint: data.imgFocalPoint,
+          audioUrl: data.audioUrl || null,
           blocks: data.blocks as any,
           seoTitle: data.seoTitle || data.title,
           seoDescription: data.seoDescription || data.excerpt,
@@ -101,7 +103,7 @@ export async function savePostAction(data: {
         }
       });
 
-      // Sincronizar imagens (Hero e Blocos) com todos os posts do mesmo grupo de tradução (idiomas irmãos)
+      // Sincronizar imagens e áudio com todos os posts do mesmo grupo de tradução (idiomas irmãos)
       if (translationGroupId) {
         const sisterPosts = await prisma.post.findMany({
           where: {
@@ -139,6 +141,7 @@ export async function savePostAction(data: {
             data: {
               img: data.img,
               imgFocalPoint: data.imgFocalPoint,
+              audioUrl: data.audioUrl || sister.audioUrl,
               blocks: updatedSisterBlocks as any
             }
           });
@@ -156,6 +159,7 @@ export async function savePostAction(data: {
           readTime: data.readTime,
           img: data.img,
           imgFocalPoint: data.imgFocalPoint,
+          audioUrl: data.audioUrl || null,
           blocks: data.blocks as any,
           seoTitle: data.seoTitle || data.title,
           seoDescription: data.seoDescription || data.excerpt,

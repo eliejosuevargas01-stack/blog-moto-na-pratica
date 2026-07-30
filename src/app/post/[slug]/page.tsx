@@ -10,6 +10,7 @@ import CommentsSection from "../../components/CommentsSection";
 import SafeHtml from "../../components/SafeHtml";
 import PostActionsBar from "../../components/PostActionsBar";
 import PostViewTracker from "../../components/PostViewTracker";
+import AudioNarrationPlayer from "../../components/AudioNarrationPlayer";
 
 export const dynamic = "force-dynamic";
 
@@ -261,6 +262,9 @@ export default async function PostPage({ params }: PostPageProps) {
           <p className="text-[17px] text-[#BBBBBB] leading-relaxed border-l-2 border-primary pl-5 mb-10" style={BODY}>
             {post.excerpt}
           </p>
+
+          {/* Player de Áudio de Narração do Post */}
+          <AudioNarrationPlayer audioUrl={post.audioUrl} title={stripHtml(post.title)} lang={currentLang} />
 
           {/* Bar de Curtir e Compartilhar */}
           <PostActionsBar postId={post.id} postTitle={stripHtml(post.title)} initialLikes={post.likes || 0} />
