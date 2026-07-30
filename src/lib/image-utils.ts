@@ -52,3 +52,32 @@ export async function saveAudioBuffer(inputBuffer: Buffer, extension: string = "
 
   return `https://motonapratica.online/uploads/${filename}`;
 }
+
+export function calculateReadTime(data: { title?: string; excerpt?: string; blocks?: any[]; text?: string }): string {
+  let combinedText = "";
+
+  if (data.title) combinedText += " " + data.title;
+  if (data.excerpt) combinedText += " " + data.excerpt;
+
+  if (Array.isArray(data.blocks)) {
+    data.blocks.forEach((block: any) => {
+      if (typeof block === "string") {
+        combinedText += " " + block;
+      } else if (block && typeof block.text === "string") {
+        combinedText += " " + block.text;
+      }
+    });
+  }
+
+  if (data.text) {
+    combinedText += " " + data.text;
+  }
+
+  const cleanText = combinedText.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  const words = cleanText.split(" ").filter(w => w.length > 0);
+  const wordCount = words.length;
+
+  const minutes = Math.max(1, Math.ceil(wordCount / 200));
+  return `${minutes} min`;
+}
+

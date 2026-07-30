@@ -6,6 +6,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { notifyGoogleIndexing } from "../lib/google-indexing";
+import { calculateReadTime } from "../lib/image-utils";
 
 // --- AUTENTICAÇÃO ---
 
@@ -77,6 +78,9 @@ export async function savePostAction(data: {
 
     const lang = data.lang || "pt";
 
+    const computedReadTime = calculateReadTime({ title: data.title, excerpt: data.excerpt, blocks: data.blocks });
+    const finalReadTime = (data.readTime && data.readTime !== "5 min") ? data.readTime : computedReadTime;
+
     if (data.id) {
       // Obter post atual para capturar translationGroupId
       const currentPost = await prisma.post.findUnique({ where: { id: data.id } });
@@ -95,7 +99,7 @@ export async function savePostAction(data: {
           category: data.category,
           title: data.title,
           excerpt: data.excerpt,
-          readTime: data.readTime,
+          readTime: finalReadTime,
           img: data.img,
           imgFocalPoint: data.imgFocalPoint,
           audioUrl: targetAudio || null,
@@ -145,11 +149,14 @@ export async function savePostAction(data: {
             ? data.audioUrlsByLang[sister.lang]
             : sister.audioUrl;
 
+          const sisterComputedReadTime = calculateReadTime({ title: sister.title, excerpt: sister.excerpt, blocks: updatedSisterBlocks });
+
           await prisma.post.update({
             where: { id: sister.id },
             data: {
               img: data.img,
               imgFocalPoint: data.imgFocalPoint,
+              readTime: sisterComputedReadTime,
               audioUrl: sisterAudio || null,
               blocks: updatedSisterBlocks as any
             }
@@ -165,7 +172,7 @@ export async function savePostAction(data: {
           category: data.category,
           title: data.title,
           excerpt: data.excerpt,
-          readTime: data.readTime,
+          readTime: finalReadTime,
           img: data.img,
           imgFocalPoint: data.imgFocalPoint,
           audioUrl: data.audioUrl || null,

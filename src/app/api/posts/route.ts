@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/db";
 import { revalidatePath } from "next/cache";
-import { processImageBase64, saveAudioBuffer } from "@/lib/image-utils";
+import { processImageBase64, saveAudioBuffer, calculateReadTime } from "@/lib/image-utils";
 
 function generateSlug(title: string): string {
   return title
@@ -295,13 +295,15 @@ export async function POST(req: Request) {
         const postTag = normalizePostTag(rawPostTag, langData.title);
         const finalAudioUrl = langData.audioUrl || langData.audio_url || langData.audio || output.audioUrl || output.audio_url || output.audio || null;
 
+        const calculatedReadTime = calculateReadTime({ title: langData.title, excerpt: langData.summary, blocks });
+
         const post = await prisma.post.upsert({
           where: { slug: finalSlug },
           update: {
             tag: postTag,
             title: langData.title,
             excerpt: langData.summary || langData.title,
-            readTime: "5 min",
+            readTime: calculatedReadTime,
             img: featuredImg,
             audioUrl: finalAudioUrl,
             blocks,
@@ -317,7 +319,7 @@ export async function POST(req: Request) {
             category: postTag,
             title: langData.title,
             excerpt: langData.summary || langData.title,
-            readTime: "5 min",
+            readTime: calculatedReadTime,
             img: featuredImg,
             audioUrl: finalAudioUrl,
             imgFocalPoint: "center",
@@ -414,7 +416,10 @@ export async function POST(req: Request) {
 
     const rawSingleTag = body.tag || body.type || body.category || body.post_type || body.postType;
     const finalTag = normalizePostTag(rawSingleTag, title);
-    const singleAudioUrl = body.audioUrl || body.audio_url || body.audio || body.narrationUrl || null;
+    const finalAudioUrlSingle = body.audioUrl || body.audio_url || body.audio || body.narrationUrl || null;
+    const finalReadTime = (body.readTime && body.readTime !== "5 min")
+      ? body.readTime
+      : calculateReadTime({ title, excerpt, blocks: cleanedBlocks });
 
     const post = await prisma.post.upsert({
       where: { slug: finalSlug },
@@ -423,7 +428,8 @@ export async function POST(req: Request) {
         category: finalTag,
         title,
         excerpt: excerpt || title,
-        audioUrl: singleAudioUrl,
+        readTime: finalReadTime,
+        audioUrl: finalAudioUrlSingle,
         blocks: cleanedBlocks,
         seoTitle: seoTitle || title,
         seoDescription: seoDescription || excerpt,
@@ -437,10 +443,10 @@ export async function POST(req: Request) {
         category: finalTag,
         title,
         excerpt: excerpt || title,
-        readTime,
+        readTime: finalReadTime,
         img,
         imgFocalPoint,
-        audioUrl: singleAudioUrl,
+        audioUrl: finalAudioUrlSingle,
         blocks: cleanedBlocks,
         seoTitle: seoTitle || title,
         seoDescription: seoDescription || excerpt,
