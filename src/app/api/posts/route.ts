@@ -74,6 +74,10 @@ function cleanBlockHtml(html: string): string {
     .replace(/<p>\s*(?:Image|Imagem)\s*URL\s*:?\s*https?:\/\/[^\s<]+\s*<\/p>/gi, "")
     .replace(/(?:Image|Imagem)\s*URL\s*:?\s*https?:\/\/[^\s<]+/gi, "")
     .replace(/\{[^}]*\}=\d+\{[^}]*\}/gi, "")
+    .replace(/href=(["'])\/?pt\/posts?\//gi, 'href=$1/post/')
+    .replace(/href=(["'])\/?posts\//gi, 'href=$1/post/')
+    .replace(/href=(["'])\/?en\/posts\//gi, 'href=$1/en/post/')
+    .replace(/href=(["'])\/?es\/posts\//gi, 'href=$1/es/post/')
     .trim();
 }
 
