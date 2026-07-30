@@ -176,7 +176,7 @@ export async function POST(req: Request) {
       body = body.json;
     }
 
-    let output = body?.output || (body?.en && body?.pt ? body : null);
+    let output = body?.output || (body?.pt || body?.en || body?.es ? body : null);
 
     if (typeof output === "string") {
       try {
@@ -190,7 +190,7 @@ export async function POST(req: Request) {
 
     // SUPORTE A POST MULTI-IDIOMA (OUTPUT DE AUTOMACÃO N8N)
     if (output && typeof output === "object") {
-      const translationGroupId = output.id || `group-${Date.now()}`;
+      const translationGroupId = output.id || output.pt?.id || output.en?.id || output.es?.id || body.id || body.translationGroupId || `group-${Date.now()}`;
       const createdPosts: any[] = [];
       const extractedMentionedSlugs: Set<string> = new Set(explicitMentionedSlugs);
 
@@ -211,7 +211,7 @@ export async function POST(req: Request) {
           "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=1200";
 
         const blocks: any[] = [];
-        for (let i = 1; i <= 5; i++) {
+        for (let i = 1; i <= 20; i++) {
           const rawBlockText = langData[`block-${i}`];
           if (!rawBlockText) continue;
 
