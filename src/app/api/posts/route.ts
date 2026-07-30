@@ -91,18 +91,28 @@ function processImagePlaceholdersInHtml(htmlText: string, langData: any): string
       const imgKey = `img-${orderNum}`;
       const imgUrl = extractImageUrl(langData[imgKey]);
       if (imgUrl) {
-        return `<img src="${imgUrl}" alt="Imagem ${orderNum}" class="w-full h-auto object-cover border border-border rounded-sm my-4" loading="lazy" />`;
+        const altText = langData[`alt-${orderNum}`] || langData[`alt_${orderNum}`] || langData[`img-${orderNum}-alt`] || `Imagem ${orderNum}`;
+        const captionText = langData[`caption-${orderNum}`] || langData[`caption_${orderNum}`] || langData[`legenda-${orderNum}`] || "";
+
+        if (captionText) {
+          return `<figure class="my-6 text-center"><img src="${imgUrl}" alt="${altText}" class="w-full h-auto object-cover border border-border rounded-sm mx-auto" loading="lazy" /><figcaption class="text-xs text-muted-foreground mt-2 italic">${captionText}</figcaption></figure>`;
+        }
+        return `<img src="${imgUrl}" alt="${altText}" class="w-full h-auto object-cover border border-border rounded-sm my-4" loading="lazy" />`;
       }
       return "";
     })
     // Suporte ao formato com legenda {Legenda}=2{Alt}
-    .replace(/\{[^}]*\}=(\d+)\{([^}]*)\}/gi, (match, orderStr, altText) => {
+    .replace(/\{([^}]*)\}=(\d+)\{([^}]*)\}/gi, (match, captionText, orderStr, altText) => {
       const orderNum = parseInt(orderStr, 10);
       const imgKey = `img-${orderNum}`;
       const imgUrl = extractImageUrl(langData[imgKey]);
 
       if (imgUrl) {
-        const cleanAlt = altText ? altText.trim() : "Imagem do artigo";
+        const cleanAlt = altText ? altText.trim() : (langData[`alt-${orderNum}`] || "Imagem do artigo");
+        const cleanCaption = captionText ? captionText.trim() : (langData[`caption-${orderNum}`] || "");
+        if (cleanCaption) {
+          return `<figure class="my-6 text-center"><img src="${imgUrl}" alt="${cleanAlt}" class="w-full h-auto object-cover border border-border rounded-sm mx-auto" loading="lazy" /><figcaption class="text-xs text-muted-foreground mt-2 italic">${cleanCaption}</figcaption></figure>`;
+        }
         return `<img src="${imgUrl}" alt="${cleanAlt}" class="w-full h-auto object-cover border border-border rounded-sm my-4" loading="lazy" />`;
       }
       return "";
@@ -431,7 +441,7 @@ export async function PATCH(req: Request) {
     }
 
     const body = await req.json();
-    const { id, post_id, postId, slug, position, pos, imgKey, image, img } = body;
+    const { id, post_id, postId, slug, position, pos, imgKey, image, img, alt, altText, alt_text, caption, legenda, focalPoint, focal_point } = body;
 
     const targetIdentifier = id || post_id || postId || slug;
     if (!targetIdentifier) {
@@ -480,12 +490,18 @@ export async function PATCH(req: Request) {
     }
 
     const updatedPostsInfo: any[] = [];
+    const metaAlt = alt || altText || alt_text;
+    const metaCaption = caption || legenda;
+    const metaFocal = focalPoint || focal_point;
 
     for (const post of postsToUpdate) {
       if (posNum === 1) {
+        const updateData: any = { img: finalImageUrl };
+        if (metaFocal) updateData.imgFocalPoint = metaFocal;
+
         const updated = await prisma.post.update({
           where: { id: post.id },
-          data: { img: finalImageUrl }
+          data: updateData
         });
         revalidatePath("/");
         revalidatePath(`/post/${updated.slug}`);
@@ -498,13 +514,25 @@ export async function PATCH(req: Request) {
           const updatedBlocks = [...rawBlocks];
           const targetBlock = { ...updatedBlocks[blockIndex] };
           targetBlock.image = finalImageUrl;
+          if (metaAlt) targetBlock.alt = metaAlt;
+          if (metaCaption) targetBlock.caption = metaCaption;
+          if (metaFocal) targetBlock.focalPoint = metaFocal;
+
+          const blockAltText = metaAlt || `Imagem ${posNum}`;
 
           if (targetBlock.text) {
             const placeholderRegex = new RegExp(`[\\{\\[]\\s*(?:id|img|image)\\s*=\\s*${posNum}\\s*[\\}\\]]`, "gi");
-            targetBlock.text = targetBlock.text.replace(
-              placeholderRegex,
-              `<img src="${finalImageUrl}" alt="Imagem ${posNum}" class="w-full h-auto object-cover border border-border rounded-sm my-4" loading="lazy" />`
-            );
+            if (metaCaption) {
+              targetBlock.text = targetBlock.text.replace(
+                placeholderRegex,
+                `<figure class="my-6 text-center"><img src="${finalImageUrl}" alt="${blockAltText}" class="w-full h-auto object-cover border border-border rounded-sm mx-auto" loading="lazy" /><figcaption class="text-xs text-muted-foreground mt-2 italic">${metaCaption}</figcaption></figure>`
+              );
+            } else {
+              targetBlock.text = targetBlock.text.replace(
+                placeholderRegex,
+                `<img src="${finalImageUrl}" alt="${blockAltText}" class="w-full h-auto object-cover border border-border rounded-sm my-4" loading="lazy" />`
+              );
+            }
           }
 
           updatedBlocks[blockIndex] = targetBlock;
