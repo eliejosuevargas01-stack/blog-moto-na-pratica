@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/db";
 import { revalidatePath } from "next/cache";
+import { processImageBase64 } from "@/lib/image-utils";
 
 function generateSlug(title: string): string {
   return title
@@ -455,14 +456,11 @@ export async function PATCH(req: Request) {
 
     let finalImageUrl = imageUrl;
     if (typeof imageUrl === "string" && (imageUrl.startsWith("data:image") || (imageUrl.length > 200 && !imageUrl.startsWith("http")))) {
-      const uploadRes = await fetch(new URL("/api/upload", req.url).toString(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: imageUrl })
-      });
-      const uploadJson = await uploadRes.json();
-      if (uploadJson.url) {
-        finalImageUrl = uploadJson.url;
+      try {
+        finalImageUrl = await processImageBase64(imageUrl);
+      } catch (err: any) {
+        console.error("Erro ao processar Base64 na rota PATCH:", err);
+        return NextResponse.json({ error: "Falha ao processar imagem Base64.", details: err.message }, { status: 400 });
       }
     }
 

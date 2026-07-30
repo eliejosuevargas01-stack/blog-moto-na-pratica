@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
-import { writeFile, mkdir, readdir } from "fs/promises";
+import { readdir } from "fs/promises";
 import path from "path";
-import sharp from "sharp";
+import { saveOptimizedImageBuffer, processImageBase64 } from "@/lib/image-utils";
 
 export async function POST(request: Request) {
   try {
     const contentType = request.headers.get("content-type") || "";
-    let inputBuffer: Buffer | null = null;
 
     if (contentType.includes("application/json")) {
       const json = await request.json();
@@ -18,9 +17,8 @@ export async function POST(request: Request) {
         );
       }
 
-      // Remover cabeçalho data:image/png;base64, se existir
-      const cleanBase64 = base64Str.replace(/^data:image\/[a-z0-9\+\-]+;base64,/i, "");
-      inputBuffer = Buffer.from(cleanBase64, "base64");
+      const imageUrl = await processImageBase64(base64Str);
+      return NextResponse.json({ url: imageUrl });
     } else {
       const formData = await request.formData();
       const file = formData.get("file") as File;
@@ -29,7 +27,6 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Nenhum arquivo enviado." }, { status: 400 });
       }
 
-      // Validar tipo de arquivo
       const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"];
       if (!allowedTypes.includes(file.type)) {
         return NextResponse.json(
@@ -38,7 +35,6 @@ export async function POST(request: Request) {
         );
       }
 
-      // Validar tamanho do arquivo (máx 50MB)
       const maxSize = 50 * 1024 * 1024;
       if (file.size > maxSize) {
         return NextResponse.json(
@@ -48,39 +44,11 @@ export async function POST(request: Request) {
       }
 
       const bytes = await file.arrayBuffer();
-      inputBuffer = Buffer.from(bytes);
+      const inputBuffer = Buffer.from(bytes);
+
+      const imageUrl = await saveOptimizedImageBuffer(inputBuffer);
+      return NextResponse.json({ url: imageUrl });
     }
-
-    if (!inputBuffer || inputBuffer.length === 0) {
-      return NextResponse.json({ error: "Buffer de imagem inválido ou vazio." }, { status: 400 });
-    }
-
-    // Processar imagem com sharp: redimensionar para max 1400px de largura e converter para WebP
-    const optimizedBuffer = await sharp(inputBuffer)
-      .rotate() // Corrigir orientação EXIF automaticamente
-      .resize({ width: 1400, withoutEnlargement: true }) // Nunca aumenta o tamanho original
-      .webp({ quality: 82 })
-      .toBuffer();
-
-    // Gerar hash MD5 único do conteúdo da imagem para evitar duplicatas no disco
-    const { createHash } = await import("crypto");
-    const { existsSync } = await import("fs");
-
-    const fileHash = createHash("md5").update(optimizedBuffer).digest("hex");
-    const filename = `img-${fileHash}.webp`;
-    const uploadDir = path.join(process.cwd(), "uploads");
-    const filePath = path.join(uploadDir, filename);
-
-    // Garantir que o diretório existe (cria recursivamente se necessário)
-    await mkdir(uploadDir, { recursive: true });
-
-    // Se a imagem já existe no servidor, REUTILIZAR sem criar duplicata!
-    if (!existsSync(filePath)) {
-      await writeFile(filePath, optimizedBuffer);
-    }
-
-    // Retorna a URL pública relativa
-    return NextResponse.json({ url: `/uploads/${filename}` });
   } catch (error: any) {
     console.error("Erro durante o upload do arquivo:", error);
     return NextResponse.json(
