@@ -414,3 +414,123 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Erro ao salvar post", details: error.message }, { status: 500 });
   }
 }
+
+export async function PATCH(req: Request) {
+  try {
+    const apiKeyHeader = req.headers.get("x-api-key") || req.headers.get("authorization")?.replace("Bearer ", "");
+    const url = new URL(req.url);
+    const apiKeyQuery = url.searchParams.get("api_key");
+
+    const expectedKey = process.env.API_SECRET_KEY || "motonapratica-secret-key-2026";
+    const providedKey = apiKeyHeader || apiKeyQuery;
+
+    if (!providedKey || providedKey !== expectedKey) {
+      return NextResponse.json({ error: "Não autorizado. Chave de API inválida (x-api-key)." }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { id, post_id, postId, slug, position, pos, imgKey, image, img } = body;
+
+    const targetIdentifier = id || post_id || postId || slug;
+    if (!targetIdentifier) {
+      return NextResponse.json({ error: "É necessário fornecer o id ou slug do post ('id', 'post_id' ou 'slug')." }, { status: 400 });
+    }
+
+    const imageUrl = image || img;
+    if (!imageUrl) {
+      return NextResponse.json({ error: "É necessário fornecer a imagem ('image' ou 'img'). Pode ser URL pública ou Base64." }, { status: 400 });
+    }
+
+    let finalImageUrl = imageUrl;
+    if (typeof imageUrl === "string" && imageUrl.startsWith("data:image")) {
+      const uploadRes = await fetch(new URL("/api/upload", req.url).toString(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: imageUrl })
+      });
+      const uploadJson = await uploadRes.json();
+      if (uploadJson.url) {
+        finalImageUrl = uploadJson.url;
+      }
+    }
+
+    const post = await prisma.post.findFirst({
+      where: {
+        OR: [
+          { id: targetIdentifier },
+          { slug: targetIdentifier }
+        ]
+      }
+    });
+
+    if (!post) {
+      return NextResponse.json({ error: "Post não encontrado no banco de dados." }, { status: 404 });
+    }
+
+    const rawPos = position !== undefined ? position : (pos !== undefined ? pos : imgKey);
+    let posNum = 1;
+    if (typeof rawPos === "number") {
+      posNum = rawPos;
+    } else if (typeof rawPos === "string") {
+      const match = rawPos.match(/\d+/);
+      if (match) posNum = parseInt(match[0], 10);
+    }
+
+    if (posNum === 1) {
+      const updated = await prisma.post.update({
+        where: { id: post.id },
+        data: { img: finalImageUrl }
+      });
+      revalidatePath("/");
+      revalidatePath(`/post/${updated.slug}`);
+      return NextResponse.json({
+        success: true,
+        message: `Imagem de Capa (Posição 1) anexada com sucesso ao post '${post.title}'!`,
+        imageUrl: finalImageUrl,
+        postId: post.id,
+        slug: post.slug
+      });
+    }
+
+    const blockIndex = posNum - 2;
+    const rawBlocks = Array.isArray(post.blocks) ? (post.blocks as any[]) : [];
+
+    if (blockIndex >= 0 && blockIndex < rawBlocks.length) {
+      const updatedBlocks = [...rawBlocks];
+      const targetBlock = { ...updatedBlocks[blockIndex] };
+      targetBlock.image = finalImageUrl;
+
+      if (targetBlock.text) {
+        const placeholderRegex = new RegExp(`[\\{\\[]\\s*(?:id|img|image)\\s*=\\s*${posNum}\\s*[\\}\\]]`, "gi");
+        targetBlock.text = targetBlock.text.replace(
+          placeholderRegex,
+          `<img src="${finalImageUrl}" alt="Imagem ${posNum}" class="w-full h-auto object-cover border border-border rounded-sm my-4" loading="lazy" />`
+        );
+      }
+
+      updatedBlocks[blockIndex] = targetBlock;
+
+      const updated = await prisma.post.update({
+        where: { id: post.id },
+        data: { blocks: updatedBlocks }
+      });
+
+      revalidatePath("/");
+      revalidatePath(`/post/${updated.slug}`);
+      return NextResponse.json({
+        success: true,
+        message: `Imagem da Posição ${posNum} (Bloco ${blockIndex + 1}) anexada com sucesso ao post '${post.title}'!`,
+        imageUrl: finalImageUrl,
+        postId: post.id,
+        slug: post.slug
+      });
+    }
+
+    return NextResponse.json({
+      error: `Posição ${posNum} inválida. O post possui apenas ${rawBlocks.length} blocos de conteúdo.`
+    }, { status: 400 });
+
+  } catch (error: any) {
+    return NextResponse.json({ error: "Erro ao anexar imagem ao post", details: error.message }, { status: 500 });
+  }
+}
