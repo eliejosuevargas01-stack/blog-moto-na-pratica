@@ -253,7 +253,7 @@ export function optimizeImageUrl(url: string, width: number, height?: number): s
   if (url.includes("images.unsplash.com")) {
     return optimizeUnsplashUrl(url, width, height);
   }
-  if (url.startsWith("/uploads/")) {
+  if (url.includes("/uploads/")) {
     const cleanUrl = url.split("?")[0];
     return `${cleanUrl}?w=${width}`;
   }

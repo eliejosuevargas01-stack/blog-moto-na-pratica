@@ -9,6 +9,10 @@ const nextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'motonapratica.online',
+      },
+      {
+        protocol: 'https',
         hostname: 'motonapratica.dominuslabs.online',
       },
       {
