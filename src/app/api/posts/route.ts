@@ -444,7 +444,7 @@ export async function PATCH(req: Request) {
     }
 
     let finalImageUrl = imageUrl;
-    if (typeof imageUrl === "string" && imageUrl.startsWith("data:image")) {
+    if (typeof imageUrl === "string" && (imageUrl.startsWith("data:image") || (imageUrl.length > 200 && !imageUrl.startsWith("http")))) {
       const uploadRes = await fetch(new URL("/api/upload", req.url).toString(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -456,17 +456,18 @@ export async function PATCH(req: Request) {
       }
     }
 
-    const post = await prisma.post.findFirst({
+    const postsToUpdate = await prisma.post.findMany({
       where: {
         OR: [
           { id: targetIdentifier },
-          { slug: targetIdentifier }
+          { slug: targetIdentifier },
+          { translationGroupId: targetIdentifier }
         ]
       }
     });
 
-    if (!post) {
-      return NextResponse.json({ error: "Post não encontrado no banco de dados." }, { status: 404 });
+    if (postsToUpdate.length === 0) {
+      return NextResponse.json({ error: "Nenhum post encontrado com o id, slug ou translationGroupId fornecido." }, { status: 404 });
     }
 
     const rawPos = position !== undefined ? position : (pos !== undefined ? pos : imgKey);
@@ -478,59 +479,61 @@ export async function PATCH(req: Request) {
       if (match) posNum = parseInt(match[0], 10);
     }
 
-    if (posNum === 1) {
-      const updated = await prisma.post.update({
-        where: { id: post.id },
-        data: { img: finalImageUrl }
-      });
-      revalidatePath("/");
-      revalidatePath(`/post/${updated.slug}`);
-      return NextResponse.json({
-        success: true,
-        message: `Imagem de Capa (Posição 1) anexada com sucesso ao post '${post.title}'!`,
-        imageUrl: finalImageUrl,
-        postId: post.id,
-        slug: post.slug
-      });
+    const updatedPostsInfo: any[] = [];
+
+    for (const post of postsToUpdate) {
+      if (posNum === 1) {
+        const updated = await prisma.post.update({
+          where: { id: post.id },
+          data: { img: finalImageUrl }
+        });
+        revalidatePath("/");
+        revalidatePath(`/post/${updated.slug}`);
+        updatedPostsInfo.push({ id: post.id, lang: post.lang, slug: post.slug });
+      } else {
+        const blockIndex = posNum - 2;
+        const rawBlocks = Array.isArray(post.blocks) ? (post.blocks as any[]) : [];
+
+        if (blockIndex >= 0 && blockIndex < rawBlocks.length) {
+          const updatedBlocks = [...rawBlocks];
+          const targetBlock = { ...updatedBlocks[blockIndex] };
+          targetBlock.image = finalImageUrl;
+
+          if (targetBlock.text) {
+            const placeholderRegex = new RegExp(`[\\{\\[]\\s*(?:id|img|image)\\s*=\\s*${posNum}\\s*[\\}\\]]`, "gi");
+            targetBlock.text = targetBlock.text.replace(
+              placeholderRegex,
+              `<img src="${finalImageUrl}" alt="Imagem ${posNum}" class="w-full h-auto object-cover border border-border rounded-sm my-4" loading="lazy" />`
+            );
+          }
+
+          updatedBlocks[blockIndex] = targetBlock;
+
+          const updated = await prisma.post.update({
+            where: { id: post.id },
+            data: { blocks: updatedBlocks }
+          });
+
+          revalidatePath("/");
+          revalidatePath(`/post/${updated.slug}`);
+          updatedPostsInfo.push({ id: post.id, lang: post.lang, slug: post.slug });
+        }
+      }
     }
 
-    const blockIndex = posNum - 2;
-    const rawBlocks = Array.isArray(post.blocks) ? (post.blocks as any[]) : [];
-
-    if (blockIndex >= 0 && blockIndex < rawBlocks.length) {
-      const updatedBlocks = [...rawBlocks];
-      const targetBlock = { ...updatedBlocks[blockIndex] };
-      targetBlock.image = finalImageUrl;
-
-      if (targetBlock.text) {
-        const placeholderRegex = new RegExp(`[\\{\\[]\\s*(?:id|img|image)\\s*=\\s*${posNum}\\s*[\\}\\]]`, "gi");
-        targetBlock.text = targetBlock.text.replace(
-          placeholderRegex,
-          `<img src="${finalImageUrl}" alt="Imagem ${posNum}" class="w-full h-auto object-cover border border-border rounded-sm my-4" loading="lazy" />`
-        );
-      }
-
-      updatedBlocks[blockIndex] = targetBlock;
-
-      const updated = await prisma.post.update({
-        where: { id: post.id },
-        data: { blocks: updatedBlocks }
-      });
-
-      revalidatePath("/");
-      revalidatePath(`/post/${updated.slug}`);
+    if (updatedPostsInfo.length === 0) {
       return NextResponse.json({
-        success: true,
-        message: `Imagem da Posição ${posNum} (Bloco ${blockIndex + 1}) anexada com sucesso ao post '${post.title}'!`,
-        imageUrl: finalImageUrl,
-        postId: post.id,
-        slug: post.slug
-      });
+        error: `Posição ${posNum} inválida para os posts encontrados.`
+      }, { status: 400 });
     }
 
     return NextResponse.json({
-      error: `Posição ${posNum} inválida. O post possui apenas ${rawBlocks.length} blocos de conteúdo.`
-    }, { status: 400 });
+      success: true,
+      message: `Imagem da Posição ${posNum} anexada com sucesso a ${updatedPostsInfo.length} post(s)!`,
+      imageUrl: finalImageUrl,
+      position: posNum,
+      updatedPosts: updatedPostsInfo
+    });
 
   } catch (error: any) {
     return NextResponse.json({ error: "Erro ao anexar imagem ao post", details: error.message }, { status: 500 });
