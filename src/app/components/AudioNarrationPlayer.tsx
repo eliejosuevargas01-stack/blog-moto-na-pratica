@@ -24,11 +24,21 @@ export default function AudioNarrationPlayer({ audioUrl, title, lang = "pt" }: A
     setCurrentTime(0);
     setDuration(0);
     setIsLoaded(false);
+    if (audioRef.current) {
+      audioRef.current.load();
+    }
   }, [audioUrl]);
 
   if (!audioUrl) {
     return null;
   }
+
+  const updateAudioDuration = () => {
+    if (audioRef.current && !isNaN(audioRef.current.duration) && isFinite(audioRef.current.duration) && audioRef.current.duration > 0) {
+      setDuration(audioRef.current.duration);
+      setIsLoaded(true);
+    }
+  };
 
   const togglePlay = () => {
     if (!audioRef.current) return;
@@ -36,21 +46,24 @@ export default function AudioNarrationPlayer({ audioUrl, title, lang = "pt" }: A
       audioRef.current.pause();
       setIsPlaying(false);
     } else {
-      audioRef.current.play().then(() => setIsPlaying(true)).catch((err) => console.error("Erro ao reproduzir áudio:", err));
+      audioRef.current.play().then(() => {
+        setIsPlaying(true);
+        updateAudioDuration();
+      }).catch((err) => console.error("Erro ao reproduzir áudio:", err));
     }
   };
 
   const handleTimeUpdate = () => {
     if (audioRef.current) {
       setCurrentTime(audioRef.current.currentTime);
+      if (duration === 0) {
+        updateAudioDuration();
+      }
     }
   };
 
   const handleLoadedMetadata = () => {
-    if (audioRef.current) {
-      setDuration(audioRef.current.duration || 0);
-      setIsLoaded(true);
-    }
+    updateAudioDuration();
   };
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,11 +100,13 @@ export default function AudioNarrationPlayer({ audioUrl, title, lang = "pt" }: A
   };
 
   const formatTime = (seconds: number) => {
-    if (isNaN(seconds) || seconds <= 0) return "00:00";
+    if (isNaN(seconds) || seconds <= 0 || !isFinite(seconds)) return "00:00";
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
+
+  const progressPercent = duration > 0 ? Math.min(100, Math.max(0, (currentTime / duration) * 100)) : 0;
 
   const headerText =
     lang === "en" ? "Listen to Article Narration" : lang === "es" ? "Escuchar Narración del Artículo" : "Ouça a Narração deste Post";
@@ -106,8 +121,10 @@ export default function AudioNarrationPlayer({ audioUrl, title, lang = "pt" }: A
         src={audioUrl}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
+        onDurationChange={updateAudioDuration}
+        onCanPlay={updateAudioDuration}
         onEnded={() => setIsPlaying(false)}
-        preload="metadata"
+        preload="auto"
       />
 
       <div className="flex flex-col gap-3">
@@ -147,12 +164,13 @@ export default function AudioNarrationPlayer({ audioUrl, title, lang = "pt" }: A
               <input
                 type="range"
                 min={0}
-                max={duration || 100}
+                max={duration > 0 ? duration : 1}
+                step={0.1}
                 value={currentTime}
                 onChange={handleSeek}
                 className="w-full h-2 bg-[#2A2A2A] rounded-lg appearance-none cursor-pointer accent-primary"
                 style={{
-                  background: `linear-gradient(to right, #E05300 ${(currentTime / (duration || 1)) * 100}%, #2A2A2A ${(currentTime / (duration || 1)) * 100}%)`,
+                  background: `linear-gradient(to right, #E05300 ${progressPercent}%, #2A2A2A ${progressPercent}%)`,
                 }}
               />
             </div>
