@@ -84,17 +84,29 @@ function cleanBlockHtml(html: string): string {
 function processImagePlaceholdersInHtml(htmlText: string, langData: any): string {
   if (!htmlText) return "";
 
-  let processed = htmlText.replace(/\{[^}]*\}=(\d+)\{([^}]*)\}/gi, (match, orderStr, altText) => {
-    const orderNum = parseInt(orderStr, 10);
-    const imgKey = `img-${orderNum}`;
-    const imgUrl = extractImageUrl(langData[imgKey]);
+  let processed = htmlText
+    // Suporte ao formato {id=1}, {id=2}, [id=1], [id=2], {img=1}, [img=1], {image=1}
+    .replace(/[\{\[]\s*(?:id|img|image)\s*=\s*(\d+)\s*[\}\]]/gi, (match, orderStr) => {
+      const orderNum = parseInt(orderStr, 10);
+      const imgKey = `img-${orderNum}`;
+      const imgUrl = extractImageUrl(langData[imgKey]);
+      if (imgUrl) {
+        return `<img src="${imgUrl}" alt="Imagem ${orderNum}" class="w-full h-auto object-cover border border-border rounded-sm my-4" loading="lazy" />`;
+      }
+      return "";
+    })
+    // Suporte ao formato com legenda {Legenda}=2{Alt}
+    .replace(/\{[^}]*\}=(\d+)\{([^}]*)\}/gi, (match, orderStr, altText) => {
+      const orderNum = parseInt(orderStr, 10);
+      const imgKey = `img-${orderNum}`;
+      const imgUrl = extractImageUrl(langData[imgKey]);
 
-    if (imgUrl) {
-      const cleanAlt = altText ? altText.trim() : "Imagem do artigo";
-      return `<img src="${imgUrl}" alt="${cleanAlt}" class="w-full h-auto object-cover border border-border rounded-sm my-4" loading="lazy" />`;
-    }
-    return "";
-  });
+      if (imgUrl) {
+        const cleanAlt = altText ? altText.trim() : "Imagem do artigo";
+        return `<img src="${imgUrl}" alt="${cleanAlt}" class="w-full h-auto object-cover border border-border rounded-sm my-4" loading="lazy" />`;
+      }
+      return "";
+    });
 
   return cleanBlockHtml(processed);
 }
