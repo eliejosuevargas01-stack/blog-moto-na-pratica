@@ -325,6 +325,8 @@ export async function POST(req: Request) {
       translationGroupId,
     } = body;
 
+    const finalTranslationGroupId = translationGroupId || body.group_id || body.groupId || body.id || null;
+
     if (!title) {
       return NextResponse.json({ error: "O título do post é obrigatório." }, { status: 400 });
     }
@@ -357,7 +359,7 @@ export async function POST(req: Request) {
         seoTitle: seoTitle || title,
         seoDescription: seoDescription || excerpt,
         seoKeywords: seoKeywords || `${tag}, ${category}, Moto na Prática`,
-        translationGroupId,
+        translationGroupId: finalTranslationGroupId,
         lang,
       },
       create: {
@@ -373,7 +375,7 @@ export async function POST(req: Request) {
         seoTitle: seoTitle || title,
         seoDescription: seoDescription || excerpt,
         seoKeywords: seoKeywords || `${tag}, ${category}, Moto na Prática`,
-        translationGroupId,
+        translationGroupId: finalTranslationGroupId,
         lang,
         date: new Date(),
       },
