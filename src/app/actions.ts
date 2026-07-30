@@ -141,7 +141,6 @@ export async function savePostAction(data: {
             data: {
               img: data.img,
               imgFocalPoint: data.imgFocalPoint,
-              audioUrl: data.audioUrl || sister.audioUrl,
               blocks: updatedSisterBlocks as any
             }
           });

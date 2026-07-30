@@ -212,14 +212,10 @@ export async function syncAndFixDefaultImagesInDB() {
 
   for (const [groupId, groupPosts] of Object.entries(groups)) {
     let realFeaturedImg: string | null = null;
-    let realAudioUrl: string | null = null;
 
     for (const p of groupPosts) {
       if (!isDefaultImage(p.img)) {
         realFeaturedImg = p.img;
-      }
-      if (p.audioUrl) {
-        realAudioUrl = p.audioUrl;
       }
     }
 
@@ -236,17 +232,11 @@ export async function syncAndFixDefaultImagesInDB() {
     for (const p of groupPosts) {
       let needUpdate = false;
       let newFeaturedImg = p.img;
-      let newAudioUrl = p.audioUrl;
       const blocks = Array.isArray(p.blocks) ? (p.blocks as any[]) : [];
       const newBlocks = [...blocks];
 
       if (isDefaultImage(p.img) && realFeaturedImg) {
         newFeaturedImg = realFeaturedImg;
-        needUpdate = true;
-      }
-
-      if (!p.audioUrl && realAudioUrl) {
-        newAudioUrl = realAudioUrl;
         needUpdate = true;
       }
 
@@ -268,7 +258,6 @@ export async function syncAndFixDefaultImagesInDB() {
           where: { id: p.id },
           data: {
             img: newFeaturedImg,
-            audioUrl: newAudioUrl,
             blocks: newBlocks,
           },
         });
@@ -277,7 +266,7 @@ export async function syncAndFixDefaultImagesInDB() {
     }
   }
 
-  console.log(`✅ Sincronização concluída! ${updatedCount} post(s) atualizado(s) com imagens e áudios reais.`);
+  console.log(`✅ Sincronização concluída! ${updatedCount} post(s) atualizado(s) com imagens reais.`);
 }
 
 // Execução CLI
