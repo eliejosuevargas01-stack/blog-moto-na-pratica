@@ -5,33 +5,55 @@ import sharp from "sharp";
 
 export async function POST(request: Request) {
   try {
-    const formData = await request.formData();
-    const file = formData.get("file") as File;
+    const contentType = request.headers.get("content-type") || "";
+    let inputBuffer: Buffer | null = null;
 
-    if (!file) {
-      return NextResponse.json({ error: "Nenhum arquivo enviado." }, { status: 400 });
+    if (contentType.includes("application/json")) {
+      const json = await request.json();
+      const base64Str = json.image || json.file || json.base64;
+      if (!base64Str || typeof base64Str !== "string") {
+        return NextResponse.json(
+          { error: "Nenhuma string base64 válida enviada no JSON (use o campo 'image', 'file' ou 'base64')." },
+          { status: 400 }
+        );
+      }
+
+      // Remover cabeçalho data:image/png;base64, se existir
+      const cleanBase64 = base64Str.replace(/^data:image\/[a-z0-9\+\-]+;base64,/i, "");
+      inputBuffer = Buffer.from(cleanBase64, "base64");
+    } else {
+      const formData = await request.formData();
+      const file = formData.get("file") as File;
+
+      if (!file) {
+        return NextResponse.json({ error: "Nenhum arquivo enviado." }, { status: 400 });
+      }
+
+      // Validar tipo de arquivo
+      const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"];
+      if (!allowedTypes.includes(file.type)) {
+        return NextResponse.json(
+          { error: "Apenas imagens (JPEG, PNG, WEBP, AVIF, GIF) são permitidas." },
+          { status: 400 }
+        );
+      }
+
+      // Validar tamanho do arquivo (máx 50MB)
+      const maxSize = 50 * 1024 * 1024;
+      if (file.size > maxSize) {
+        return NextResponse.json(
+          { error: "O tamanho máximo permitido é 50MB." },
+          { status: 400 }
+        );
+      }
+
+      const bytes = await file.arrayBuffer();
+      inputBuffer = Buffer.from(bytes);
     }
 
-    // Validar tipo de arquivo
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"];
-    if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json(
-        { error: "Apenas imagens (JPEG, PNG, WEBP, AVIF, GIF) são permitidas." },
-        { status: 400 }
-      );
+    if (!inputBuffer || inputBuffer.length === 0) {
+      return NextResponse.json({ error: "Buffer de imagem inválido ou vazio." }, { status: 400 });
     }
-
-    // Validar tamanho do arquivo (máx 50MB antes de compressão)
-    const maxSize = 50 * 1024 * 1024;
-    if (file.size > maxSize) {
-      return NextResponse.json(
-        { error: "O tamanho máximo permitido é 50MB." },
-        { status: 400 }
-      );
-    }
-
-    const bytes = await file.arrayBuffer();
-    const inputBuffer = Buffer.from(bytes);
 
     // Processar imagem com sharp: redimensionar para max 1400px de largura e converter para WebP
     const optimizedBuffer = await sharp(inputBuffer)
