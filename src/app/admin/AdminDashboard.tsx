@@ -560,6 +560,13 @@ function AdminDashboardContent({ initialPosts, initialPages }: AdminDashboardPro
     lang: "pt"
   });
 
+  const [selectedAudioLang, setSelectedAudioLang] = useState<string>("pt");
+  const [audioUrlsByLang, setAudioUrlsByLang] = useState<{ pt: string; en: string; es: string }>({
+    pt: "",
+    en: "",
+    es: ""
+  });
+
   // --- CONTROLE DE PÁGINAS ---
   const [selectedPageSlug, setSelectedPageSlug] = useState<string>("");
   const [editingPage, setEditingPage] = useState<any | null>(null);
@@ -615,6 +622,8 @@ function AdminDashboardContent({ initialPosts, initialPages }: AdminDashboardPro
       seoKeywords: "",
       lang: "pt"
     });
+    setSelectedAudioLang("pt");
+    setAudioUrlsByLang({ pt: "", en: "", es: "" });
     setEditingPost({});
     setMessage(null);
   };
@@ -636,6 +645,21 @@ function AdminDashboardContent({ initialPosts, initialPages }: AdminDashboardPro
       parsedBlocks.push({ text: "", image: "", focalPoint: "center" });
     }
 
+    const currentLang = post.lang || "pt";
+    setSelectedAudioLang(currentLang);
+
+    // Buscar posts do mesmo grupo de tradução para capturar áudios existentes de cada idioma
+    const groupPosts = initialPosts.filter((p: any) => post.translationGroupId && p.translationGroupId === post.translationGroupId);
+    const ptPost = groupPosts.find((p: any) => p.lang === "pt") || (post.lang === "pt" ? post : null);
+    const enPost = groupPosts.find((p: any) => p.lang === "en") || (post.lang === "en" ? post : null);
+    const esPost = groupPosts.find((p: any) => p.lang === "es") || (post.lang === "es" ? post : null);
+
+    setAudioUrlsByLang({
+      pt: ptPost?.audioUrl || (post.lang === "pt" ? post.audioUrl || "" : ""),
+      en: enPost?.audioUrl || (post.lang === "en" ? post.audioUrl || "" : ""),
+      es: esPost?.audioUrl || (post.lang === "es" ? post.audioUrl || "" : ""),
+    });
+
     setPostForm({
       id: post.id,
       title: post.title,
@@ -651,7 +675,7 @@ function AdminDashboardContent({ initialPosts, initialPages }: AdminDashboardPro
       seoTitle: post.seoTitle || "",
       seoDescription: post.seoDescription || "",
       seoKeywords: post.seoKeywords || "",
-      lang: post.lang || "pt"
+      lang: currentLang
     });
     setEditingPost(post);
     setMessage(null);
@@ -839,7 +863,7 @@ function BlockLinkMapper({
     setMessage(null);
 
     const slug = postForm.slug.trim() || generateSlugFromTitle(postForm.title);
-    let postData = { ...postForm, slug };
+    let postData = { ...postForm, slug, audioUrlsByLang };
     // Run hooks from registry plugins
     plugins.forEach(plugin => {
       const isActive = !!activePlugins[plugin.id];
@@ -1392,40 +1416,74 @@ function BlockLinkMapper({
               <div className="border-t border-border/40 pt-5 mt-5 space-y-3 col-span-1 md:col-span-2">
                 <div className="flex items-center justify-between">
                   <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold">
-                    🎙️ Áudio de Narração do Post (MP3, WAV, OGG, M4A)
+                    🎙️ Áudio de Narração por Idioma (MP3, WAV, OGG, M4A)
                   </label>
-                  {postForm.audioUrl && (
+                  {audioUrlsByLang[selectedAudioLang as keyof typeof audioUrlsByLang] && (
                     <button
                       type="button"
-                      onClick={() => setPostForm({ ...postForm, audioUrl: "" })}
+                      onClick={() => {
+                        const updated = { ...audioUrlsByLang, [selectedAudioLang]: "" };
+                        setAudioUrlsByLang(updated);
+                        if (selectedAudioLang === postForm.lang) {
+                          setPostForm({ ...postForm, audioUrl: "" });
+                        }
+                      }}
                       className="text-[11px] text-red-400 hover:underline uppercase font-bold"
                     >
-                      Remover Áudio
+                      Remover Áudio ({selectedAudioLang.toUpperCase()})
                     </button>
                   )}
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 items-center">
+                <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr_auto] gap-3 items-center">
+                  <select
+                    value={selectedAudioLang}
+                    onChange={(e) => setSelectedAudioLang(e.target.value)}
+                    className="bg-[#222222] border border-border rounded-sm text-[12px] font-bold text-foreground px-3 py-2 uppercase tracking-wider focus:outline-none focus:border-primary cursor-pointer"
+                  >
+                    <option value="pt">🇵🇹 PT</option>
+                    <option value="en">🇬🇧 EN</option>
+                    <option value="es">🇪🇸 ES</option>
+                  </select>
                   <input
                     type="text"
-                    value={postForm.audioUrl || ""}
-                    onChange={(e) => setPostForm({ ...postForm, audioUrl: e.target.value })}
-                    placeholder="https://motonapratica.online/uploads/audio-narracao.mp3"
+                    value={audioUrlsByLang[selectedAudioLang as keyof typeof audioUrlsByLang] || ""}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const updated = { ...audioUrlsByLang, [selectedAudioLang]: val };
+                      setAudioUrlsByLang(updated);
+                      if (selectedAudioLang === postForm.lang) {
+                        setPostForm({ ...postForm, audioUrl: val });
+                      }
+                    }}
+                    placeholder={`Link do áudio para a versão em ${selectedAudioLang === "pt" ? "Português" : selectedAudioLang === "en" ? "Inglês" : "Espanhol"}...`}
                     className="w-full bg-[#222222] border border-border rounded-sm text-[13px] text-foreground px-4 py-2 font-mono"
                   />
-                  <label className="bg-secondary hover:bg-white/[0.04] text-muted-foreground hover:text-foreground text-[12px] font-bold uppercase tracking-wider px-4 py-2 border border-border rounded-sm cursor-pointer flex items-center justify-center gap-2 transition-all">
-                    <Upload size={14} /> Upload Áudio
+                  <label className="bg-secondary hover:bg-white/[0.04] text-muted-foreground hover:text-foreground text-[12px] font-bold uppercase tracking-wider px-4 py-2 border border-border rounded-sm cursor-pointer flex items-center justify-center gap-2 transition-all whitespace-nowrap">
+                    <Upload size={14} /> Upload ({selectedAudioLang.toUpperCase()})
                     <input
                       type="file"
                       accept="audio/*,.mp3,.wav,.ogg,.m4a,.webm"
                       className="hidden"
-                      onChange={(e) => handleFileUpload(e, (url) => setPostForm({ ...postForm, audioUrl: url }))}
+                      onChange={(e) => handleFileUpload(e, (url) => {
+                        const updated = { ...audioUrlsByLang, [selectedAudioLang]: url };
+                        setAudioUrlsByLang(updated);
+                        if (selectedAudioLang === postForm.lang) {
+                          setPostForm({ ...postForm, audioUrl: url });
+                        }
+                      })}
                     />
                   </label>
                 </div>
-                {postForm.audioUrl && (
+                {audioUrlsByLang[selectedAudioLang as keyof typeof audioUrlsByLang] ? (
                   <div className="p-3 bg-[#111111] border border-primary/30 rounded flex items-center gap-3">
-                    <span className="text-xs text-primary font-mono truncate">▶ {postForm.audioUrl}</span>
+                    <span className="text-xs text-primary font-mono truncate">
+                      ▶ Áudio Ativo ({selectedAudioLang.toUpperCase()}): {audioUrlsByLang[selectedAudioLang as keyof typeof audioUrlsByLang]}
+                    </span>
                   </div>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground italic">
+                    Nenhum áudio configurado para a versão ({selectedAudioLang.toUpperCase()}).
+                  </p>
                 )}
               </div>
             </div>

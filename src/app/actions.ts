@@ -55,6 +55,7 @@ export async function savePostAction(data: {
   img: string;
   imgFocalPoint: string;
   audioUrl?: string | null;
+  audioUrlsByLang?: Record<string, string | null>;
   blocks: { text: string; image: string; focalPoint: string }[];
   seoTitle?: string;
   seoDescription?: string;
@@ -81,6 +82,10 @@ export async function savePostAction(data: {
       const currentPost = await prisma.post.findUnique({ where: { id: data.id } });
       const translationGroupId = currentPost?.translationGroupId;
 
+      const targetAudio = data.audioUrlsByLang && data.audioUrlsByLang[lang] !== undefined
+        ? data.audioUrlsByLang[lang]
+        : (data.audioUrl || null);
+
       // Atualização do post alvo
       await prisma.post.update({
         where: { id: data.id },
@@ -93,7 +98,7 @@ export async function savePostAction(data: {
           readTime: data.readTime,
           img: data.img,
           imgFocalPoint: data.imgFocalPoint,
-          audioUrl: data.audioUrl || null,
+          audioUrl: targetAudio || null,
           blocks: data.blocks as any,
           seoTitle: data.seoTitle || data.title,
           seoDescription: data.seoDescription || data.excerpt,
@@ -103,7 +108,7 @@ export async function savePostAction(data: {
         }
       });
 
-      // Sincronizar imagens e áudio com todos os posts do mesmo grupo de tradução (idiomas irmãos)
+      // Sincronizar imagens (e áudios específicos de idioma) com todos os posts do mesmo grupo de tradução
       if (translationGroupId) {
         const sisterPosts = await prisma.post.findMany({
           where: {
@@ -136,11 +141,16 @@ export async function savePostAction(data: {
             return b;
           });
 
+          const sisterAudio = data.audioUrlsByLang && data.audioUrlsByLang[sister.lang] !== undefined
+            ? data.audioUrlsByLang[sister.lang]
+            : sister.audioUrl;
+
           await prisma.post.update({
             where: { id: sister.id },
             data: {
               img: data.img,
               imgFocalPoint: data.imgFocalPoint,
+              audioUrl: sisterAudio || null,
               blocks: updatedSisterBlocks as any
             }
           });
