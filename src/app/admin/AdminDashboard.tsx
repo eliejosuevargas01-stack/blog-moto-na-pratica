@@ -2131,7 +2131,7 @@ function BlockLinkMapper({
                 </div>
               </div>
 
-              {/* Biografia e Foto do Lucas */}
+              {/* Biografia e Foto do Eliezer */}
               <div className="border border-border p-5 bg-[#181818] rounded-sm space-y-4">
                 <h4 style={TEKO} className="text-[18px] uppercase tracking-wide text-foreground">Biografia do Autor</h4>
                 <div className="space-y-2">

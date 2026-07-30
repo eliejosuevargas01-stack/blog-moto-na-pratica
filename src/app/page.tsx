@@ -42,7 +42,7 @@ export default async function Home({ searchParams }: HomeProps) {
     breakingText: "Michelin Pilot Street 2 na Fazer — diferença real ou papo de vendedor?",
     breakingSlug: "michelin-pilot-street-2-fazer",
     bannerTitle: "Yamaha FZ25 · Solid Grey 2026",
-    bannerSubtitle: "8.400 km rodados · Motor 249cc · Minha companheira diária",
+    bannerSubtitle: "4.000 km rodados · Motor 249cc · Minha companheira diária",
     bannerImage: "https://images.unsplash.com/photo-1571646059462-99317ec8d1bf?w=1400&h=500&fit=crop&auto=format",
     bannerFocalPoint: "center"
   };

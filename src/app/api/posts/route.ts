@@ -53,6 +53,27 @@ function extractImageUrl(imgField: any): string {
   return "";
 }
 
+function normalizePostTag(rawTag?: string, title?: string): string {
+  const lowerTag = (rawTag || "").toLowerCase().trim();
+  const lowerTitle = (title || "").toLowerCase().trim();
+
+  if (lowerTag.includes("review") || lowerTag.includes("anális") || lowerTag.includes("analis") || lowerTag.includes("teste") || lowerTag.includes("test")) return "Reviews";
+  if (lowerTag.includes("manuten") || lowerTag.includes("mainten") || lowerTag.includes("oficina") || lowerTag.includes("garagem")) return "Manutenção";
+  if (lowerTag.includes("rota") || lowerTag.includes("route") || lowerTag.includes("viagem") || lowerTag.includes("estrada") || lowerTag.includes("travel")) return "Rotas";
+  if (lowerTag.includes("equip") || lowerTag.includes("gear") || lowerTag.includes("capacete") || lowerTag.includes("vestuário")) return "Equipamentos";
+  if (lowerTag.includes("event") || lowerTag.includes("encontro") || lowerTag.includes("salão")) return "Eventos";
+  if (lowerTag.includes("motogp") || lowerTag.includes("márquez") || lowerTag.includes("marquez") || lowerTag.includes("ducati") || lowerTag.includes("paddock") || lowerTag.includes("corrida")) return "MotoGP";
+
+  // Inferência automática pelo título se tag não foi informada ou for genérica
+  if (lowerTitle.includes("review") || lowerTitle.includes("avaliação") || lowerTitle.includes("análise") || lowerTitle.includes("custos") || lowerTitle.includes("twister") || lowerTitle.includes("mt-") || lowerTitle.includes("fz25") || lowerTitle.includes("cb 300") || lowerTitle.includes("morreram") || lowerTitle.includes("died")) return "Reviews";
+  if (lowerTitle.includes("manutenção") || lowerTitle.includes("óleo") || lowerTitle.includes("corrente") || lowerTitle.includes("freio") || lowerTitle.includes("pneu") || lowerTitle.includes("oficina")) return "Manutenção";
+  if (lowerTitle.includes("rota") || lowerTitle.includes("viagem") || lowerTitle.includes("serra") || lowerTitle.includes("estrada") || lowerTitle.includes("roteiro")) return "Rotas";
+  if (lowerTitle.includes("capacete") || lowerTitle.includes("jaqueta") || lowerTitle.includes("luva") || lowerTitle.includes("intercomunicador") || lowerTitle.includes("equipamento")) return "Equipamentos";
+  if (lowerTitle.includes("motogp") || lowerTitle.includes("marquez") || lowerTitle.includes("márquez") || lowerTitle.includes("bagnaia") || lowerTitle.includes("martín") || lowerTitle.includes("cota") || lowerTitle.includes("austin")) return "MotoGP";
+
+  return rawTag?.trim() || "Reviews";
+}
+
 function extractMentionedSlugsFromHtml(html: string, selfSlug?: string): string[] {
   if (!html) return [];
   const regex = /(?:\/post\/|\/en\/post\/|\/es\/post\/|motonapratica\.online\/post\/)([a-zA-Z0-9_-]+)/gi;
@@ -247,9 +268,13 @@ export async function POST(req: Request) {
 
         const postUrlPath = lang === "en" ? `/en/post/${finalSlug}` : lang === "es" ? `/es/post/${finalSlug}` : `/post/${finalSlug}`;
 
+        const rawPostTag = langData.tag || langData.type || langData.category || body.tag || body.type || body.category || output.tag || output.type || output.category;
+        const postTag = normalizePostTag(rawPostTag, langData.title);
+
         const post = await prisma.post.upsert({
           where: { slug: finalSlug },
           update: {
+            tag: postTag,
             title: langData.title,
             excerpt: langData.summary || langData.title,
             readTime: "5 min",
@@ -257,14 +282,14 @@ export async function POST(req: Request) {
             blocks,
             seoTitle: langData["meta-title"] || langData.title,
             seoDescription: langData["meta-description"] || langData.summary,
-            seoKeywords: langData["meta-tags"] || "MotoGP, Moto na Prática",
+            seoKeywords: langData["meta-tags"] || `${postTag}, Moto na Prática`,
             translationGroupId,
             lang,
           },
           create: {
             slug: finalSlug,
-            tag: "MotoGP",
-            category: "Notícias",
+            tag: postTag,
+            category: postTag,
             title: langData.title,
             excerpt: langData.summary || langData.title,
             readTime: "5 min",
@@ -273,7 +298,7 @@ export async function POST(req: Request) {
             blocks,
             seoTitle: langData["meta-title"] || langData.title,
             seoDescription: langData["meta-description"] || langData.summary,
-            seoKeywords: langData["meta-tags"] || "MotoGP, Moto na Prática",
+            seoKeywords: langData["meta-tags"] || `${postTag}, Moto na Prática`,
             translationGroupId,
             lang,
             date: new Date(),
@@ -361,22 +386,27 @@ export async function POST(req: Request) {
       return b;
     }) : [];
 
+    const rawSingleTag = body.tag || body.type || body.category || body.post_type || body.postType;
+    const finalTag = normalizePostTag(rawSingleTag, title);
+
     const post = await prisma.post.upsert({
       where: { slug: finalSlug },
       update: {
+        tag: finalTag,
+        category: finalTag,
         title,
         excerpt: excerpt || title,
         blocks: cleanedBlocks,
         seoTitle: seoTitle || title,
         seoDescription: seoDescription || excerpt,
-        seoKeywords: seoKeywords || `${tag}, ${category}, Moto na Prática`,
+        seoKeywords: seoKeywords || `${finalTag}, Moto na Prática`,
         translationGroupId: finalTranslationGroupId,
         lang,
       },
       create: {
         slug: finalSlug,
-        tag,
-        category,
+        tag: finalTag,
+        category: finalTag,
         title,
         excerpt: excerpt || title,
         readTime,
@@ -385,7 +415,7 @@ export async function POST(req: Request) {
         blocks: cleanedBlocks,
         seoTitle: seoTitle || title,
         seoDescription: seoDescription || excerpt,
-        seoKeywords: seoKeywords || `${tag}, ${category}, Moto na Prática`,
+        seoKeywords: seoKeywords || `${finalTag}, Moto na Prática`,
         translationGroupId: finalTranslationGroupId,
         lang,
         date: new Date(),

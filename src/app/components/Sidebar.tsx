@@ -72,7 +72,7 @@ export default async function Sidebar({ postTags, tableOfContents }: SidebarProp
   }
 
   const finalCategories = [
-    { label: t.nav.reviews, tag: "Review", path: "/reviews" },
+    { label: t.nav.reviews, tag: "Reviews", path: "/reviews" },
     { label: t.nav.maintenance, tag: "Manutenção", path: "/manutencao" },
     { label: t.nav.routes, tag: "Rotas", path: "/rotas" },
     { label: t.nav.gear, tag: "Equipamentos", path: "/equipamentos" },
@@ -80,7 +80,7 @@ export default async function Sidebar({ postTags, tableOfContents }: SidebarProp
   ].map(cat => ({
     ...cat,
     count: categoryCounts[cat.tag] || 0
-  }));
+  })).filter(cat => cat.count > 0);
 
   const SIDEBAR_IMG = optimizeUnsplashUrl("https://images.unsplash.com/photo-1761000989410-3fa81f1b94cb", 300, 130);
 

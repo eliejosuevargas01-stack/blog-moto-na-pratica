@@ -34,6 +34,15 @@ export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Moto na Prática",
   description: "Blog independente · experiência real na estrada",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+    },
+  },
 };
 
 export default async function RootLayout({

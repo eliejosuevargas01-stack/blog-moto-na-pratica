@@ -4,6 +4,7 @@ import Sidebar from "../components/Sidebar";
 import SocialLinks from "../components/SocialLinks";
 import Link from "next/link";
 import { Clock, ArrowRight, Gauge, Calendar, MapPin, Wrench } from "lucide-react";
+import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
@@ -21,33 +22,43 @@ export async function generateMetadata() {
     });
     return {
       title: page?.seoTitle || "Sobre o Blog e Eliezer · Moto na Prática",
-      description: page?.seoDescription || "Eliezer, piloto de Fazer 250 Solid Grey 2026 em Gaspar - SC, conta sua história na estrada sem filtros.",
+      description: page?.seoDescription || "Eliezer, 20 anos, piloto de Fazer 250 Solid Grey 2026 em Gaspar - SC, conta sua história na estrada sem filtros.",
     };
   } catch (e) {
     return {
       title: "Sobre o Blog · Moto na Prática",
-      description: "Eliezer, piloto de Fazer 250 Solid Grey 2026 em Gaspar - SC, conta sua história na estrada sem filtros."
+      description: "Eliezer, 20 anos, piloto de Fazer 250 Solid Grey 2026 em Gaspar - SC, conta sua história na estrada sem filtros."
     };
   }
 }
 
 export default async function Sobre() {
+  const cookieStore = cookies();
+  const currentLang = cookieStore.get("NEXT_LOCALE")?.value || "pt";
+
+  const langFilter = {
+    OR: [
+      { lang: currentLang },
+      ...(currentLang === "pt" ? [{ lang: null }] : []),
+    ],
+  };
+
   let content: any = {
     heroTitle: "O blog e o motociclista",
     heroDescription: "Sem patrocínio, sem jabá. Só experiência real de quem usa moto todo dia.",
     heroImage: "https://images.unsplash.com/photo-1625812184391-0359bf2344b9?w=1400&h=500&fit=crop&auto=format",
     heroFocalPoint: "center",
     stats: [
-      { value: "3.500 km", label: "Rodados na FZ25", iconName: "Gauge" },
-      { value: "Jan 2026", label: "Início com a moto", iconName: "Calendar" },
+      { value: "4.000 km", label: "Rodados na FZ25", iconName: "Gauge" },
+      { value: "2026", label: "Início no motociclismo", iconName: "Calendar" },
       { value: "Gaspar - SC", label: "Base de operações", iconName: "MapPin" },
       { value: "5", label: "Manutenções feitas em casa", iconName: "Wrench" }
     ],
     bioTitle: "Quem escreve aqui",
-    bioContentHtml: `<p class="mb-4">Me chamo Eliezer, moro em Gaspar, Santa Catarina (Vale do Itajaí). Comecei a andar de moto recentemente e a partir daí não parei mais.</p>
-<p class="mb-4">No início de 2026 dei o salto para a Fazer 250 Solid Grey, a versão nova. Foi a maior compra que já fiz relacionada a moto e, com ela, veio a vontade de registrar tudo — as dúvidas, os erros, as descobertas.</p>
-<p class="mb-4">O <span class="text-foreground font-semibold font-bold">Moto na Prática</span> nasceu disso. Não sou mecânico, não sou piloto profissional, não tenho patrocínio. Sou apenas alguém que usa moto todo dia e quer compartilhar o que aprende.</p>
-<p class="mb-4">Aqui você vai encontrar reviews de coisas que comprei com o meu dinheiro, manutenções que fiz na garagem, rotas que percorri e dicas que aprendi na raça. Nada de conteúdo pago ou postagem encomendada.</p>`,
+    bioContentHtml: `<p class="mb-4">Me chamo Eliezer, tenho 20 anos e moro em Gaspar, Santa Catarina (Vale do Itajaí). Comecei a dirigir e andar de moto em 2026 com a minha Fazer 250 — a partir daí não parei mais.</p>
+<p class="mb-4">Em 2026 dei o salto para a Fazer 250 Solid Grey, a versão nova. Foi a maior conquista que já fiz relacionada a moto e, com ela, veio a vontade de registrar tudo — as dúvidas, os erros, as descobertas e a evolução na pilotagem.</p>
+<p class="mb-4">O <span class="text-foreground font-semibold font-bold">Moto na Prática</span> nasceu disso. Não sou mecânico, não sou piloto profissional, não tenho patrocínio. Sou apenas alguém de 20 anos que usa moto todo dia e quer compartilhar o que aprende na raça.</p>
+<p class="mb-4">Aqui você vai encontrar reviews de equipamentos e acessórios que comprei com o meu dinheiro, manutenções que fiz na garagem, rotas que percorri e dicas reais de quem está vivendo o motociclismo na pele.</p>`,
     bioQuote: "Se você está pensando em comprar uma moto, já tem uma ou só curte o assunto — esse blog é pra você.",
     riderImage: "https://images.unsplash.com/photo-1542351387-dde430deaaa7?w=800&h=900&fit=crop&auto=format",
     riderFocalPoint: "center",
@@ -76,8 +87,9 @@ export default async function Sobre() {
     }
 
     recentPosts = await prisma.post.findMany({
+      where: langFilter,
       take: 3,
-      orderBy: { updatedAt: "desc" }
+      orderBy: { createdAt: "desc" }
     });
   } catch (error) {
     console.warn("Sobre database query failed, using static fallback.", error);
