@@ -432,20 +432,37 @@ export async function POST(req: Request) {
       translationGroupId,
     } = body;
 
-    const finalTranslationGroupId = translationGroupId || body.group_id || body.groupId || body.id || null;
+    const finalTranslationGroupId = translationGroupId || body.group_id || body.groupId || body.id || body.post_id || body.postId || null;
+    const targetLang = (lang || "pt").toLowerCase();
 
     if (!title) {
       return NextResponse.json({ error: "O título do post é obrigatório." }, { status: 400 });
     }
 
-    const rawTargetId = body.id || body.post_id || body.postId;
-    const targetIdStr = rawTargetId ? String(rawTargetId).trim() : undefined;
-    const existingSinglePost = targetIdStr ? await prisma.post.findUnique({ where: { id: targetIdStr } }) : null;
+    // REGRA DE MATCHING:
+    // Desconsiderar slug e título para identificar o post a ser atualizado!
+    // Buscar se já existe um post com o mesmo translationGroupId E o mesmo idioma (lang).
+    let existingSinglePost = null;
+    if (finalTranslationGroupId) {
+      const gidStr = String(finalTranslationGroupId).trim();
+      existingSinglePost = await prisma.post.findFirst({
+        where: {
+          translationGroupId: { in: [gidStr, `group-${gidStr}`] },
+          lang: targetLang
+        }
+      });
+    }
 
-    // Se o post já existir no banco, MANTÉM o slug original existente!
+    // Se não encontrou por translationGroupId + lang, busca por ID direto (se fornecido)
+    if (!existingSinglePost && (body.id || body.post_id || body.postId)) {
+      const rawIdStr = String(body.id || body.post_id || body.postId).trim();
+      existingSinglePost = await prisma.post.findUnique({ where: { id: rawIdStr } });
+    }
+
+    // Manter o slug original caso o post já exista, mesmo que a IA tenha alterado o título
     const finalSlug = existingSinglePost
-      ? (customSlug || body.slug || existingSinglePost.slug)
-      : await generateUniqueSlug(title, existingSinglePost?.id);
+      ? existingSinglePost.slug
+      : await generateUniqueSlug(title);
 
     const extractedMentionedSlugs: Set<string> = new Set(explicitMentionedSlugs);
 
@@ -473,8 +490,28 @@ export async function POST(req: Request) {
 
     let post;
     if (existingSinglePost) {
+      // UPDATE: Se o post do mesmo translationGroupId e idioma existe, ATUALIZA ele!
       post = await prisma.post.update({
         where: { id: existingSinglePost.id },
+        data: {
+          tag: finalTag,
+          category: finalTag,
+          title,
+          excerpt: excerpt || title,
+          readTime: finalReadTime,
+          audioUrl: finalAudioUrlSingle || existingSinglePost.audioUrl,
+          blocks: cleanedBlocks,
+          seoTitle: seoTitle || title,
+          seoDescription: seoDescription || excerpt,
+          seoKeywords: seoKeywords || `${finalTag}, Moto na Prática`,
+          translationGroupId: finalTranslationGroupId ? String(finalTranslationGroupId).trim() : existingSinglePost.translationGroupId,
+          lang: targetLang,
+          updatedAt: new Date(),
+        }
+      });
+    } else {
+      // CREATE: Se não existe post para este translationGroupId + idioma, CRIA para este idioma!
+      post = await prisma.post.create({
         data: {
           slug: finalSlug,
           tag: finalTag,
@@ -482,48 +519,15 @@ export async function POST(req: Request) {
           title,
           excerpt: excerpt || title,
           readTime: finalReadTime,
+          img: img || "",
+          imgFocalPoint: imgFocalPoint || "center",
           audioUrl: finalAudioUrlSingle,
           blocks: cleanedBlocks,
           seoTitle: seoTitle || title,
           seoDescription: seoDescription || excerpt,
           seoKeywords: seoKeywords || `${finalTag}, Moto na Prática`,
-          translationGroupId: finalTranslationGroupId || existingSinglePost.translationGroupId,
-          lang,
-        }
-      });
-    } else {
-      post = await prisma.post.upsert({
-        where: { slug: finalSlug },
-        update: {
-          tag: finalTag,
-          category: finalTag,
-          title,
-          excerpt: excerpt || title,
-          readTime: finalReadTime,
-          audioUrl: finalAudioUrlSingle,
-          blocks: cleanedBlocks,
-          seoTitle: seoTitle || title,
-          seoDescription: seoDescription || excerpt,
-          seoKeywords: seoKeywords || `${finalTag}, Moto na Prática`,
-          translationGroupId: finalTranslationGroupId,
-          lang,
-        },
-        create: {
-          slug: finalSlug,
-          tag: finalTag,
-          category: finalTag,
-          title,
-          excerpt: excerpt || title,
-          readTime: finalReadTime,
-          img,
-          imgFocalPoint,
-          audioUrl: finalAudioUrlSingle,
-          blocks: cleanedBlocks,
-          seoTitle: seoTitle || title,
-          seoDescription: seoDescription || excerpt,
-          seoKeywords: seoKeywords || `${finalTag}, Moto na Prática`,
-          translationGroupId: finalTranslationGroupId,
-          lang,
+          translationGroupId: finalTranslationGroupId ? String(finalTranslationGroupId).trim() : null,
+          lang: targetLang,
           date: new Date(),
         },
       });
