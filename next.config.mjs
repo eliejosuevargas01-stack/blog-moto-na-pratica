@@ -24,28 +24,28 @@ const nextConfig = {
   async redirects() {
     return [
       {
-        source: '/pt/post/:slug*',
-        destination: '/post/:slug*',
+        source: '/pt/post/:slug+',
+        destination: '/post/:slug+',
         permanent: true,
       },
       {
-        source: '/pt/posts/:slug*',
-        destination: '/post/:slug*',
+        source: '/pt/posts/:slug+',
+        destination: '/post/:slug+',
         permanent: true,
       },
       {
-        source: '/posts/:slug*',
-        destination: '/post/:slug*',
+        source: '/posts/:slug+',
+        destination: '/post/:slug+',
         permanent: true,
       },
       {
-        source: '/en/posts/:slug*',
-        destination: '/en/post/:slug*',
+        source: '/en/posts/:slug+',
+        destination: '/en/post/:slug+',
         permanent: true,
       },
       {
-        source: '/es/posts/:slug*',
-        destination: '/es/post/:slug*',
+        source: '/es/posts/:slug+',
+        destination: '/es/post/:slug+',
         permanent: true,
       },
     ];
