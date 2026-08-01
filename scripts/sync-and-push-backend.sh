@@ -28,6 +28,8 @@ cp "$MOTO_DIR/src/lib/auth.ts" "$CHARMING_DIR/lib/auth.ts" 2>/dev/null
 cp "$MOTO_DIR/src/lib/google-indexing.ts" "$CHARMING_DIR/lib/google-indexing.ts" 2>/dev/null
 cp "$MOTO_DIR/src/lib/image-utils.ts" "$CHARMING_DIR/lib/image-utils.ts" 2>/dev/null
 cp "$MOTO_DIR/Dockerfile" "$CHARMING_DIR/Dockerfile" 2>/dev/null
+cp "$MOTO_DIR/docker-compose.yml" "$CHARMING_DIR/docker-compose.yml" 2>/dev/null
+cp "$MOTO_DIR/next.config.mjs" "$CHARMING_DIR/next.config.mjs" 2>/dev/null
 
 # 5. Gerar Prisma Client no Charming Borg
 echo "⚙️  Atualizando Prisma Client no Charming Borg..."
