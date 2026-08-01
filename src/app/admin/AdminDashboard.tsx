@@ -2986,9 +2986,14 @@ function BlockLinkMapper({
                           <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${
                             notif.type === "REGISTER" ? "bg-blue-900/60 text-blue-300" :
                             notif.type === "LIKE" ? "bg-red-900/60 text-red-300" :
-                            notif.type === "SHARE" ? "bg-purple-900/60 text-purple-300" : "bg-primary/30 text-primary"
+                            notif.type === "SHARE" ? "bg-purple-900/60 text-purple-300" :
+                            notif.type === "AUDIO" ? "bg-amber-900/60 text-amber-300" :
+                            notif.type === "IMAGE" ? "bg-cyan-900/60 text-cyan-300" :
+                            notif.type === "POST_UPDATE" ? "bg-emerald-900/60 text-emerald-300" :
+                            notif.type?.startsWith("AI_ACTION") ? "bg-purple-900/60 text-purple-300" :
+                            "bg-primary/30 text-primary"
                           }`}>
-                            {notif.type}
+                            {notif.type === "POST_UPDATE" ? "POST API" : notif.type?.startsWith("AI_ACTION") ? "IA WEBHOOK" : notif.type}
                           </span>
                           <span className="text-[11px] text-muted-foreground">
                             {new Date(notif.createdAt).toLocaleString("pt-BR")}

@@ -548,6 +548,19 @@ export async function POST(req: Request) {
       });
     }
 
+    try {
+      await prisma.notification.create({
+        data: {
+          type: "POST_UPDATE",
+          message: `📝 Post "${post.title}" (${(post.lang || "pt").toUpperCase()}) ${existingSinglePost ? "atualizado" : "criado"} via API`,
+          postId: post.id,
+          postTitle: post.title,
+        }
+      });
+    } catch (notifErr) {
+      console.warn("Erro ao criar notificação no POST /api/posts:", notifErr);
+    }
+
     revalidatePath("/");
     revalidatePath("/posts");
 
@@ -817,6 +830,30 @@ export async function PATCH(req: Request) {
           revalidatePath(`/post/${updated.slug}`);
           updatedPostsInfo.push({ id: post.id, lang: post.lang, slug: post.slug });
         }
+      }
+
+      try {
+        if (finalAudioUrl && !finalImageUrl) {
+          await prisma.notification.create({
+            data: {
+              type: "AUDIO",
+              message: `🎵 Narração em áudio anexada com sucesso ao post "${post.title}" (${(post.lang || "pt").toUpperCase()})`,
+              postId: post.id,
+              postTitle: post.title,
+            }
+          });
+        } else if (finalImageUrl) {
+          await prisma.notification.create({
+            data: {
+              type: "IMAGE",
+              message: `🖼️ Nova imagem inserida no post "${post.title}" (${(post.lang || "pt").toUpperCase()})`,
+              postId: post.id,
+              postTitle: post.title,
+            }
+          });
+        }
+      } catch (notifErr) {
+        console.warn("Erro ao criar notificação no PATCH /api/posts:", notifErr);
       }
     }
 

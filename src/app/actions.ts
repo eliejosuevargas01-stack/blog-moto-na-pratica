@@ -273,6 +273,33 @@ export async function deletePostAction(id: number | string) {
 
 // --- INTEGRAÇÃO COM N8N & NOTIFICAÇÕES ---
 
+// --- AUXILIAR DE RATE LIMIT DE WEBHOOK (1 REQUISIÇÃO POR HORA POR AÇÃO) ---
+async function checkWebhookRateLimit(actionType: string): Promise<{ allowed: boolean; remainingMinutes?: number; error?: string }> {
+  try {
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const recentNotif = await prisma.notification.findFirst({
+      where: {
+        type: `AI_ACTION_${actionType.toUpperCase()}`,
+        createdAt: { gte: oneHourAgo }
+      },
+      orderBy: { createdAt: "desc" }
+    });
+
+    if (recentNotif) {
+      const elapsedMs = Date.now() - new Date(recentNotif.createdAt).getTime();
+      const remainingMinutes = Math.max(1, Math.ceil((3600000 - elapsedMs) / 60000));
+      return {
+        allowed: false,
+        remainingMinutes,
+        error: `Limite de frequência ativado: Você só pode disparar o Webhook de IA (${actionType}) 1 vez por hora para economizar tokens. Por favor, aguarde ${remainingMinutes} minuto(s) para disparar novamente.`
+      };
+    }
+  } catch (err) {
+    console.warn("Erro ao verificar limite de frequência de webhook:", err);
+  }
+  return { allowed: true };
+}
+
 export async function triggerImprovePostWithAIAction(data: {
   translationGroupId?: string;
   id?: string | number;
@@ -284,6 +311,11 @@ export async function triggerImprovePostWithAIAction(data: {
   category?: string;
 }) {
   try {
+    const rateCheck = await checkWebhookRateLimit("update");
+    if (!rateCheck.allowed) {
+      return { error: rateCheck.error };
+    }
+
     const configPage = await prisma.page.findUnique({ where: { slug: "config" } });
     let webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || process.env.N8N_WEBHOOK_URL || "";
     
@@ -336,6 +368,16 @@ export async function triggerImprovePostWithAIAction(data: {
       return { error: `Webhook respondeu com erro HTTP ${res.status}` };
     }
 
+    // Registrar Notificação no Banco de Dados
+    await prisma.notification.create({
+      data: {
+        type: "AI_ACTION_UPDATE",
+        message: `✨ Requisição de Melhoria por IA (action=update) enviada para o post "${data.title}"`,
+        postTitle: data.title,
+        postId: groupId,
+      }
+    });
+
     return { success: true, message: "Requisição enviada com sucesso para o Webhook de IA (action=update)!" };
   } catch (error: any) {
     console.error("Erro ao disparar webhook de Melhorar com IA:", error);
@@ -362,6 +404,11 @@ export async function triggerGenerateImagesAction(data: {
   blocks: Array<{ text: string; image?: string; focalPoint?: string; alt?: string }>;
 }) {
   try {
+    const rateCheck = await checkWebhookRateLimit("img");
+    if (!rateCheck.allowed) {
+      return { error: rateCheck.error };
+    }
+
     const configPage = await prisma.page.findUnique({ where: { slug: "config" } });
     let webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || process.env.N8N_WEBHOOK_URL || "";
     
@@ -433,7 +480,6 @@ export async function triggerGenerateImagesAction(data: {
           pt: formattedLangObject
         }
       },
-      // Campos de raiz para compatibilidade universal
       translationGroupId: groupId,
       translation_group_id: groupId,
       id: groupId,
@@ -457,6 +503,16 @@ export async function triggerGenerateImagesAction(data: {
     if (!res.ok) {
       return { error: `Webhook respondeu com erro HTTP ${res.status}` };
     }
+
+    // Registrar Notificação no Banco de Dados
+    await prisma.notification.create({
+      data: {
+        type: "AI_ACTION_IMG",
+        message: `🖼️ Requisição de Geração de Imagens (action=img) enviada para o post "${data.title}"`,
+        postTitle: data.title,
+        postId: groupId,
+      }
+    });
 
     return { success: true, message: "Requisição enviada com sucesso para o Webhook de Geração de Imagens (action=img)!" };
   } catch (error: any) {
@@ -483,6 +539,11 @@ export async function triggerCreateAudioAction(data: {
   blocks: Array<{ text: string; image?: string; focalPoint?: string; alt?: string }>;
 }) {
   try {
+    const rateCheck = await checkWebhookRateLimit("audio");
+    if (!rateCheck.allowed) {
+      return { error: rateCheck.error };
+    }
+
     const configPage = await prisma.page.findUnique({ where: { slug: "config" } });
     let webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || process.env.N8N_WEBHOOK_URL || "";
     
@@ -559,6 +620,16 @@ export async function triggerCreateAudioAction(data: {
     if (!res.ok) {
       return { error: `Webhook respondeu com erro HTTP ${res.status}` };
     }
+
+    // Registrar Notificação no Banco de Dados
+    await prisma.notification.create({
+      data: {
+        type: "AI_ACTION_AUDIO",
+        message: `🎧 Requisição de Criar Narração (action=audio) enviada para o post "${data.title}"`,
+        postTitle: data.title,
+        postId: groupId,
+      }
+    });
 
     return { success: true, message: "Requisição enviada com sucesso para o Webhook de Narração de Áudio (action=audio)!" };
   } catch (error: any) {
