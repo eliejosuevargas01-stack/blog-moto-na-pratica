@@ -288,7 +288,7 @@ export default async function Home({ searchParams }: HomeProps) {
 
             <div className="text-center mt-8 pt-6 border-t border-border/60">
               <Link
-                href="/posts"
+                href={currentLang === "en" ? "/en/posts" : currentLang === "es" ? "/es/posts" : "/posts"}
                 className="inline-flex items-center justify-center gap-2 bg-secondary hover:bg-primary hover:text-white border border-border text-[14px] font-bold uppercase tracking-wider px-8 py-3.5 transition-all rounded-sm text-foreground shadow-sm"
               >
                 {t.posts.loadMore} <ArrowRight size={15} />
