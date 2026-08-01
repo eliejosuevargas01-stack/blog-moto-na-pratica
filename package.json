@@ -9,8 +9,7 @@
     "start": "next start",
     "prisma:generate": "prisma generate",
     "prisma:db:push": "prisma db push",
-    "prisma:seed": "prisma db seed",
-    "sync:backend": "bash scripts/sync-and-push-backend.sh"
+    "prisma:seed": "prisma db seed"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",
