@@ -406,10 +406,9 @@ export async function triggerGenerateImagesAction(data: {
       alt: b.alt || ""
     }));
 
-    const payload = {
+    const ptData = {
       translationGroupId: groupId,
       translation_group_id: groupId,
-      groupId: groupId,
       id: data.id || groupId,
       title: stripHtmlTags(data.title || ""),
       titulo: stripHtmlTags(data.title || ""),
@@ -430,6 +429,51 @@ export async function triggerGenerateImagesAction(data: {
         audioUrl: data.audioUrl || null
       },
       blocks: parsedBlocks,
+      blocos_de_conteudo: parsedBlocks,
+      slug: data.slug || "",
+      lang: data.lang || "pt",
+      tag: data.tag || "",
+      category: data.category || "",
+    };
+
+    const originalBlocks = (data.blocks || []).map((b, idx) => ({
+      index: idx + 1,
+      text: b.text || "",
+      image: b.image || "",
+      focalPoint: b.focalPoint || "center",
+      alt: b.alt || ""
+    }));
+
+    const auditLogs = {
+      origem: "cms_post_editor",
+      timestamp: new Date().toISOString(),
+      action: "img",
+      user_agent: "MotoNaPratica_CMS"
+    };
+
+    const payload = {
+      payload_para_api: {
+        output: {
+          pt: ptData,
+          [data.lang || "pt"]: ptData
+        }
+      },
+      dados_de_auditoria: auditLogs,
+      blocos_originais: originalBlocks,
+
+      // Atributos de compatibilidade direta na raiz
+      translationGroupId: groupId,
+      translation_group_id: groupId,
+      groupId: groupId,
+      id: data.id || groupId,
+      title: stripHtmlTags(data.title || ""),
+      titulo: stripHtmlTags(data.title || ""),
+      excerpt: stripHtmlTags(data.excerpt || ""),
+      summary: stripHtmlTags(data.excerpt || ""),
+      resumo: stripHtmlTags(data.excerpt || ""),
+      metadata: ptData.metadata,
+      blocks: parsedBlocks,
+      blocos_de_conteudo: parsedBlocks,
       slug: data.slug || "",
       lang: data.lang || "pt",
       tag: data.tag || "",
