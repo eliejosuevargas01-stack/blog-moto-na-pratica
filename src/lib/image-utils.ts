@@ -22,7 +22,7 @@ export async function saveOptimizedImageBuffer(inputBuffer: Buffer): Promise<str
     await writeFile(filePath, optimizedBuffer);
   }
 
-  return `https://motonapratica.online/uploads/${filename}`;
+  return `/uploads/${filename}`;
 }
 
 export async function processImageBase64(base64Str: string): Promise<string> {
@@ -50,7 +50,7 @@ export async function saveAudioBuffer(inputBuffer: Buffer, extension: string = "
     await writeFile(filePath, inputBuffer);
   }
 
-  return `https://motonapratica.online/uploads/${filename}`;
+  return `/uploads/${filename}`;
 }
 
 export function calculateReadTime(data: { title?: string; excerpt?: string; blocks?: any[]; text?: string }): string {

@@ -2,22 +2,15 @@
 const nextConfig = {
   output: 'standalone',
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'images.unsplash.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'motonapratica.online',
-      },
-      {
-        protocol: 'https',
-        hostname: 'motonapratica.dominuslabs.online',
+        hostname: '**',
       },
       {
         protocol: 'http',
-        hostname: 'localhost',
+        hostname: '**',
       },
     ],
   },

@@ -13,10 +13,11 @@ function generateSlug(title: string): string {
     .replace(/\s+/g, "-");
 }
 
-async function generateUniqueSlug(title: string, existingId?: string): Promise<string> {
+async function generateUniqueSlug(title: string, existingId?: number | string): Promise<string> {
   const baseSlug = generateSlug(title) || `post-${Date.now()}`;
   let slug = baseSlug;
   let counter = 1;
+  const numExistingId = existingId ? parseInt(String(existingId), 10) : undefined;
 
   while (true) {
     const existing = await prisma.post.findUnique({
@@ -24,7 +25,7 @@ async function generateUniqueSlug(title: string, existingId?: string): Promise<s
       select: { id: true }
     });
 
-    if (!existing || (existingId && existing.id === existingId)) {
+    if (!existing || (numExistingId && existing.id === numExistingId)) {
       return slug;
     }
 
@@ -43,14 +44,18 @@ function cleanSlug(slug?: string): string {
 
 function extractImageUrl(imgField: any): string {
   if (!imgField) return "";
+  let url = "";
   if (typeof imgField === "string") {
-    if (imgField.startsWith("http")) return imgField;
-    return "";
+    url = imgField.trim();
+  } else if (typeof imgField === "object" && imgField.url) {
+    url = String(imgField.url).trim();
   }
-  if (typeof imgField === "object" && imgField.url) {
-    return imgField.url;
+  if (!url) return "";
+  if (url.includes("/uploads/")) {
+    const filename = url.split("/uploads/").pop()?.split("?")[0];
+    if (filename) return `/uploads/${filename}`;
   }
-  return "";
+  return url;
 }
 
 function normalizePostTag(rawTag?: string, title?: string): string {
@@ -253,8 +258,24 @@ export async function POST(req: Request) {
         const langData = output[lang];
         if (!langData || !langData.title) continue;
 
-        // Gerar slug automaticamente e garantindo unicidade (-2, -3 se já existir no banco)
-        const finalSlug = await generateUniqueSlug(langData.title);
+        const targetIdRaw = langData.id || body.id || body.post_id || output.id || output.pt?.id || output.en?.id || output.es?.id;
+        const targetIdInt = targetIdRaw && !isNaN(parseInt(String(targetIdRaw), 10)) ? parseInt(String(targetIdRaw), 10) : undefined;
+
+        // Se o post para este id ou translationGroupId e idioma JÁ EXISTIR no banco, MANTÉM o slug original existente!
+        const existingPostForLang = await prisma.post.findFirst({
+          where: {
+            OR: [
+              ...(targetIdInt ? [{ id: targetIdInt }] : []),
+              ...(translationGroupId ? [{ translationGroupId: String(translationGroupId) }] : []),
+              ...(translationGroupId && !String(translationGroupId).startsWith("group-") ? [{ translationGroupId: `group-${translationGroupId}` }] : [])
+            ],
+            lang
+          }
+        });
+
+        const finalSlug = existingPostForLang
+          ? (langData.slug || existingPostForLang.slug)
+          : await generateUniqueSlug(langData.title, existingPostForLang?.id);
 
         const featuredImg =
           extractImageUrl(langData["img-1"]) ||
@@ -297,41 +318,64 @@ export async function POST(req: Request) {
 
         const calculatedReadTime = calculateReadTime({ title: langData.title, excerpt: langData.summary, blocks });
 
-        const post = await prisma.post.upsert({
-          where: { slug: finalSlug },
-          update: {
-            tag: postTag,
-            title: langData.title,
-            excerpt: langData.summary || langData.title,
-            readTime: calculatedReadTime,
-            img: featuredImg,
-            audioUrl: finalAudioUrl,
-            blocks,
-            seoTitle: langData["meta-title"] || langData.title,
-            seoDescription: langData["meta-description"] || langData.summary,
-            seoKeywords: langData["meta-tags"] || `${postTag}, Moto na Prática`,
-            translationGroupId,
-            lang,
-          },
-          create: {
-            slug: finalSlug,
-            tag: postTag,
-            category: postTag,
-            title: langData.title,
-            excerpt: langData.summary || langData.title,
-            readTime: calculatedReadTime,
-            img: featuredImg,
-            audioUrl: finalAudioUrl,
-            imgFocalPoint: "center",
-            blocks,
-            seoTitle: langData["meta-title"] || langData.title,
-            seoDescription: langData["meta-description"] || langData.summary,
-            seoKeywords: langData["meta-tags"] || `${postTag}, Moto na Prática`,
-            translationGroupId,
-            lang,
-            date: new Date(),
-          },
-        });
+        let post;
+        if (existingPostForLang) {
+          post = await prisma.post.update({
+            where: { id: existingPostForLang.id },
+            data: {
+              slug: finalSlug,
+              tag: postTag,
+              category: postTag,
+              title: langData.title,
+              excerpt: langData.summary || langData.title,
+              readTime: calculatedReadTime,
+              img: featuredImg,
+              audioUrl: finalAudioUrl,
+              blocks,
+              seoTitle: langData["meta-title"] || langData.title,
+              seoDescription: langData["meta-description"] || langData.summary,
+              seoKeywords: langData["meta-tags"] || `${postTag}, CuriosoTech`,
+              translationGroupId,
+              lang,
+            }
+          });
+        } else {
+          post = await prisma.post.upsert({
+            where: { slug: finalSlug },
+            update: {
+              tag: postTag,
+              title: langData.title,
+              excerpt: langData.summary || langData.title,
+              readTime: calculatedReadTime,
+              img: featuredImg,
+              audioUrl: finalAudioUrl,
+              blocks,
+              seoTitle: langData["meta-title"] || langData.title,
+              seoDescription: langData["meta-description"] || langData.summary,
+              seoKeywords: langData["meta-tags"] || `${postTag}, CuriosoTech`,
+              translationGroupId,
+              lang,
+            },
+            create: {
+              slug: finalSlug,
+              tag: postTag,
+              category: postTag,
+              title: langData.title,
+              excerpt: langData.summary || langData.title,
+              readTime: calculatedReadTime,
+              img: featuredImg,
+              audioUrl: finalAudioUrl,
+              imgFocalPoint: "center",
+              blocks,
+              seoTitle: langData["meta-title"] || langData.title,
+              seoDescription: langData["meta-description"] || langData.summary,
+              seoKeywords: langData["meta-tags"] || `${postTag}, CuriosoTech`,
+              translationGroupId,
+              lang,
+              date: new Date(),
+            },
+          });
+        }
 
         createdPosts.push({
           id: post.id,
@@ -395,8 +439,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "O título do post é obrigatório." }, { status: 400 });
     }
 
-    // Gerar slug automaticamente e garantindo unicidade (-2, -3 se já existir)
-    const finalSlug = await generateUniqueSlug(title);
+    const rawTargetId = body.id || body.post_id || body.postId;
+    const targetIdInt = rawTargetId && !isNaN(parseInt(String(rawTargetId), 10)) ? parseInt(String(rawTargetId), 10) : undefined;
+    const existingSinglePost = targetIdInt ? await prisma.post.findUnique({ where: { id: targetIdInt } }) : null;
+
+    // Se o post já existir no banco, MANTÉM o slug original existente!
+    const finalSlug = existingSinglePost
+      ? (customSlug || body.slug || existingSinglePost.slug)
+      : await generateUniqueSlug(title, existingSinglePost?.id);
+
     const extractedMentionedSlugs: Set<string> = new Set(explicitMentionedSlugs);
 
     const cleanedBlocks = Array.isArray(blocks) ? blocks.map((b: any) => {
@@ -421,41 +472,63 @@ export async function POST(req: Request) {
       ? body.readTime
       : calculateReadTime({ title, excerpt, blocks: cleanedBlocks });
 
-    const post = await prisma.post.upsert({
-      where: { slug: finalSlug },
-      update: {
-        tag: finalTag,
-        category: finalTag,
-        title,
-        excerpt: excerpt || title,
-        readTime: finalReadTime,
-        audioUrl: finalAudioUrlSingle,
-        blocks: cleanedBlocks,
-        seoTitle: seoTitle || title,
-        seoDescription: seoDescription || excerpt,
-        seoKeywords: seoKeywords || `${finalTag}, Moto na Prática`,
-        translationGroupId: finalTranslationGroupId,
-        lang,
-      },
-      create: {
-        slug: finalSlug,
-        tag: finalTag,
-        category: finalTag,
-        title,
-        excerpt: excerpt || title,
-        readTime: finalReadTime,
-        img,
-        imgFocalPoint,
-        audioUrl: finalAudioUrlSingle,
-        blocks: cleanedBlocks,
-        seoTitle: seoTitle || title,
-        seoDescription: seoDescription || excerpt,
-        seoKeywords: seoKeywords || `${finalTag}, Moto na Prática`,
-        translationGroupId: finalTranslationGroupId,
-        lang,
-        date: new Date(),
-      },
-    });
+    let post;
+    if (existingSinglePost) {
+      post = await prisma.post.update({
+        where: { id: existingSinglePost.id },
+        data: {
+          slug: finalSlug,
+          tag: finalTag,
+          category: finalTag,
+          title,
+          excerpt: excerpt || title,
+          readTime: finalReadTime,
+          audioUrl: finalAudioUrlSingle,
+          blocks: cleanedBlocks,
+          seoTitle: seoTitle || title,
+          seoDescription: seoDescription || excerpt,
+          seoKeywords: seoKeywords || `${finalTag}, CuriosoTech`,
+          translationGroupId: finalTranslationGroupId || existingSinglePost.translationGroupId,
+          lang,
+        }
+      });
+    } else {
+      post = await prisma.post.upsert({
+        where: { slug: finalSlug },
+        update: {
+          tag: finalTag,
+          category: finalTag,
+          title,
+          excerpt: excerpt || title,
+          readTime: finalReadTime,
+          audioUrl: finalAudioUrlSingle,
+          blocks: cleanedBlocks,
+          seoTitle: seoTitle || title,
+          seoDescription: seoDescription || excerpt,
+          seoKeywords: seoKeywords || `${finalTag}, CuriosoTech`,
+          translationGroupId: finalTranslationGroupId,
+          lang,
+        },
+        create: {
+          slug: finalSlug,
+          tag: finalTag,
+          category: finalTag,
+          title,
+          excerpt: excerpt || title,
+          readTime: finalReadTime,
+          img,
+          imgFocalPoint,
+          audioUrl: finalAudioUrlSingle,
+          blocks: cleanedBlocks,
+          seoTitle: seoTitle || title,
+          seoDescription: seoDescription || excerpt,
+          seoKeywords: seoKeywords || `${finalTag}, CuriosoTech`,
+          translationGroupId: finalTranslationGroupId,
+          lang,
+          date: new Date(),
+        },
+      });
+    }
 
     if (extractedMentionedSlugs.size > 0) {
       await prisma.post.updateMany({
@@ -580,13 +653,21 @@ export async function PATCH(req: Request) {
         return NextResponse.json({ error: "Falha ao processar imagem Base64.", details: err.message }, { status: 400 });
       }
     }
+    if (typeof finalImageUrl === "string" && finalImageUrl.includes("/uploads/")) {
+      const fname = finalImageUrl.split("/uploads/").pop()?.split("?")[0];
+      if (fname) finalImageUrl = `/uploads/${fname}`;
+    }
+
+    const targetIdInt = targetIdentifier && !isNaN(parseInt(String(targetIdentifier), 10)) ? parseInt(String(targetIdentifier), 10) : undefined;
+    const targetIdentifierStr = String(targetIdentifier);
 
     const initialPosts = await prisma.post.findMany({
       where: {
         OR: [
-          { id: targetIdentifier },
-          { slug: targetIdentifier },
-          { translationGroupId: targetIdentifier }
+          ...(targetIdInt ? [{ id: targetIdInt }] : []),
+          { slug: targetIdentifierStr },
+          { translationGroupId: targetIdentifierStr },
+          { translationGroupId: `group-${targetIdentifierStr}` }
         ]
       }
     });

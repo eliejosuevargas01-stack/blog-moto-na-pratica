@@ -38,13 +38,13 @@ ENV NEXT_TELEMETRY_DISABLED 1
 # Copiar arquivos estáticos públicos
 COPY --from=builder /app/public ./public
 
-# Criar pasta de uploads com permissões corretas
+# Criar pasta de uploads para mídia (imagens, áudios, vídeos)
 RUN mkdir -p ./uploads
 
-# Volume persistente para uploads (mapear no painel do Coolify)
+# Volume persistente para uploads de mídia (mapear no Coolify / Docker Compose)
 VOLUME ["/app/uploads"]
 
-# Configurar permissões para o cache do Next.js
+# Configurar diretório .next
 RUN mkdir -p .next
 
 # Copiar o build standalone otimizado
