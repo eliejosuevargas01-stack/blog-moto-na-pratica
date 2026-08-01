@@ -406,78 +406,41 @@ export async function triggerGenerateImagesAction(data: {
       alt: b.alt || ""
     }));
 
-    const ptData = {
-      translationGroupId: groupId,
-      translation_group_id: groupId,
-      id: data.id || groupId,
-      title: stripHtmlTags(data.title || ""),
-      titulo: stripHtmlTags(data.title || ""),
-      excerpt: stripHtmlTags(data.excerpt || ""),
-      summary: stripHtmlTags(data.excerpt || ""),
-      resumo: stripHtmlTags(data.excerpt || ""),
-      metadata: {
-        seoTitle: stripHtmlTags(data.seoTitle || data.title || ""),
-        seoDescription: stripHtmlTags(data.seoDescription || data.excerpt || ""),
-        seoKeywords: data.seoKeywords || "",
-        tag: data.tag || "",
-        category: data.category || "",
-        slug: data.slug || "",
-        lang: data.lang || "pt",
-        readTime: data.readTime || "",
-        img: data.img || "",
-        imgFocalPoint: data.imgFocalPoint || "center",
-        audioUrl: data.audioUrl || null
-      },
-      blocks: parsedBlocks,
-      blocos_de_conteudo: parsedBlocks,
-      slug: data.slug || "",
-      lang: data.lang || "pt",
-      tag: data.tag || "",
-      category: data.category || "",
+    const langKey = (data.lang || "pt").toLowerCase();
+
+    const formattedLangObject: Record<string, any> = {
+      id: groupId,
+      title: data.title || "",
+      summary: data.excerpt || "",
+      "meta-title": data.seoTitle || data.title || "",
+      "meta-description": data.seoDescription || data.excerpt || "",
+      "meta-tags": data.seoKeywords || "",
+      "img-1": data.img || "AGUARDANDO_GERACAO_CAPA"
     };
 
-    const originalBlocks = (data.blocks || []).map((b, idx) => ({
-      index: idx + 1,
-      text: b.text || "",
-      image: b.image || "",
-      focalPoint: b.focalPoint || "center",
-      alt: b.alt || ""
-    }));
+    (data.blocks || []).forEach((b, idx) => {
+      const blockNum = idx + 1;
+      const imgNum = idx + 2;
 
-    const auditLogs = {
-      origem: "cms_post_editor",
-      timestamp: new Date().toISOString(),
-      action: "img",
-      user_agent: "MotoNaPratica_CMS"
-    };
+      formattedLangObject[`block-${blockNum}`] = b.text || "";
+      formattedLangObject[`img-${imgNum}`] = b.image || `AGUARDANDO_GERACAO_B${blockNum}`;
+    });
 
     const payload = {
       payload_para_api: {
         output: {
-          pt: ptData,
-          [data.lang || "pt"]: ptData
+          [langKey]: formattedLangObject,
+          pt: formattedLangObject
         }
       },
-      dados_de_auditoria: auditLogs,
-      blocos_originais: originalBlocks,
-
-      // Atributos de compatibilidade direta na raiz
+      // Campos de raiz para compatibilidade universal
       translationGroupId: groupId,
       translation_group_id: groupId,
-      groupId: groupId,
-      id: data.id || groupId,
-      title: stripHtmlTags(data.title || ""),
-      titulo: stripHtmlTags(data.title || ""),
-      excerpt: stripHtmlTags(data.excerpt || ""),
-      summary: stripHtmlTags(data.excerpt || ""),
-      resumo: stripHtmlTags(data.excerpt || ""),
-      metadata: ptData.metadata,
-      blocks: parsedBlocks,
-      blocos_de_conteudo: parsedBlocks,
-      slug: data.slug || "",
-      lang: data.lang || "pt",
-      tag: data.tag || "",
-      category: data.category || "",
+      id: groupId,
+      title: data.title || "",
+      summary: data.excerpt || "",
+      excerpt: data.excerpt || "",
+      blocks: parsedBlocks
     };
 
     console.log(`[AI Webhook: Gerar Imagens] Disparando (action=img) -> ${urlObj.toString()}`);
