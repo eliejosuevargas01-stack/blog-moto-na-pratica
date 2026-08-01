@@ -23,6 +23,121 @@ import {
 } from "lucide-react";
 import { plugins } from "../../plugins";
 
+interface PopupModalData {
+  isOpen: boolean;
+  type: "success" | "error";
+  title: string;
+  message: string;
+  details?: {
+    action?: string;
+    endpoint?: string;
+    timestamp?: string;
+  };
+}
+
+interface StyledActionModalProps {
+  modal: PopupModalData | null;
+  onClose: () => void;
+}
+
+function StyledActionModal({ modal, onClose }: StyledActionModalProps) {
+  if (!modal || !modal.isOpen) return null;
+
+  const isSuccess = modal.type === "success";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+      <div 
+        className={`relative w-full max-w-lg bg-card border rounded-lg p-6 shadow-2xl overflow-hidden transition-all duration-300 ${
+          isSuccess 
+            ? "border-emerald-500/40 shadow-emerald-500/20 bg-gradient-to-b from-emerald-950/50 via-[#181818] to-[#141414]" 
+            : "border-rose-500/40 shadow-rose-500/20 bg-gradient-to-b from-rose-950/50 via-[#181818] to-[#141414]"
+        }`}
+        style={BODY}
+      >
+        {/* TOP GLOW BAR */}
+        <div className={`absolute top-0 left-0 right-0 h-1.5 ${isSuccess ? "bg-emerald-500" : "bg-rose-500"}`} />
+
+        {/* CLOSE BUTTON */}
+        <button
+          onClick={onClose}
+          type="button"
+          className="absolute top-4 right-4 p-1.5 rounded-full text-muted-foreground hover:text-foreground bg-secondary/80 hover:bg-secondary transition-colors"
+        >
+          <X size={16} />
+        </button>
+
+        {/* HEADER */}
+        <div className="flex items-start gap-4 mb-4">
+          <div className={`p-3 rounded-full shrink-0 ${
+            isSuccess 
+              ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" 
+              : "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+          }`}>
+            {isSuccess ? <Check size={28} className="animate-bounce" /> : <X size={28} className="animate-pulse" />}
+          </div>
+
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-sm border ${
+                isSuccess 
+                  ? "bg-emerald-950 text-emerald-300 border-emerald-800" 
+                  : "bg-rose-950 text-rose-300 border-rose-800"
+              }`}>
+                {isSuccess ? "Sucesso" : "Falha na Ação"}
+              </span>
+              {modal.details?.timestamp && (
+                <span className="text-[11px] text-muted-foreground font-mono">{modal.details.timestamp}</span>
+              )}
+            </div>
+            <h3 style={TEKO} className="text-[26px] uppercase tracking-wide font-semibold leading-tight text-foreground">
+              {modal.title}
+            </h3>
+          </div>
+        </div>
+
+        {/* MESSAGE */}
+        <p className="text-[14px] text-muted-foreground leading-relaxed mb-5 bg-[#1A1A1A] p-4 rounded-sm border border-border/50">
+          {modal.message}
+        </p>
+
+        {/* DETAILS BOX IF PRESENT */}
+        {modal.details && (modal.details.action || modal.details.endpoint) && (
+          <div className="mb-6 p-3 bg-[#111111] border border-border/40 rounded-sm text-[12px] space-y-1.5 font-mono">
+            {modal.details.action && (
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Ação da Query:</span>
+                <span className="text-primary font-bold">action={modal.details.action}</span>
+              </div>
+            )}
+            {modal.details.endpoint && (
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Destino:</span>
+                <span className="text-foreground text-[11px] truncate max-w-[240px]">{modal.details.endpoint}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* FOOTER BUTTON */}
+        <div className="flex justify-end">
+          <button
+            onClick={onClose}
+            type="button"
+            className={`w-full sm:w-auto px-6 py-2.5 rounded-sm text-[13px] font-bold uppercase tracking-wider transition-all shadow-md ${
+              isSuccess
+                ? "bg-emerald-600 hover:bg-emerald-500 text-white"
+                : "bg-rose-600 hover:bg-rose-500 text-white"
+            }`}
+          >
+            Entendido / Fechar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 interface FocalPointPickerProps {
   imageUrl: string;
@@ -570,17 +685,25 @@ function AdminDashboardContent({ initialPosts, initialPages }: AdminDashboardPro
     es: ""
   });
 
+  // --- POPUP MODAL ESTILIZADO DE AÇÕES E WEBHOOKS ---
+  const [actionModal, setActionModal] = useState<PopupModalData | null>(null);
+
   // --- IA E AUTOMAÇÃO N8N ---
   const [aiLoadingImprove, setAiLoadingImprove] = useState(false);
   const [aiLoadingImg, setAiLoadingImg] = useState(false);
 
   const handleImproveWithAI = async () => {
     if (!postForm.title) {
-      alert("Por favor, preencha o título do post antes de solicitar o aprimoramento de IA.");
+      setActionModal({
+        isOpen: true,
+        type: "error",
+        title: "Título Necessário",
+        message: "Por favor, preencha pelo menos o título do post antes de solicitar o aprimoramento por IA.",
+        details: { action: "update" }
+      });
       return;
     }
     setAiLoadingImprove(true);
-    setMessage(null);
 
     const groupId = editingPost?.translationGroupId || (editingPost?.id ? String(editingPost.id) : `group-${Date.now()}`);
 
@@ -596,20 +719,45 @@ function AdminDashboardContent({ initialPosts, initialPages }: AdminDashboardPro
     });
 
     if (res.error) {
-      setMessage({ type: "error", text: `Falha ao enviar requisição (action=update): ${res.error}` });
+      setActionModal({
+        isOpen: true,
+        type: "error",
+        title: "Falha na Ação de IA",
+        message: `Não foi possível enviar a requisição para o Webhook de IA: ${res.error}`,
+        details: {
+          action: "update",
+          endpoint: "NEXT_PUBLIC_N8N_WEBHOOK_URL",
+          timestamp: new Date().toLocaleTimeString("pt-BR")
+        }
+      });
     } else {
-      setMessage({ type: "success", text: "✨ Requisição enviada com sucesso para o Webhook com a ação 'update'!" });
+      setActionModal({
+        isOpen: true,
+        type: "success",
+        title: "Ação Executada com Sucesso!",
+        message: "✨ A requisição para melhorar o post (action=update) foi enviada com sucesso para o Webhook de IA! O processamento foi iniciado com êxito.",
+        details: {
+          action: "update",
+          endpoint: "NEXT_PUBLIC_N8N_WEBHOOK_URL",
+          timestamp: new Date().toLocaleTimeString("pt-BR")
+        }
+      });
     }
     setAiLoadingImprove(false);
   };
 
   const handleGenerateImagesWithAI = async () => {
     if (!postForm.title) {
-      alert("Por favor, preencha o título do post antes de solicitar a geração de imagens.");
+      setActionModal({
+        isOpen: true,
+        type: "error",
+        title: "Título Necessário",
+        message: "Por favor, preencha o título do post antes de solicitar a geração de imagens.",
+        details: { action: "img" }
+      });
       return;
     }
     setAiLoadingImg(true);
-    setMessage(null);
 
     const groupId = editingPost?.translationGroupId || (editingPost?.id ? String(editingPost.id) : `group-${Date.now()}`);
 
@@ -633,9 +781,29 @@ function AdminDashboardContent({ initialPosts, initialPages }: AdminDashboardPro
     });
 
     if (res.error) {
-      setMessage({ type: "error", text: `Falha ao solicitar geração de imagens (action=img): ${res.error}` });
+      setActionModal({
+        isOpen: true,
+        type: "error",
+        title: "Falha ao Gerar Imagens",
+        message: `Ocorreu um erro ao enviar a requisição para geração de imagens: ${res.error}`,
+        details: {
+          action: "img",
+          endpoint: "NEXT_PUBLIC_N8N_WEBHOOK_URL",
+          timestamp: new Date().toLocaleTimeString("pt-BR")
+        }
+      });
     } else {
-      setMessage({ type: "success", text: "🖼️ Requisição enviada com sucesso para o Webhook com a ação 'img' e blocos parseados sem HTML!" });
+      setActionModal({
+        isOpen: true,
+        type: "success",
+        title: "Geração de Imagens Executada!",
+        message: "🖼️ A requisição para o Webhook (action=img) foi enviada com êxito! Todos os blocos foram parseados e limpos de tags HTML.",
+        details: {
+          action: "img",
+          endpoint: "NEXT_PUBLIC_N8N_WEBHOOK_URL",
+          timestamp: new Date().toLocaleTimeString("pt-BR")
+        }
+      });
     }
     setAiLoadingImg(false);
   };
@@ -3026,6 +3194,9 @@ function BlockLinkMapper({
           </div>
         </div>
       )}
+
+      {/* POPUP MODAL ESTILIZADO DE RESPOSTA/AÇÕES */}
+      <StyledActionModal modal={actionModal} onClose={() => setActionModal(null)} />
 
     </div>
   );
