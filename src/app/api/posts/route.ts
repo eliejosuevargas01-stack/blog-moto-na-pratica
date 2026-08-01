@@ -572,8 +572,8 @@ export async function POST(req: Request) {
 export async function PATCH(req: Request) {
   try {
     const apiKeyHeader = req.headers.get("x-api-key") || req.headers.get("authorization")?.replace("Bearer ", "");
-    const url = new URL(req.url);
-    const apiKeyQuery = url.searchParams.get("api_key");
+    const reqUrl = new URL(req.url);
+    const apiKeyQuery = reqUrl.searchParams.get("api_key");
 
     const expectedKey = process.env.API_SECRET_KEY || "motonapratica-secret-key-2026";
     const providedKey = apiKeyHeader || apiKeyQuery;
@@ -582,54 +582,74 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: "Não autorizado. Chave de API inválida (x-api-key)." }, { status: 401 });
     }
 
-    const contentType = req.headers.get("content-type") || "";
     let body: any = {};
     let fileFromFormData: File | null = null;
+    const contentType = (req.headers.get("content-type") || "").toLowerCase();
 
     if (contentType.includes("multipart/form-data")) {
-      const formData = await req.formData();
-      formData.forEach((value, key) => {
-        if (value instanceof File) {
-          if (key === "audio" || key === "file") fileFromFormData = value;
-          else if (key === "image" || key === "img") body[key] = value;
-        } else {
-          body[key] = value;
+      try {
+        const formData = await req.formData();
+        formData.forEach((value, key) => {
+          if (value instanceof File) {
+            if (key === "audio" || key === "file" || key === "narration" || key === "audio_file") fileFromFormData = value;
+            else if (key === "image" || key === "img") body[key] = value;
+          } else {
+            body[key] = value;
+          }
+        });
+      } catch (formDataErr: any) {
+        console.warn("[PATCH /api/posts] req.formData() falhou, tentando fallback para JSON/Text:", formDataErr?.message || formDataErr);
+        try {
+          body = await req.json();
+        } catch (jsonErr) {
+          try {
+            const rawText = await req.text();
+            body = JSON.parse(rawText);
+          } catch (textErr) {
+            body = {};
+          }
         }
-      });
+      }
     } else {
       try {
         body = await req.json();
       } catch (e) {
-        body = {};
+        try {
+          const rawText = await req.text();
+          body = JSON.parse(rawText);
+        } catch (textErr) {
+          body = {};
+        }
       }
     }
 
     const {
-      id, post_id, postId, slug,
+      id, post_id, postId, translationGroupId, group_id, groupId, slug,
       position, pos, imgKey,
       image, img,
-      audioUrl, audio_url, audio, narrationUrl,
+      audioUrl, audio_url, audio, narrationUrl, narration_url, audio_path, audioPath, url, file,
       lang,
       alt, altText, alt_text, caption, legenda, focalPoint, focal_point
     } = body;
 
-    const targetIdentifier = id || post_id || postId || slug;
+    const targetIdentifier = id || post_id || postId || translationGroupId || group_id || groupId || slug;
     if (!targetIdentifier) {
-      return NextResponse.json({ error: "É necessário fornecer o id ou slug do post ('id', 'post_id' ou 'slug')." }, { status: 400 });
+      return NextResponse.json({ error: "É necessário fornecer o id, translationGroupId ou slug do post." }, { status: 400 });
     }
 
-    const rawAudioInput = fileFromFormData || audio || audioUrl || audio_url || narrationUrl;
+    const rawAudioInput = fileFromFormData || audio || audioUrl || audio_url || narrationUrl || narration_url || audio_path || audioPath || url || file;
     let finalAudioUrl: string | null = null;
 
     if (rawAudioInput) {
       if (typeof rawAudioInput === "string") {
-        if (rawAudioInput.startsWith("http://") || rawAudioInput.startsWith("https://")) {
-          finalAudioUrl = rawAudioInput;
+        const trimmedAudioStr = rawAudioInput.trim();
+        if (trimmedAudioStr.startsWith("http://") || trimmedAudioStr.startsWith("https://")) {
+          finalAudioUrl = trimmedAudioStr;
         } else {
           // Processar string Base64 de áudio
-          const matches = rawAudioInput.match(/^data:audio\/([a-z0-9\+\-]+);base64,/i);
+          const matches = trimmedAudioStr.match(/^data:audio\/([a-z0-9\+\-]+);base64,/i);
           const ext = matches ? (matches[1] === "mpeg" ? "mp3" : matches[1]) : "mp3";
-          const cleanBase64 = rawAudioInput.replace(/^data:audio\/[a-z0-9\+\-]+;base64,/i, "").trim();
+          const cleanBase64 = trimmedAudioStr.replace(/^data:[^;]+;base64,/i, "").trim();
           const buffer = Buffer.from(cleanBase64, "base64");
           finalAudioUrl = await saveAudioBuffer(buffer, ext);
         }
