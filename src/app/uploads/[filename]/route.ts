@@ -16,9 +16,25 @@ export async function GET(
     const ext = path.extname(filename).toLowerCase();
     const filePath = path.join(UPLOADS_DIR, filename);
 
-    // Verificar se o arquivo original existe
+    // Verificar se o arquivo original existe. Se não existir, retornar SVG placeholder amigável
     if (!fs.existsSync(filePath)) {
-      return new Response("Arquivo não encontrado", { status: 404 });
+      const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">
+  <rect width="1200" height="675" fill="#151515"/>
+  <rect x="2" y="2" width="1196" height="671" fill="none" stroke="#262626" stroke-width="2"/>
+  <g transform="translate(600, 310)" text-anchor="middle">
+    <circle cx="0" cy="-20" r="40" fill="#252525"/>
+    <path d="M-15 -30 L15 -30 L15 -10 L-15 -10 Z M-8 -35 L8 -35 L5 -30 L-5 -30 Z" fill="#E31E24"/>
+    <circle cx="0" cy="-20" r="10" fill="#151515" stroke="#E31E24" stroke-width="3"/>
+    <text x="0" y="55" font-family="'Barlow', sans-serif, system-ui" font-size="22" font-weight="700" fill="#FFFFFF" letter-spacing="1">CURIOSOTECH</text>
+    <text x="0" y="85" font-family="'Barlow', sans-serif, system-ui" font-size="14" font-weight="400" fill="#888888">Imagem em processamento ou não encontrada no servidor</text>
+  </g>
+</svg>`;
+      return new Response(fallbackSvg, {
+        headers: {
+          "Content-Type": "image/svg+xml",
+          "Cache-Control": "no-cache",
+        },
+      });
     }
 
     // Obter parâmetro de largura ?w=
