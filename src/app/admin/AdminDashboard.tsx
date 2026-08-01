@@ -10,13 +10,16 @@ import {
   logoutAction,
   getNotificationsAction,
   getSubscribersAction,
-  markNotificationAsReadAction
+  markNotificationAsReadAction,
+  triggerImprovePostWithAIAction,
+  triggerGenerateImagesAction
 } from "../actions";
 import { TEKO, BODY } from "../data";
 import { 
   Plus, Trash2, Save, Upload, LogOut, FileText, Layout, ArrowLeft, 
   Eye, Edit, Wrench, Sliders, Bell, Mail, ArrowUp, ArrowDown, Users, Heart, Share2, Copy, Check, Lock, GripVertical,
-  Globe, ChevronDown, ChevronUp, Languages, ExternalLink, CornerDownRight, Image as ImageIcon, Search, X
+  Globe, ChevronDown, ChevronUp, Languages, ExternalLink, CornerDownRight, Image as ImageIcon, Search, X,
+  Sparkles, ImagePlus
 } from "lucide-react";
 import { plugins } from "../../plugins";
 
@@ -566,6 +569,76 @@ function AdminDashboardContent({ initialPosts, initialPages }: AdminDashboardPro
     en: "",
     es: ""
   });
+
+  // --- IA E AUTOMAÇÃO N8N ---
+  const [aiLoadingImprove, setAiLoadingImprove] = useState(false);
+  const [aiLoadingImg, setAiLoadingImg] = useState(false);
+
+  const handleImproveWithAI = async () => {
+    if (!postForm.title) {
+      alert("Por favor, preencha o título do post antes de solicitar o aprimoramento de IA.");
+      return;
+    }
+    setAiLoadingImprove(true);
+    setMessage(null);
+
+    const groupId = editingPost?.translationGroupId || (editingPost?.id ? String(editingPost.id) : `group-${Date.now()}`);
+
+    const res = await triggerImprovePostWithAIAction({
+      translationGroupId: groupId,
+      id: postForm.id || editingPost?.id,
+      title: postForm.title,
+      excerpt: postForm.excerpt,
+      slug: postForm.slug,
+      lang: postForm.lang,
+      tag: postForm.tag,
+      category: postForm.category,
+    });
+
+    if (res.error) {
+      setMessage({ type: "error", text: `Falha ao enviar requisição (action=update): ${res.error}` });
+    } else {
+      setMessage({ type: "success", text: "✨ Requisição enviada com sucesso para o Webhook com a ação 'update'!" });
+    }
+    setAiLoadingImprove(false);
+  };
+
+  const handleGenerateImagesWithAI = async () => {
+    if (!postForm.title) {
+      alert("Por favor, preencha o título do post antes de solicitar a geração de imagens.");
+      return;
+    }
+    setAiLoadingImg(true);
+    setMessage(null);
+
+    const groupId = editingPost?.translationGroupId || (editingPost?.id ? String(editingPost.id) : `group-${Date.now()}`);
+
+    const res = await triggerGenerateImagesAction({
+      translationGroupId: groupId,
+      id: postForm.id || editingPost?.id,
+      title: postForm.title,
+      excerpt: postForm.excerpt,
+      slug: postForm.slug,
+      lang: postForm.lang,
+      tag: postForm.tag,
+      category: postForm.category,
+      readTime: postForm.readTime,
+      img: postForm.img,
+      imgFocalPoint: postForm.imgFocalPoint,
+      audioUrl: postForm.audioUrl,
+      seoTitle: postForm.seoTitle,
+      seoDescription: postForm.seoDescription,
+      seoKeywords: postForm.seoKeywords,
+      blocks: postForm.blocks,
+    });
+
+    if (res.error) {
+      setMessage({ type: "error", text: `Falha ao solicitar geração de imagens (action=img): ${res.error}` });
+    } else {
+      setMessage({ type: "success", text: "🖼️ Requisição enviada com sucesso para o Webhook com a ação 'img' e blocos parseados sem HTML!" });
+    }
+    setAiLoadingImg(false);
+  };
 
   // --- CONTROLE DE PÁGINAS ---
   const [selectedPageSlug, setSelectedPageSlug] = useState<string>("");
@@ -1252,17 +1325,44 @@ function BlockLinkMapper({
       {/* --- EDITAR/CRIAR POST --- */}
       {editingPost && (
         <form onSubmit={handleSavePost} className="space-y-8 bg-card border border-border p-8 rounded-sm">
-          <div className="flex items-center gap-3 border-b border-border pb-5 mb-5">
-            <button
-              type="button"
-              onClick={() => setEditingPost(null)}
-              className="p-1.5 bg-secondary border border-border text-muted-foreground hover:text-foreground rounded-sm transition-colors"
-            >
-              <ArrowLeft size={16} />
-            </button>
-            <h2 style={TEKO} className="text-[26px] uppercase tracking-wide">
-              {postForm.id ? "Editar Artigo" : "Novo Artigo"}
-            </h2>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5 mb-5">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setEditingPost(null)}
+                className="p-1.5 bg-secondary border border-border text-muted-foreground hover:text-foreground rounded-sm transition-colors"
+              >
+                <ArrowLeft size={16} />
+              </button>
+              <h2 style={TEKO} className="text-[26px] uppercase tracking-wide">
+                {postForm.id ? "Editar Artigo" : "Novo Artigo"}
+              </h2>
+            </div>
+
+            {/* BOTÕES DE IA (EXCLUSIVOS DO EDITOR DE POSTS) */}
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                disabled={aiLoadingImprove}
+                onClick={handleImproveWithAI}
+                className="flex items-center gap-2 bg-purple-950 hover:bg-purple-900 border border-purple-700/60 text-purple-200 text-[12px] font-bold uppercase tracking-wider px-4 py-2 rounded-sm transition-all shadow-sm disabled:opacity-50"
+                title="Envia requisição (action=update) com translationGroupId, título e resumo para o Webhook"
+              >
+                <Sparkles size={14} className={aiLoadingImprove ? "animate-spin" : ""} />
+                <span>{aiLoadingImprove ? "Enviando..." : "Melhorar com IA"}</span>
+              </button>
+
+              <button
+                type="button"
+                disabled={aiLoadingImg}
+                onClick={handleGenerateImagesWithAI}
+                className="flex items-center gap-2 bg-cyan-950 hover:bg-cyan-900 border border-cyan-700/60 text-cyan-200 text-[12px] font-bold uppercase tracking-wider px-4 py-2 rounded-sm transition-all shadow-sm disabled:opacity-50"
+                title="Envia requisição (action=img) com translationGroupId e todos os blocos parseados sem HTML"
+              >
+                <ImagePlus size={14} className={aiLoadingImg ? "animate-spin" : ""} />
+                <span>{aiLoadingImg ? "Enviando..." : "Gerar Imagens"}</span>
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1679,22 +1779,48 @@ function BlockLinkMapper({
             </div>
           </div>
 
-          {/* BOTÕES SALVAR/VOLTAR */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
-            <button
-              type="button"
-              onClick={() => setEditingPost(null)}
-              className="bg-secondary hover:bg-white/[0.03] text-muted-foreground hover:text-foreground text-[13px] font-bold uppercase tracking-wider px-5 py-3 border border-border rounded-sm transition-all"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex items-center gap-2 bg-primary hover:bg-[#E05300] text-white text-[13px] font-bold uppercase tracking-wider px-6 py-3 rounded-sm transition-colors disabled:bg-primary/50"
-            >
-              <Save size={14} /> {loading ? "Salvando..." : "Salvar Post"}
-            </button>
+          {/* BOTÕES SALVAR/VOLTAR & AÇÕES DE IA */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-border">
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                disabled={aiLoadingImprove}
+                onClick={handleImproveWithAI}
+                className="flex items-center gap-2 bg-purple-950 hover:bg-purple-900 border border-purple-700/60 text-purple-200 text-[12px] font-bold uppercase tracking-wider px-4 py-2.5 rounded-sm transition-all shadow-sm disabled:opacity-50"
+                title="Envia requisição (action=update) com translationGroupId, título e resumo para o Webhook"
+              >
+                <Sparkles size={14} className={aiLoadingImprove ? "animate-spin" : ""} />
+                <span>{aiLoadingImprove ? "Enviando..." : "Melhorar com IA"}</span>
+              </button>
+
+              <button
+                type="button"
+                disabled={aiLoadingImg}
+                onClick={handleGenerateImagesWithAI}
+                className="flex items-center gap-2 bg-cyan-950 hover:bg-cyan-900 border border-cyan-700/60 text-cyan-200 text-[12px] font-bold uppercase tracking-wider px-4 py-2.5 rounded-sm transition-all shadow-sm disabled:opacity-50"
+                title="Envia requisição (action=img) com translationGroupId e todos os blocos parseados sem HTML"
+              >
+                <ImagePlus size={14} className={aiLoadingImg ? "animate-spin" : ""} />
+                <span>{aiLoadingImg ? "Enviando..." : "Gerar Imagens"}</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setEditingPost(null)}
+                className="bg-secondary hover:bg-white/[0.03] text-muted-foreground hover:text-foreground text-[13px] font-bold uppercase tracking-wider px-5 py-3 border border-border rounded-sm transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex items-center gap-2 bg-primary hover:bg-[#E05300] text-white text-[13px] font-bold uppercase tracking-wider px-6 py-3 rounded-sm transition-colors disabled:bg-primary/50"
+              >
+                <Save size={14} /> {loading ? "Salvando..." : "Salvar Post"}
+              </button>
+            </div>
           </div>
         </form>
       )}

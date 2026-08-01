@@ -64,13 +64,13 @@ export async function savePostAction(data: {
   lang?: string;
 }) {
   try {
-    const numericId = data.id && !isNaN(parseInt(String(data.id), 10)) ? parseInt(String(data.id), 10) : undefined;
+    const targetPostId = data.id ? String(data.id).trim() : undefined;
 
     // Validar slug
     const existing = await prisma.post.findFirst({
       where: {
         slug: data.slug,
-        id: numericId ? { not: numericId } : undefined
+        id: targetPostId ? { not: targetPostId } : undefined
       }
     });
 
@@ -83,9 +83,9 @@ export async function savePostAction(data: {
     const computedReadTime = calculateReadTime({ title: data.title, excerpt: data.excerpt, blocks: data.blocks });
     const finalReadTime = (data.readTime && data.readTime !== "5 min") ? data.readTime : computedReadTime;
 
-    if (numericId) {
+    if (targetPostId) {
       // Obter post atual para capturar translationGroupId
-      const currentPost = await prisma.post.findUnique({ where: { id: numericId } });
+      const currentPost = await prisma.post.findUnique({ where: { id: targetPostId } });
       const translationGroupId = currentPost?.translationGroupId;
 
       const targetAudio = data.audioUrlsByLang && data.audioUrlsByLang[lang] !== undefined
@@ -94,7 +94,7 @@ export async function savePostAction(data: {
 
       // Atualização do post alvo
       await prisma.post.update({
-        where: { id: numericId },
+        where: { id: targetPostId },
         data: {
           slug: data.slug,
           tag: data.tag,
@@ -119,7 +119,7 @@ export async function savePostAction(data: {
         const sisterPosts = await prisma.post.findMany({
           where: {
             translationGroupId,
-            id: { not: numericId }
+            id: { not: targetPostId }
           }
         });
 
@@ -240,8 +240,8 @@ export async function savePostAction(data: {
 
 export async function deletePostAction(id: number | string) {
   try {
-    const numericId = typeof id === "number" ? id : parseInt(String(id), 10);
-    const post = isNaN(numericId) ? null : await prisma.post.findUnique({ where: { id: numericId } });
+    const targetIdStr = String(id).trim();
+    const post = await prisma.post.findUnique({ where: { id: targetIdStr } });
     if (!post) {
       return { error: "Post não encontrado." };
     }
@@ -252,7 +252,7 @@ export async function deletePostAction(id: number | string) {
         where: { translationGroupId: post.translationGroupId }
       });
     } else {
-      await prisma.post.delete({ where: { id: numericId } });
+      await prisma.post.delete({ where: { id: targetIdStr } });
     }
 
     revalidatePath("/");
@@ -273,6 +273,191 @@ export async function deletePostAction(id: number | string) {
 
 // --- INTEGRAÇÃO COM N8N & NOTIFICAÇÕES ---
 
+export async function triggerImprovePostWithAIAction(data: {
+  translationGroupId?: string;
+  id?: string | number;
+  title: string;
+  excerpt: string;
+  slug?: string;
+  lang?: string;
+  tag?: string;
+  category?: string;
+}) {
+  try {
+    const configPage = await prisma.page.findUnique({ where: { slug: "config" } });
+    let webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || process.env.N8N_WEBHOOK_URL || "";
+    
+    if (configPage && configPage.content) {
+      const content = typeof configPage.content === "string" ? JSON.parse(configPage.content) : configPage.content;
+      if (content.n8nWebhookUrl) {
+        webhookUrl = content.n8nWebhookUrl;
+      }
+    }
+
+    if (!webhookUrl) {
+      return { error: "Webhook URL não configurado nas variáveis de ambiente (NEXT_PUBLIC_N8N_WEBHOOK_URL)." };
+    }
+
+    const apiKey = process.env.API_SECRET_KEY || process.env.NEXT_PUBLIC_API_SECRET_KEY || "motonapratica-secret-key-2026";
+    const groupId = data.translationGroupId || (data.id ? String(data.id) : `group-${Date.now()}`);
+
+    const urlObj = new URL(webhookUrl);
+    urlObj.searchParams.set("action", "update");
+    urlObj.searchParams.set("api_key", apiKey);
+
+    const payload = {
+      translationGroupId: groupId,
+      translation_group_id: groupId,
+      groupId: groupId,
+      id: data.id || groupId,
+      title: data.title,
+      titulo: data.title,
+      excerpt: data.excerpt,
+      summary: data.excerpt,
+      resumo: data.excerpt,
+      slug: data.slug || "",
+      lang: data.lang || "pt",
+      tag: data.tag || "",
+      category: data.category || "",
+    };
+
+    console.log(`[AI Webhook: Melhorar com IA] Disparando (action=update) -> ${urlObj.toString()}`);
+
+    const res = await fetch(urlObj.toString(), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      return { error: `Webhook respondeu com erro HTTP ${res.status}` };
+    }
+
+    return { success: true, message: "Requisição enviada com sucesso para o Webhook de IA (action=update)!" };
+  } catch (error: any) {
+    console.error("Erro ao disparar webhook de Melhorar com IA:", error);
+    return { error: error.message || "Falha de conexão com o Webhook." };
+  }
+}
+
+export async function triggerGenerateImagesAction(data: {
+  translationGroupId?: string;
+  id?: string | number;
+  title: string;
+  excerpt: string;
+  slug?: string;
+  lang?: string;
+  tag?: string;
+  category?: string;
+  readTime?: string;
+  img?: string;
+  imgFocalPoint?: string;
+  audioUrl?: string | null;
+  seoTitle?: string;
+  seoDescription?: string;
+  seoKeywords?: string;
+  blocks: Array<{ text: string; image?: string; focalPoint?: string; alt?: string }>;
+}) {
+  try {
+    const configPage = await prisma.page.findUnique({ where: { slug: "config" } });
+    let webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || process.env.N8N_WEBHOOK_URL || "";
+    
+    if (configPage && configPage.content) {
+      const content = typeof configPage.content === "string" ? JSON.parse(configPage.content) : configPage.content;
+      if (content.n8nWebhookUrl) {
+        webhookUrl = content.n8nWebhookUrl;
+      }
+    }
+
+    if (!webhookUrl) {
+      return { error: "Webhook URL não configurado nas variáveis de ambiente (NEXT_PUBLIC_N8N_WEBHOOK_URL)." };
+    }
+
+    const apiKey = process.env.API_SECRET_KEY || process.env.NEXT_PUBLIC_API_SECRET_KEY || "motonapratica-secret-key-2026";
+    const groupId = data.translationGroupId || (data.id ? String(data.id) : `group-${Date.now()}`);
+
+    const stripHtmlTags = (html: string): string => {
+      if (!html) return "";
+      return html
+        .replace(/<[^>]*>/g, " ")
+        .replace(/&nbsp;/gi, " ")
+        .replace(/&amp;/gi, "&")
+        .replace(/&lt;/gi, "<")
+        .replace(/&gt;/gi, ">")
+        .replace(/&quot;/gi, '"')
+        .replace(/&#39;/gi, "'")
+        .replace(/\s+/g, " ")
+        .trim();
+    };
+
+    const urlObj = new URL(webhookUrl);
+    urlObj.searchParams.set("action", "img");
+    urlObj.searchParams.set("api_key", apiKey);
+
+    const parsedBlocks = (data.blocks || []).map((b, idx) => ({
+      index: idx + 1,
+      blockNumber: idx + 1,
+      text: stripHtmlTags(b.text || ""),
+      image: b.image || "",
+      focalPoint: b.focalPoint || "center",
+      alt: b.alt || ""
+    }));
+
+    const payload = {
+      translationGroupId: groupId,
+      translation_group_id: groupId,
+      groupId: groupId,
+      id: data.id || groupId,
+      title: stripHtmlTags(data.title || ""),
+      titulo: stripHtmlTags(data.title || ""),
+      excerpt: stripHtmlTags(data.excerpt || ""),
+      summary: stripHtmlTags(data.excerpt || ""),
+      resumo: stripHtmlTags(data.excerpt || ""),
+      metadata: {
+        seoTitle: stripHtmlTags(data.seoTitle || data.title || ""),
+        seoDescription: stripHtmlTags(data.seoDescription || data.excerpt || ""),
+        seoKeywords: data.seoKeywords || "",
+        tag: data.tag || "",
+        category: data.category || "",
+        slug: data.slug || "",
+        lang: data.lang || "pt",
+        readTime: data.readTime || "",
+        img: data.img || "",
+        imgFocalPoint: data.imgFocalPoint || "center",
+        audioUrl: data.audioUrl || null
+      },
+      blocks: parsedBlocks,
+      slug: data.slug || "",
+      lang: data.lang || "pt",
+      tag: data.tag || "",
+      category: data.category || "",
+    };
+
+    console.log(`[AI Webhook: Gerar Imagens] Disparando (action=img) -> ${urlObj.toString()}`);
+
+    const res = await fetch(urlObj.toString(), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      return { error: `Webhook respondeu com erro HTTP ${res.status}` };
+    }
+
+    return { success: true, message: "Requisição enviada com sucesso para o Webhook de Geração de Imagens (action=img)!" };
+  } catch (error: any) {
+    console.error("Erro ao disparar webhook de Gerar Imagens:", error);
+    return { error: error.message || "Falha de conexão com o Webhook." };
+  }
+}
+
 export async function triggerImprovePostAction(data: {
   id: number | string;
   title: string;
@@ -283,7 +468,7 @@ export async function triggerImprovePostAction(data: {
   lang?: string;
 }) {
   try {
-    const webhookUrl = process.env.N8N_WEBHOOK_URL || process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || "https://myn8n.seommerce.shop/webhook/curiosotech";
+    const webhookUrl = process.env.N8N_WEBHOOK_URL || process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || "";
 
     console.log(`[Server Action] Disparando webhook de IA Redatora para "${data.title}" -> ${webhookUrl}`);
 

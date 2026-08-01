@@ -25,7 +25,7 @@ export async function GET(
     <circle cx="0" cy="-20" r="40" fill="#252525"/>
     <path d="M-15 -30 L15 -30 L15 -10 L-15 -10 Z M-8 -35 L8 -35 L5 -30 L-5 -30 Z" fill="#E31E24"/>
     <circle cx="0" cy="-20" r="10" fill="#151515" stroke="#E31E24" stroke-width="3"/>
-    <text x="0" y="55" font-family="'Barlow', sans-serif, system-ui" font-size="22" font-weight="700" fill="#FFFFFF" letter-spacing="1">CURIOSOTECH</text>
+    <text x="0" y="55" font-family="'Barlow', sans-serif, system-ui" font-size="22" font-weight="700" fill="#FFFFFF" letter-spacing="1">MOTO NA PRÁTICA</text>
     <text x="0" y="85" font-family="'Barlow', sans-serif, system-ui" font-size="14" font-weight="400" fill="#888888">Imagem em processamento ou não encontrada no servidor</text>
   </g>
 </svg>`;
