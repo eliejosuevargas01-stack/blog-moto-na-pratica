@@ -12,14 +12,15 @@ import {
   getSubscribersAction,
   markNotificationAsReadAction,
   triggerImprovePostWithAIAction,
-  triggerGenerateImagesAction
+  triggerGenerateImagesAction,
+  triggerCreateAudioAction
 } from "../actions";
 import { TEKO, BODY } from "../data";
 import { 
   Plus, Trash2, Save, Upload, LogOut, FileText, Layout, ArrowLeft, 
   Eye, Edit, Wrench, Sliders, Bell, Mail, ArrowUp, ArrowDown, Users, Heart, Share2, Copy, Check, Lock, GripVertical,
   Globe, ChevronDown, ChevronUp, Languages, ExternalLink, CornerDownRight, Image as ImageIcon, Search, X,
-  Sparkles, ImagePlus
+  Sparkles, ImagePlus, Volume2
 } from "lucide-react";
 import { plugins } from "../../plugins";
 
@@ -691,6 +692,7 @@ function AdminDashboardContent({ initialPosts, initialPages }: AdminDashboardPro
   // --- IA E AUTOMAÇÃO N8N ---
   const [aiLoadingImprove, setAiLoadingImprove] = useState(false);
   const [aiLoadingImg, setAiLoadingImg] = useState(false);
+  const [aiLoadingAudio, setAiLoadingAudio] = useState(false);
 
   const handleImproveWithAI = async () => {
     if (!postForm.title) {
@@ -806,6 +808,67 @@ function AdminDashboardContent({ initialPosts, initialPages }: AdminDashboardPro
       });
     }
     setAiLoadingImg(false);
+  };
+
+  const handleCreateAudioWithAI = async () => {
+    if (!postForm.title) {
+      setActionModal({
+        isOpen: true,
+        type: "error",
+        title: "Título Necessário",
+        message: "Por favor, preencha o título do post antes de solicitar a narração de áudio.",
+        details: { action: "audio" }
+      });
+      return;
+    }
+    setAiLoadingAudio(true);
+
+    const groupId = editingPost?.translationGroupId || (editingPost?.id ? String(editingPost.id) : `group-${Date.now()}`);
+
+    const res = await triggerCreateAudioAction({
+      translationGroupId: groupId,
+      id: postForm.id || editingPost?.id,
+      title: postForm.title,
+      excerpt: postForm.excerpt,
+      slug: postForm.slug,
+      lang: postForm.lang,
+      tag: postForm.tag,
+      category: postForm.category,
+      readTime: postForm.readTime,
+      img: postForm.img,
+      imgFocalPoint: postForm.imgFocalPoint,
+      seoTitle: postForm.seoTitle,
+      seoDescription: postForm.seoDescription,
+      seoKeywords: postForm.seoKeywords,
+      blocks: postForm.blocks,
+    });
+
+    if (res.error) {
+      setActionModal({
+        isOpen: true,
+        type: "error",
+        title: "Falha ao Criar Narração",
+        message: `Ocorreu um erro ao enviar a requisição para síntese de áudio: ${res.error}`,
+        details: {
+          action: "audio",
+          endpoint: "NEXT_PUBLIC_N8N_WEBHOOK_URL",
+          timestamp: new Date().toLocaleTimeString("pt-BR")
+        }
+      });
+    } else {
+      setActionModal({
+        isOpen: true,
+        type: "success",
+        title: "Criar Narração Executado!",
+        message: "🎧 A requisição para o Webhook (action=audio) foi enviada com êxito! O payload com blocos de texto e auditoria foi transmitido para a síntese de narração em áudio.",
+        details: {
+          action: "audio",
+          endpoint: "NEXT_PUBLIC_N8N_WEBHOOK_URL",
+          timestamp: new Date().toLocaleTimeString("pt-BR")
+        }
+      });
+    }
+    setAiLoadingAudio(false);
   };
 
   // --- CONTROLE DE PÁGINAS ---
@@ -1530,6 +1593,17 @@ function BlockLinkMapper({
                 <ImagePlus size={14} className={aiLoadingImg ? "animate-spin" : ""} />
                 <span>{aiLoadingImg ? "Enviando..." : "Gerar Imagens"}</span>
               </button>
+
+              <button
+                type="button"
+                disabled={aiLoadingAudio}
+                onClick={handleCreateAudioWithAI}
+                className="flex items-center gap-2 bg-amber-950 hover:bg-amber-900 border border-amber-700/60 text-amber-200 text-[12px] font-bold uppercase tracking-wider px-4 py-2 rounded-sm transition-all shadow-sm disabled:opacity-50"
+                title="Envia requisição (action=audio) com payload completo de blocos e auditoria para narração de voz"
+              >
+                <Volume2 size={14} className={aiLoadingAudio ? "animate-spin" : ""} />
+                <span>{aiLoadingAudio ? "Enviando..." : "Criar Narração"}</span>
+              </button>
             </div>
           </div>
 
@@ -1970,6 +2044,17 @@ function BlockLinkMapper({
               >
                 <ImagePlus size={14} className={aiLoadingImg ? "animate-spin" : ""} />
                 <span>{aiLoadingImg ? "Enviando..." : "Gerar Imagens"}</span>
+              </button>
+
+              <button
+                type="button"
+                disabled={aiLoadingAudio}
+                onClick={handleCreateAudioWithAI}
+                className="flex items-center gap-2 bg-amber-950 hover:bg-amber-900 border border-amber-700/60 text-amber-200 text-[12px] font-bold uppercase tracking-wider px-4 py-2.5 rounded-sm transition-all shadow-sm disabled:opacity-50"
+                title="Envia requisição (action=audio) com payload completo de blocos e auditoria para narração de voz"
+              >
+                <Volume2 size={14} className={aiLoadingAudio ? "animate-spin" : ""} />
+                <span>{aiLoadingAudio ? "Enviando..." : "Criar Narração"}</span>
               </button>
             </div>
 

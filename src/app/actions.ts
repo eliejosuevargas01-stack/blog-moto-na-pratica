@@ -465,6 +465,108 @@ export async function triggerGenerateImagesAction(data: {
   }
 }
 
+export async function triggerCreateAudioAction(data: {
+  translationGroupId?: string;
+  id?: string | number;
+  title: string;
+  excerpt: string;
+  slug?: string;
+  lang?: string;
+  tag?: string;
+  category?: string;
+  readTime?: string;
+  img?: string;
+  imgFocalPoint?: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  seoKeywords?: string;
+  blocks: Array<{ text: string; image?: string; focalPoint?: string; alt?: string }>;
+}) {
+  try {
+    const configPage = await prisma.page.findUnique({ where: { slug: "config" } });
+    let webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || process.env.N8N_WEBHOOK_URL || "";
+    
+    if (configPage && configPage.content) {
+      const content = typeof configPage.content === "string" ? JSON.parse(configPage.content) : configPage.content;
+      if (content.n8nWebhookUrl) {
+        webhookUrl = content.n8nWebhookUrl;
+      }
+    }
+
+    if (!webhookUrl) {
+      return { error: "Webhook URL não configurado nas variáveis de ambiente (NEXT_PUBLIC_N8N_WEBHOOK_URL)." };
+    }
+
+    const apiKey = process.env.API_SECRET_KEY || process.env.NEXT_PUBLIC_API_SECRET_KEY || "motonapratica-secret-key-2026";
+    const groupId = data.translationGroupId || (data.id ? String(data.id) : `group-${Date.now()}`);
+    const langKey = (data.lang || "pt").toLowerCase();
+
+    const urlObj = new URL(webhookUrl);
+    urlObj.searchParams.set("action", "audio");
+    urlObj.searchParams.set("api_key", apiKey);
+
+    const formattedLangObject: Record<string, any> = {
+      id: groupId,
+      title: data.title || "",
+      summary: data.excerpt || "",
+      "meta-title": data.seoTitle || data.title || "",
+      "meta-description": data.seoDescription || data.excerpt || "",
+      "meta-tags": data.seoKeywords || "",
+      "img-1": data.img || "AGUARDANDO_GERACAO_CAPA",
+    };
+
+    (data.blocks || []).forEach((b, idx) => {
+      const blockNum = idx + 1;
+      const imgNum = idx + 2;
+      formattedLangObject[`block-${blockNum}`] = b.text || "";
+      formattedLangObject[`img-${imgNum}`] = b.image || `AGUARDANDO_GERACAO_B${blockNum}`;
+    });
+
+    const blocosOriginais = (data.blocks || []).map((b) => ({
+      html_do_bloco: b.text || ""
+    }));
+
+    const payload = [
+      {
+        payload_para_api: {
+          output: {
+            [langKey]: formattedLangObject,
+            pt: formattedLangObject
+          }
+        },
+        dados_de_auditoria: {
+          gancho_escolhido: data.excerpt || data.title,
+          motivo_gancho: data.excerpt || data.title,
+          analise_fatos: data.excerpt || data.title,
+          decisao_seo_e_blocos: data.excerpt || data.title,
+          total_de_blocos_gerados: (data.blocks || []).length
+        },
+        blocos_originais: blocosOriginais
+      }
+    ];
+
+    console.log(`[AI Webhook: Criar Narração] Disparando (action=audio) -> ${urlObj.toString()}`);
+
+    const res = await fetch(urlObj.toString(), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      return { error: `Webhook respondeu com erro HTTP ${res.status}` };
+    }
+
+    return { success: true, message: "Requisição enviada com sucesso para o Webhook de Narração de Áudio (action=audio)!" };
+  } catch (error: any) {
+    console.error("Erro ao disparar webhook de Criar Narração:", error);
+    return { error: error.message || "Falha de conexão com o Webhook." };
+  }
+}
+
 export async function triggerImprovePostAction(data: {
   id: number | string;
   title: string;
