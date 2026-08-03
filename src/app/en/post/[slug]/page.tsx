@@ -7,9 +7,10 @@ interface LangPostPageProps {
 }
 
 export async function generateMetadata(props: LangPostPageProps) {
-  return baseGenerateMetadata(props);
+  return baseGenerateMetadata({ ...props, lang: "en" });
 }
 
 export default async function EnPostPage(props: LangPostPageProps) {
-  return PostPage(props);
+  return PostPage({ ...props, lang: "en" });
 }
+

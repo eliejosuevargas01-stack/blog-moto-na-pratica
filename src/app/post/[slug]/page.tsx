@@ -3,7 +3,7 @@ import { POSTS, TAG_COLORS, TEKO, BODY, optimizeImageUrl, slugify } from "../../
 import Sidebar from "../../components/Sidebar";
 import Link from "next/link";
 import Image from "next/image";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Clock, ChevronLeft, Tag, Eye, Globe } from "lucide-react";
 import TableOfContents from "../../components/TableOfContents";
 import CommentsSection from "../../components/CommentsSection";
@@ -42,14 +42,84 @@ interface PostPageProps {
   params: {
     slug: string;
   };
+  lang?: string;
 }
 
-export async function generateMetadata({ params }: PostPageProps) {
+export async function findPostBySlugOrId(identifier: string, requestedLang: string = "pt") {
+  if (!identifier) return null;
+  const cleanId = identifier.trim();
+
+  try {
+    const postBySlug = await prisma.post.findUnique({
+      where: { slug: cleanId }
+    });
+
+    if (postBySlug) {
+      if (postBySlug.translationGroupId && postBySlug.lang !== requestedLang && !(requestedLang === "pt" && !postBySlug.lang)) {
+        const siblingInLang = await prisma.post.findFirst({
+          where: {
+            translationGroupId: postBySlug.translationGroupId,
+            OR: [
+              { lang: requestedLang },
+              ...(requestedLang === "pt" ? [{ lang: null }] : [])
+            ]
+          }
+        });
+        if (siblingInLang) {
+          return siblingInLang;
+        }
+      }
+      return postBySlug;
+    }
+  } catch (err) {
+    console.warn("findUnique by slug failed", err);
+  }
+
+  try {
+    let candidatePosts = await prisma.post.findMany({
+      where: {
+        OR: [
+          { id: cleanId },
+          { translationGroupId: cleanId },
+          { translationGroupId: `group-${cleanId}` }
+        ]
+      }
+    });
+
+    if (candidatePosts.length > 0) {
+      const groupIds = Array.from(new Set(candidatePosts.map(p => p.translationGroupId).filter(Boolean))) as string[];
+      if (groupIds.length > 0) {
+        candidatePosts = await prisma.post.findMany({
+          where: {
+            OR: [
+              { id: { in: candidatePosts.map(p => p.id) } },
+              { translationGroupId: { in: groupIds } }
+            ]
+          }
+        });
+      }
+
+      let matchedPost = candidatePosts.find(p => p.lang === requestedLang);
+      if (!matchedPost && requestedLang === "pt") {
+        matchedPost = candidatePosts.find(p => !p.lang || p.lang === "pt");
+      }
+      if (!matchedPost) {
+        matchedPost = candidatePosts.find(p => p.lang === "pt" || !p.lang) || candidatePosts[0];
+      }
+      return matchedPost;
+    }
+  } catch (err) {
+    console.warn("findMany by ID/translationGroupId failed", err);
+  }
+
+  const staticPost = POSTS.find(p => p.slug === cleanId || p.id === cleanId);
+  return staticPost || null;
+}
+
+export async function generateMetadata({ params, lang = "pt" }: PostPageProps) {
   const { slug } = params;
   try {
-    const post = await prisma.post.findUnique({
-      where: { slug }
-    });
+    const post = await findPostBySlugOrId(slug, lang);
     if (!post) return { title: "Post Não Encontrado" };
 
     let alternates: any = {};
@@ -61,7 +131,7 @@ export async function generateMetadata({ params }: PostPageProps) {
       const languages: Record<string, string> = {};
       siblings.forEach((s) => {
         if (s.lang) {
-          languages[s.lang] = `/post/${s.slug}`;
+          languages[s.lang] = s.lang === "en" ? `/en/post/${s.slug}` : s.lang === "es" ? `/es/post/${s.slug}` : `/post/${s.slug}`;
         }
       });
       alternates = { languages };
@@ -87,19 +157,17 @@ export async function generateMetadata({ params }: PostPageProps) {
   }
 }
 
-export default async function PostPage({ params }: PostPageProps) {
+export default async function PostPage({ params, lang = "pt" }: PostPageProps) {
   const { slug } = params;
   let post: any = null;
   let related: any[] = [];
   let translations: any[] = [];
 
   try {
-    post = await prisma.post.findUnique({
-      where: { slug }
-    });
+    post = await findPostBySlugOrId(slug, lang);
   } catch (error) {
     console.warn("Post query failed, falling back to static POSTS.", error);
-    post = POSTS.find(p => p.slug === slug);
+    post = POSTS.find(p => p.slug === slug || p.id === slug);
   }
 
   if (!post) {
@@ -107,6 +175,13 @@ export default async function PostPage({ params }: PostPageProps) {
   }
 
   const currentLang = post.lang || "pt";
+  const expectedPrefix = currentLang === "en" ? "/en/post" : currentLang === "es" ? "/es/post" : "/post";
+  const expectedPath = `${expectedPrefix}/${post.slug}`;
+
+  if (slug !== post.slug) {
+    redirect(expectedPath);
+  }
+
   const langFilter = {
     OR: [
       { lang: currentLang },
