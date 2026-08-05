@@ -48,7 +48,7 @@ export const TRANSLATIONS = {
     banner: {
       badge: "A moto do blog",
       title: "Yamaha FZ25 · Solid Grey 2026",
-      subtitle: "8.400 km rodados · Motor 249cc · Minha companheira diária",
+      subtitle: "4.000 km rodados · Motor 249cc · Minha companheira diária",
     },
     footer: {
       description: "Blog independente de motociclismo. Análises sinceras, manutenção prática e relatos de viagens. Feito por quem anda de moto todo dia.",
@@ -121,7 +121,7 @@ export const TRANSLATIONS = {
     banner: {
       badge: "The blog's bike",
       title: "Yamaha FZ25 · Solid Grey 2026",
-      subtitle: "8,400 km ridden · 249cc Engine · My daily companion",
+      subtitle: "4,000 km ridden · 249cc Engine · My daily companion",
     },
     footer: {
       description: "Independent motorcycle blog. Honest reviews, practical maintenance and travel stories. Built by someone who rides every day.",
@@ -194,7 +194,7 @@ export const TRANSLATIONS = {
     banner: {
       badge: "La moto del blog",
       title: "Yamaha FZ25 · Solid Grey 2026",
-      subtitle: "8.400 km recorridos · Motor 249cc · Mi compañera diaria",
+      subtitle: "4.000 km recorridos · Motor 249cc · Mi compañera diaria",
     },
     footer: {
       description: "Blog independiente de motociclismo. Reseñas sinceras, mantenimiento práctico e historias de viajes. Hecho por quienes ruedan todos los días.",

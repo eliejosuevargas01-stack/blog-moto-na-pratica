@@ -49,16 +49,16 @@ export default async function Sobre() {
     heroImage: "https://images.unsplash.com/photo-1625812184391-0359bf2344b9?w=1400&h=500&fit=crop&auto=format",
     heroFocalPoint: "center",
     stats: [
-      { value: "4.000 km", label: "Rodados na FZ25", iconName: "Gauge" },
-      { value: "2026", label: "Início no motociclismo", iconName: "Calendar" },
-      { value: "Gaspar - SC", label: "Base de operações", iconName: "MapPin" },
-      { value: "5", label: "Manutenções feitas em casa", iconName: "Wrench" }
+      { value: "4.000 KM", label: "Rodados na FZ25", iconName: "Gauge" },
+      { value: "JAN 2026", label: "Início com a moto", iconName: "Calendar" },
+      { value: "GASPAR - SC", label: "Base de operações", iconName: "MapPin" },
+      { value: "1", label: "Reparação feita em casa", iconName: "Wrench" }
     ],
     bioTitle: "Quem escreve aqui",
-    bioContentHtml: `<p class="mb-4">Me chamo Eliezer, tenho 20 anos e moro em Gaspar, Santa Catarina (Vale do Itajaí). Comecei a dirigir e andar de moto em 2026 com a minha Fazer 250 — a partir daí não parei mais.</p>
-<p class="mb-4">Em 2026 dei o salto para a Fazer 250 Solid Grey, a versão nova. Foi a maior conquista que já fiz relacionada a moto e, com ela, veio a vontade de registrar tudo — as dúvidas, os erros, as descobertas e a evolução na pilotagem.</p>
+    bioContentHtml: `<p class="mb-4">Me chamo Eliezer, tenho 20 anos e moro em Gaspar, Santa Catarina. Comecei a andar de moto em janeiro de 2026 com a minha Fazer 250 Solid Grey 2026 — a partir daí não parei mais.</p>
+<p class="mb-4">Em janeiro de 2026 dei o salto para a Fazer 250 Solid Grey, a versão nova. Foi a maior conquista que já fiz relacionada a moto e, com ela, veio a vontade de registrar tudo — as dúvidas, os erros, as descobertas e a evolução na pilotagem.</p>
 <p class="mb-4">O <span class="text-foreground font-semibold font-bold">Moto na Prática</span> nasceu disso. Não sou mecânico, não sou piloto profissional, não tenho patrocínio. Sou apenas alguém de 20 anos que usa moto todo dia e quer compartilhar o que aprende na raça.</p>
-<p class="mb-4">Aqui você vai encontrar reviews de equipamentos e acessórios que comprei com o meu dinheiro, manutenções que fiz na garagem, rotas que percorri e dicas reais de quem está vivendo o motociclismo na pele.</p>`,
+<p class="mb-4">Aqui você vai encontrar reviews de equipamentos e acessórios que comprei com o meu dinheiro, reparações que fiz na garagem, rotas que percorri e dicas reais de quem está vivendo o motociclismo na pele. Nada de conteúdo pago ou postagem encomendada.</p>`,
     bioQuote: "Se você está pensando em comprar uma moto, já tem uma ou só curte o assunto — esse blog é pra você.",
     riderImage: "https://images.unsplash.com/photo-1542351387-dde430deaaa7?w=800&h=900&fit=crop&auto=format",
     riderFocalPoint: "center",

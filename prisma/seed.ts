@@ -277,13 +277,13 @@ async function main() {
       isStatic: true,
       content: {
         heroTitle: "Fazer 250 Solid Grey 2026: 6 meses de uso real",
-        heroSubtitle: "Peguei a chave em janeiro e desde então rodei mais de 8.000 km. Aqui vai tudo que aprendi — o que é ótimo, o que incomoda e por que ainda não me arrependo.",
+        heroSubtitle: "Peguei a chave em janeiro e desde então rodei 4.000 km. Aqui vai tudo que aprendi — o que é ótimo, o que incomoda e por que ainda não me arrependo.",
         heroImage: "https://images.unsplash.com/photo-1571646036117-8015cc02547c?w=1400&h=780&fit=crop&auto=format",
         heroFocalPoint: "center",
         breakingText: "Michelin Pilot Street 2 na Fazer — diferença real ou papo de vendedor?",
         breakingSlug: "michelin-pilot-street-2-fazer",
         bannerTitle: "Yamaha FZ25 · Solid Grey 2026",
-        bannerSubtitle: "8.400 km rodados · Motor 249cc · Minha companheira diária",
+        bannerSubtitle: "4.000 km rodados · Motor 249cc · Minha companheira diária",
         bannerImage: "https://images.unsplash.com/photo-1571646059462-99317ec8d1bf?w=1400&h=500&fit=crop&auto=format",
         bannerFocalPoint: "center"
       },
@@ -305,16 +305,16 @@ async function main() {
         heroImage: "https://images.unsplash.com/photo-1625812184391-0359bf2344b9?w=1400&h=500&fit=crop&auto=format",
         heroFocalPoint: "center",
         stats: [
-          { value: "8.400 km", label: "Rodados na FZ25", iconName: "Gauge" },
-          { value: "Jan 2025", label: "Início com a moto", iconName: "Calendar" },
-          { value: "Belo Horizonte", label: "Base de operações", iconName: "MapPin" },
-          { value: "5", label: "Manutenções feitas em casa", iconName: "Wrench" }
+          { value: "4.000 KM", label: "Rodados na FZ25", iconName: "Gauge" },
+          { value: "JAN 2026", label: "Início com a moto", iconName: "Calendar" },
+          { value: "GASPAR - SC", label: "Base de operações", iconName: "MapPin" },
+          { value: "1", label: "Reparação feita em casa", iconName: "Wrench" }
         ],
         bioTitle: "Quem escreve aqui",
-        bioContentHtml: `<p class="mb-4">Me chamo Lucas, tenho 29 anos e moro em Belo Horizonte. Comecei a andar de moto em 2019 com uma CG 150 de entrega emprestada do meu tio — a partir daí não parei mais.</p>
-<p class="mb-4">Em janeiro de 2025 dei o salto para a Fazer 250 Solid Grey, a versão nova. Foi a maior compra que já fiz relacionada a moto e, com ela, veio a vontade de registrar tudo — as dúvidas, os erros, as descobertas.</p>
-<p class="mb-4">O <span class="text-foreground font-semibold">Moto na Prática</span> nasceu disso. Não sou mecânico, não sou piloto profissional, não tenho patrocínio. Sou apenas alguém que usa moto todo dia e quer compartilhar o que aprende.</p>
-<p class="mb-4">Aqui você vai encontrar reviews de coisas que comprei com o meu dinheiro, manutenções que fiz na garagem, rotas que percorri e dicas que aprendi na raça. Nada de conteúdo pago ou postagem encomendada.</p>`,
+        bioContentHtml: `<p class="mb-4">Me chamo Eliezer, tenho 20 anos e moro em Gaspar, Santa Catarina. Comecei a andar de moto em janeiro de 2026 com a minha Fazer 250 Solid Grey 2026 — a partir daí não parei mais.</p>
+<p class="mb-4">Em janeiro de 2026 dei o salto para a Fazer 250 Solid Grey, a versão nova. Foi a maior conquista que já fiz relacionada a moto e, com ela, veio a vontade de registrar tudo — as dúvidas, os erros, as descobertas e a evolução na pilotagem.</p>
+<p class="mb-4">O <span class="text-foreground font-semibold">Moto na Prática</span> nasceu disso. Não sou mecânico, não sou piloto profissional, não tenho patrocínio. Sou apenas alguém que usa moto todo dia e quer compartilhar o que aprende na raça.</p>
+<p class="mb-4">Aqui você vai encontrar reviews de coisas que comprei com o meu dinheiro, reparações que fiz na garagem, rotas que percorri e dicas que aprendi no dia a dia. Nada de conteúdo pago ou postagem encomendada.</p>`,
         bioQuote: "Se você está pensando em comprar uma moto, já tem uma ou só curte o assunto — esse blog é pra você.",
         riderImage: "https://images.unsplash.com/photo-1542351387-dde430deaaa7?w=800&h=900&fit=crop&auto=format",
         riderFocalPoint: "center",
@@ -331,8 +331,8 @@ async function main() {
           { name: "Cor", value: "Solid Grey (exclusiva 2026)" }
         ]
       },
-      seoTitle: "Sobre o Lucas e a Fazer 250 - Moto na Prática",
-      seoDescription: "Conheça o Lucas, criador do Moto na Prática, e veja a ficha técnica detalhada da Yamaha FZ25 Solid Grey 2026 do blog."
+      seoTitle: "Sobre o Eliezer e a Fazer 250 - Moto na Prática",
+      seoDescription: "Conheça o Eliezer, criador do Moto na Prática, e veja a ficha técnica detalhada da Yamaha FZ25 Solid Grey 2026 do blog."
     }
   });
   console.log("Página Sobre semeada.");
