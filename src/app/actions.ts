@@ -753,6 +753,18 @@ export async function markNotificationAsReadAction(id: string) {
   }
 }
 
+export async function markAllNotificationsAsReadAction() {
+  try {
+    await prisma.notification.updateMany({
+      where: { read: false },
+      data: { read: true },
+    });
+    return { success: true };
+  } catch (error) {
+    return { success: false };
+  }
+}
+
 // --- CRUD DE PÁGINAS ---
 
 export async function savePageAction(data: {

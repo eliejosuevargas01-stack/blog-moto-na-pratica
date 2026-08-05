@@ -112,14 +112,14 @@ export async function findPostBySlugOrId(identifier: string, requestedLang: stri
     console.warn("findMany by ID/translationGroupId failed", err);
   }
 
-  const staticPost = POSTS.find(p => p.slug === cleanId || p.id === cleanId);
+  const staticPost = POSTS.find(p => p.slug === cleanId || String(p.id) === cleanId);
   return staticPost || null;
 }
 
 export async function generateMetadata({ params, lang = "pt" }: PostPageProps) {
   const { slug } = params;
   try {
-    const post = await findPostBySlugOrId(slug, lang);
+    const post: any = await findPostBySlugOrId(slug, lang);
     if (!post) return { title: "Post Não Encontrado" };
 
     let alternates: any = {};
@@ -167,7 +167,7 @@ export default async function PostPage({ params, lang = "pt" }: PostPageProps) {
     post = await findPostBySlugOrId(slug, lang);
   } catch (error) {
     console.warn("Post query failed, falling back to static POSTS.", error);
-    post = POSTS.find(p => p.slug === slug || p.id === slug);
+    post = POSTS.find(p => p.slug === slug || String(p.id) === slug);
   }
 
   if (!post) {
@@ -290,7 +290,7 @@ export default async function PostPage({ params, lang = "pt" }: PostPageProps) {
       <PostViewTracker postId={post.id} />
 
       {/* POST HERO */}
-      <div className="relative w-full overflow-hidden" style={{ height: "60vh", minHeight: "360px" }}>
+      <div id="img-1" className="relative w-full overflow-hidden scroll-mt-10" style={{ height: "60vh", minHeight: "360px" }}>
         <Image 
           src={optimizeImageUrl(post.img, 1200)} 
           alt={stripHtml(post.title)}
@@ -338,8 +338,10 @@ export default async function PostPage({ params, lang = "pt" }: PostPageProps) {
             {post.excerpt}
           </p>
 
-          {/* Player de Áudio de Narração do Post */}
-          <AudioNarrationPlayer audioUrl={post.audioUrl} title={stripHtml(post.title)} lang={currentLang} />
+          {/* Player de Áudio de Narração do Post com Âncora #audio */}
+          <div id="audio" className="scroll-mt-24">
+            <AudioNarrationPlayer audioUrl={post.audioUrl} title={stripHtml(post.title)} lang={currentLang} />
+          </div>
 
           {/* Bar de Curtir e Compartilhar */}
           <PostActionsBar postId={post.id} postTitle={stripHtml(post.title)} initialLikes={post.likes || 0} />
@@ -353,16 +355,17 @@ export default async function PostPage({ params, lang = "pt" }: PostPageProps) {
               const cleanedText = cleanBlockHtml(injectHeadingIds(block.text || ""));
               const hasImageInText = cleanedText.includes("<img");
               const isImageAlreadyInText = block.image && cleanedText.includes(block.image);
+              const blockImgId = `img-${i + 2}`;
 
               return (
-                <div key={i} className="flex flex-col gap-6">
+                <div key={i} id={`block-${i + 1}`} className="flex flex-col gap-6 scroll-mt-24">
                   <div 
                     className="prose prose-invert max-w-none text-muted-foreground text-[15px] leading-relaxed [&_a]:text-primary [&_a]:underline [&_a:hover]:text-primary/80 [&_a]:transition-colors"
                     dangerouslySetInnerHTML={{ __html: cleanedText }}
                   />
                   
                   {block.image && !hasImageInText && !isImageAlreadyInText && (
-                    <div className="relative overflow-hidden w-full h-[360px] border border-border rounded-sm">
+                    <div id={blockImgId} className="relative overflow-hidden w-full h-[360px] border border-border rounded-sm scroll-mt-24">
                       <img
                         src={optimizeImageUrl(block.image, 800)}
                         alt={`Ilustração do bloco ${i + 1}`}

@@ -1,7 +1,10 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { Play, Pause, Volume2, VolumeX, Headphones, RotateCcw, FastForward } from "lucide-react";
+import { 
+  Play, Pause, Volume2, VolumeX, Headphones, RotateCcw, FastForward, 
+  ChevronLeft, ChevronRight, Rewind 
+} from "lucide-react";
 
 interface AudioNarrationPlayerProps {
   audioUrl?: string | null;
@@ -20,6 +23,7 @@ export default function AudioNarrationPlayer({ audioUrl, title, lang = "pt" }: A
   const [playbackRate, setPlaybackRate] = useState(1);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isFloatingVisible, setIsFloatingVisible] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
     setIsPlaying(false);
@@ -35,7 +39,6 @@ export default function AudioNarrationPlayer({ audioUrl, title, lang = "pt" }: A
     if (!containerRef.current) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
-        // Exibe o mini-player flutuante quando o player principal sai da tela ao rolar
         setIsFloatingVisible(!entry.isIntersecting);
       },
       { threshold: 0.1 }
@@ -89,6 +92,14 @@ export default function AudioNarrationPlayer({ audioUrl, title, lang = "pt" }: A
     }
   };
 
+  const skipTime = (seconds: number) => {
+    if (!audioRef.current) return;
+    const maxDuration = duration > 0 ? duration : 9999;
+    const newTime = Math.max(0, Math.min(maxDuration, currentTime + seconds));
+    audioRef.current.currentTime = newTime;
+    setCurrentTime(newTime);
+  };
+
   const toggleMute = () => {
     if (!audioRef.current) return;
     audioRef.current.muted = !isMuted;
@@ -106,7 +117,7 @@ export default function AudioNarrationPlayer({ audioUrl, title, lang = "pt" }: A
   };
 
   const changePlaybackRate = () => {
-    const rates = [1, 1.25, 1.5, 2];
+    const rates = [0.75, 1, 1.25, 1.5, 1.75, 2];
     const nextRate = rates[(rates.indexOf(playbackRate) + 1) % rates.length];
     setPlaybackRate(nextRate);
     if (audioRef.current) {
@@ -128,7 +139,23 @@ export default function AudioNarrationPlayer({ audioUrl, title, lang = "pt" }: A
 
   return (
     <>
-      <div ref={containerRef} className="w-full my-6 bg-[#161616] border border-primary/30 rounded-lg p-4 md:p-5 shadow-xl relative overflow-hidden group">
+      <div 
+        ref={containerRef} 
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowLeft") {
+            e.preventDefault();
+            skipTime(-10);
+          } else if (e.key === "ArrowRight") {
+            e.preventDefault();
+            skipTime(10);
+          } else if (e.key === " ") {
+            e.preventDefault();
+            togglePlay();
+          }
+        }}
+        className="w-full my-6 bg-[#161616] border border-primary/30 rounded-lg p-4 md:p-5 shadow-xl relative overflow-hidden group outline-none focus:border-primary/60"
+      >
         {/* Background Subtle Accent Glow */}
         <div className="absolute -right-10 -top-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -149,9 +176,10 @@ export default function AudioNarrationPlayer({ audioUrl, title, lang = "pt" }: A
             <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
               <Headphones size={16} className={isPlaying ? "animate-bounce text-primary" : "text-primary/80"} />
               <span>{headerText}</span>
+              <span className="text-[10px] font-normal text-muted-foreground ml-2 hidden sm:inline">(Use as setas ← → para avançar/recuar 10s)</span>
             </div>
 
-            {/* Audio Equalizer Wave Animation (Only when playing) */}
+            {/* Audio Equalizer Wave Animation */}
             {isPlaying && (
               <div className="flex items-end gap-1 h-3">
                 <span className="w-1 bg-primary animate-[bounce_1s_infinite_100ms] rounded-full h-full" />
@@ -164,17 +192,37 @@ export default function AudioNarrationPlayer({ audioUrl, title, lang = "pt" }: A
 
           {/* Player Controls Bar */}
           <div className="flex flex-col sm:flex-row items-center gap-4 mt-1">
-            {/* Play/Pause Button */}
-            <button
-              type="button"
-              onClick={togglePlay}
-              aria-label={isPlaying ? "Pausar áudio" : "Reproduzir áudio"}
-              className="w-12 h-12 rounded-full bg-primary hover:bg-[#E05300] text-white flex items-center justify-center transition-all transform hover:scale-105 shadow-md shadow-primary/20 shrink-0"
-            >
-              {isPlaying ? <Pause size={22} className="fill-white" /> : <Play size={22} className="fill-white ml-0.5" />}
-            </button>
+            {/* Action Buttons: Voltar 10s | Play/Pause | Avançar 10s */}
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => skipTime(-10)}
+                title="Recuar 10 segundos (Seta esquerda)"
+                className="w-9 h-9 rounded-full bg-[#222222] border border-border hover:border-primary/50 text-muted-foreground hover:text-white flex items-center justify-center transition-all"
+              >
+                <Rewind size={16} />
+              </button>
 
-            {/* Progress Slider and Timer */}
+              <button
+                type="button"
+                onClick={togglePlay}
+                aria-label={isPlaying ? "Pausar áudio" : "Reproduzir áudio"}
+                className="w-12 h-12 rounded-full bg-primary hover:bg-[#E05300] text-white flex items-center justify-center transition-all transform hover:scale-105 shadow-md shadow-primary/20 shrink-0"
+              >
+                {isPlaying ? <Pause size={22} className="fill-white" /> : <Play size={22} className="fill-white ml-0.5" />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => skipTime(10)}
+                title="Avançar 10 segundos (Seta direita)"
+                className="w-9 h-9 rounded-full bg-[#222222] border border-border hover:border-primary/50 text-muted-foreground hover:text-white flex items-center justify-center transition-all"
+              >
+                <FastForward size={16} />
+              </button>
+            </div>
+
+            {/* Progress Slider and Timer (Permite arrastar até o segundo exato) */}
             <div className="flex-1 w-full space-y-1">
               <div className="relative flex items-center">
                 <input
@@ -184,26 +232,28 @@ export default function AudioNarrationPlayer({ audioUrl, title, lang = "pt" }: A
                   step={0.1}
                   value={currentTime}
                   onChange={handleSeek}
-                  className="w-full h-2 bg-[#2A2A2A] rounded-lg appearance-none cursor-pointer accent-primary"
+                  aria-label="Arrastar posição do áudio"
+                  title={`Posição atual: ${formatTime(currentTime)}`}
+                  className="w-full h-2.5 bg-[#2A2A2A] rounded-lg appearance-none cursor-pointer accent-primary focus:outline-none"
                   style={{
                     background: `linear-gradient(to right, #E05300 ${progressPercent}%, #2A2A2A ${progressPercent}%)`,
                   }}
                 />
               </div>
               <div className="flex justify-between text-[11px] font-mono text-muted-foreground">
-                <span>{formatTime(currentTime)}</span>
+                <span className="text-white font-semibold">{formatTime(currentTime)}</span>
                 <span>{formatTime(duration)}</span>
               </div>
             </div>
 
             {/* Secondary Controls (Speed & Volume) */}
             <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
-              {/* Speed Toggle */}
+              {/* Speed Toggle (0.75x, 1x, 1.25x, 1.5x, 1.75x, 2x) */}
               <button
                 type="button"
                 onClick={changePlaybackRate}
                 className="text-[11px] font-mono font-bold text-muted-foreground hover:text-white bg-[#222222] border border-border px-2 py-1 rounded transition-colors"
-                title="Velocidade de reprodução"
+                title="Clique para alterar velocidade (0.75x, 1x, 1.25x, 1.5x, 1.75x, 2x)"
               >
                 {playbackRate}x
               </button>
@@ -230,45 +280,108 @@ export default function AudioNarrationPlayer({ audioUrl, title, lang = "pt" }: A
 
       {/* Floating Sticky Quick Player (Shown on Scroll) */}
       {isFloatingVisible && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-[#141414]/95 backdrop-blur-md border border-primary/40 px-4 py-2.5 rounded-full shadow-2xl shadow-black/90 transition-all duration-300 animate-in fade-in slide-in-from-bottom-5">
-          {/* Play/Pause Button */}
+        isCollapsed ? (
           <button
             type="button"
-            onClick={togglePlay}
-            aria-label={isPlaying ? "Pausar narração" : "Reproduzir narração"}
-            className="w-10 h-10 rounded-full bg-primary hover:bg-[#E05300] text-white flex items-center justify-center transition-all transform hover:scale-105 shadow-md shadow-primary/30 shrink-0"
+            onClick={() => setIsCollapsed(false)}
+            title="Expandir player de narração"
+            className="fixed bottom-6 right-0 z-50 flex items-center gap-2 bg-[#141414]/95 backdrop-blur-md border-l-2 border-y border-l-primary border-primary/40 pl-3 pr-2 py-2.5 rounded-l-full shadow-2xl shadow-black/90 text-primary hover:text-white transition-all duration-300 hover:bg-primary/20 group"
           >
-            {isPlaying ? <Pause size={18} className="fill-white" /> : <Play size={18} className="fill-white ml-0.5" />}
-          </button>
-
-          {/* Track Info & Equalizer */}
-          <div className="flex flex-col cursor-pointer select-none" onClick={togglePlay}>
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold text-white tracking-wide uppercase">
-                {isPlaying ? "Tocando Narração" : "Narração Pausada"}
+            <ChevronLeft size={18} className="animate-pulse group-hover:-translate-x-0.5 transition-transform" />
+            <Headphones size={16} className={isPlaying ? "animate-bounce text-primary" : ""} />
+            {isPlaying && (
+              <span className="text-[10px] font-mono text-white font-bold pr-1">
+                {formatTime(currentTime)}
               </span>
-              {isPlaying && (
-                <div className="flex items-end gap-0.5 h-2.5">
-                  <span className="w-0.5 bg-primary animate-[bounce_1s_infinite_100ms] rounded-full h-full" />
-                  <span className="w-0.5 bg-primary animate-[bounce_1s_infinite_300ms] rounded-full h-2/3" />
-                  <span className="w-0.5 bg-primary animate-[bounce_1s_infinite_200ms] rounded-full h-full" />
-                </div>
-              )}
-            </div>
-            <span className="text-[10px] font-mono text-muted-foreground">
-              {formatTime(currentTime)} / {formatTime(duration)}
-            </span>
-          </div>
-
-          {/* Floating Speed Toggle */}
-          <button
-            type="button"
-            onClick={changePlaybackRate}
-            className="text-[10px] font-mono font-bold text-muted-foreground hover:text-white bg-[#222222] border border-border/80 px-2 py-0.5 rounded transition-colors ml-1"
-          >
-            {playbackRate}x
+            )}
           </button>
-        </div>
+        ) : (
+          <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2 bg-[#141414]/95 backdrop-blur-md border border-primary/40 px-4 py-3 rounded-2xl shadow-2xl shadow-black/90 transition-all duration-300 animate-in fade-in slide-in-from-bottom-5 max-w-sm">
+            <div className="flex items-center gap-3">
+              {/* Skip Back 10s */}
+              <button
+                type="button"
+                onClick={() => skipTime(-10)}
+                title="Recuar 10s"
+                className="text-muted-foreground hover:text-white"
+              >
+                <Rewind size={15} />
+              </button>
+
+              {/* Play/Pause Button */}
+              <button
+                type="button"
+                onClick={togglePlay}
+                aria-label={isPlaying ? "Pausar narração" : "Reproduzir narração"}
+                className="w-9 h-9 rounded-full bg-primary hover:bg-[#E05300] text-white flex items-center justify-center transition-all transform hover:scale-105 shadow-md shadow-primary/30 shrink-0"
+              >
+                {isPlaying ? <Pause size={16} className="fill-white" /> : <Play size={16} className="fill-white ml-0.5" />}
+              </button>
+
+              {/* Skip Forward 10s */}
+              <button
+                type="button"
+                onClick={() => skipTime(10)}
+                title="Avançar 10s"
+                className="text-muted-foreground hover:text-white"
+              >
+                <FastForward size={15} />
+              </button>
+
+              {/* Track Info */}
+              <div className="flex flex-col cursor-pointer select-none flex-1 min-w-0" onClick={togglePlay}>
+                <div className="flex items-center gap-1.5 truncate">
+                  <span className="text-[11px] font-bold text-white tracking-wide uppercase truncate">
+                    {isPlaying ? "Narração" : "Pausado"}
+                  </span>
+                  {isPlaying && (
+                    <div className="flex items-end gap-0.5 h-2.5 shrink-0">
+                      <span className="w-0.5 bg-primary animate-[bounce_1s_infinite_100ms] rounded-full h-full" />
+                      <span className="w-0.5 bg-primary animate-[bounce_1s_infinite_300ms] rounded-full h-2/3" />
+                      <span className="w-0.5 bg-primary animate-[bounce_1s_infinite_200ms] rounded-full h-full" />
+                    </div>
+                  )}
+                </div>
+                <span className="text-[10px] font-mono text-muted-foreground">
+                  {formatTime(currentTime)} / {formatTime(duration)}
+                </span>
+              </div>
+
+              {/* Speed Toggle */}
+              <button
+                type="button"
+                onClick={changePlaybackRate}
+                className="text-[10px] font-mono font-bold text-muted-foreground hover:text-white bg-[#222222] border border-border/80 px-1.5 py-0.5 rounded transition-colors"
+              >
+                {playbackRate}x
+              </button>
+
+              {/* Collapse Button */}
+              <button
+                type="button"
+                onClick={() => setIsCollapsed(true)}
+                className="p-1 text-muted-foreground hover:text-white hover:bg-secondary rounded-full transition-colors"
+                title="Esconder para a lateral"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+
+            {/* Slider no Player Flutuante (Permite arrastar a posição em qualquer lugar da página) */}
+            <input
+              type="range"
+              min={0}
+              max={duration > 0 ? duration : 1}
+              step={0.1}
+              value={currentTime}
+              onChange={handleSeek}
+              className="w-full h-1.5 bg-[#2A2A2A] rounded-lg appearance-none cursor-pointer accent-primary"
+              style={{
+                background: `linear-gradient(to right, #E05300 ${progressPercent}%, #2A2A2A ${progressPercent}%)`,
+              }}
+            />
+          </div>
+        )
       )}
     </>
   );

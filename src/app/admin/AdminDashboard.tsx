@@ -11,6 +11,7 @@ import {
   getNotificationsAction,
   getSubscribersAction,
   markNotificationAsReadAction,
+  markAllNotificationsAsReadAction,
   triggerImprovePostWithAIAction,
   triggerGenerateImagesAction,
   triggerCreateAudioAction
@@ -34,6 +35,29 @@ interface PopupModalData {
     endpoint?: string;
     timestamp?: string;
   };
+}
+
+function AudioDurationBadge({ url }: { url: string }) {
+  const [durationStr, setDurationStr] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!url) return;
+    const audio = new Audio(url);
+    audio.onloadedmetadata = () => {
+      if (audio.duration && !isNaN(audio.duration)) {
+        const mins = Math.floor(audio.duration / 60);
+        const secs = Math.floor(audio.duration % 60);
+        setDurationStr(`${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`);
+      }
+    };
+  }, [url]);
+
+  if (!durationStr) return <span className="text-[10px] font-mono text-muted-foreground">⏱️ --:--</span>;
+  return (
+    <span className="text-[10px] font-mono font-bold text-amber-400 bg-amber-950/60 border border-amber-800/60 px-2 py-0.5 rounded flex items-center gap-1">
+      <Volume2 size={11} /> ⏱️ {durationStr}
+    </span>
+  );
 }
 
 interface StyledActionModalProps {
@@ -2959,13 +2983,27 @@ function BlockLinkMapper({
             
             {/* FEED DE NOTIFICAÇÕES */}
             <div className="bg-card border border-border p-6 rounded-sm space-y-4">
-              <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center justify-between border-b border-border pb-3 flex-wrap gap-2">
                 <h3 style={TEKO} className="text-[20px] uppercase tracking-wide text-foreground flex items-center gap-2">
                   <Bell size={16} className="text-primary" /> Feed de Atividades Recentes
                 </h3>
-                <span className="text-[11px] text-muted-foreground uppercase">
-                  {notifications.length} registros
-                </span>
+                <div className="flex items-center gap-3">
+                  <span className="text-[11px] text-muted-foreground uppercase">
+                    {notifications.length} registros
+                  </span>
+                  {notifications.some(n => !n.read) && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await markAllNotificationsAsReadAction();
+                        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+                      }}
+                      className="text-[11px] bg-primary/20 hover:bg-primary text-primary hover:text-white px-2.5 py-1 rounded-sm border border-primary/40 uppercase font-bold transition-all"
+                    >
+                      Marcar todas como lidas
+                    </button>
+                  )}
+                </div>
               </div>
 
               {notifications.length === 0 ? (
@@ -2973,48 +3011,126 @@ function BlockLinkMapper({
                   Nenhuma notificação registrada até o momento.
                 </div>
               ) : (
-                <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
-                  {notifications.map((notif) => (
-                    <div
-                      key={notif.id}
-                      className={`p-3.5 border rounded-sm flex items-start justify-between gap-3 text-[13px] transition-colors ${
-                        notif.read ? "bg-[#141414] border-border/40 text-muted-foreground" : "bg-[#1E1A16] border-primary/40 text-foreground"
-                      }`}
-                    >
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${
-                            notif.type === "REGISTER" ? "bg-blue-900/60 text-blue-300" :
-                            notif.type === "LIKE" ? "bg-red-900/60 text-red-300" :
-                            notif.type === "SHARE" ? "bg-purple-900/60 text-purple-300" :
-                            notif.type === "AUDIO" ? "bg-amber-900/60 text-amber-300" :
-                            notif.type === "IMAGE" ? "bg-cyan-900/60 text-cyan-300" :
-                            notif.type === "POST_UPDATE" ? "bg-emerald-900/60 text-emerald-300" :
-                            notif.type?.startsWith("AI_ACTION") ? "bg-purple-900/60 text-purple-300" :
-                            "bg-primary/30 text-primary"
-                          }`}>
-                            {notif.type === "POST_UPDATE" ? "POST API" : notif.type?.startsWith("AI_ACTION") ? "IA WEBHOOK" : notif.type}
-                          </span>
-                          <span className="text-[11px] text-muted-foreground">
-                            {new Date(notif.createdAt).toLocaleString("pt-BR")}
-                          </span>
-                        </div>
-                        <p className="leading-snug">{notif.message}</p>
-                      </div>
+                <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+                  {notifications.map((notif) => {
+                    const associatedPost = posts.find(p => p.id === notif.postId || p.title === notif.postTitle || (p.translationGroupId && p.translationGroupId === notif.postId));
+                    const postSlug = associatedPost?.slug;
+                    const postAudioUrl = associatedPost?.audioUrl;
+                    const postImgUrl = associatedPost?.img;
 
-                      {!notif.read && (
-                        <button
-                          onClick={async () => {
-                            await markNotificationAsReadAction(notif.id);
-                            setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, read: true } : n));
-                          }}
-                          className="text-[10px] text-primary hover:underline shrink-0 uppercase font-bold"
-                        >
-                          Marcar lido
-                        </button>
-                      )}
-                    </div>
-                  ))}
+                    return (
+                      <div
+                        key={notif.id}
+                        className={`p-3.5 border rounded-sm flex flex-col gap-2.5 text-[13px] transition-colors ${
+                          notif.read ? "bg-[#141414] border-border/40 text-muted-foreground" : "bg-[#1E1A16] border-primary/40 text-foreground"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${
+                                notif.type === "REGISTER" ? "bg-blue-900/60 text-blue-300" :
+                                notif.type === "LIKE" ? "bg-red-900/60 text-red-300" :
+                                notif.type === "SHARE" ? "bg-purple-900/60 text-purple-300" :
+                                notif.type === "AUDIO" ? "bg-amber-900/60 text-amber-300" :
+                                notif.type === "IMAGE" ? "bg-cyan-900/60 text-cyan-300" :
+                                notif.type === "POST_UPDATE" ? "bg-emerald-900/60 text-emerald-300" :
+                                notif.type?.startsWith("AI_ACTION") ? "bg-purple-900/60 text-purple-300" :
+                                "bg-primary/30 text-primary"
+                              }`}>
+                                {notif.type === "POST_UPDATE" ? "POST API" : notif.type?.startsWith("AI_ACTION") ? "IA WEBHOOK" : notif.type}
+                              </span>
+
+                              {/* DURAÇÃO DO ÁUDIO NAS NOTIFICAÇÕES */}
+                              {(notif.type === "AUDIO" || postAudioUrl) && postAudioUrl && (
+                                <AudioDurationBadge url={postAudioUrl} />
+                              )}
+
+                              <span className="text-[11px] text-muted-foreground">
+                                {new Date(notif.createdAt).toLocaleString("pt-BR")}
+                              </span>
+                            </div>
+                            <p className="leading-snug font-medium">{notif.message}</p>
+                          </div>
+
+                          {!notif.read && (
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                await markNotificationAsReadAction(notif.id);
+                                setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, read: true } : n));
+                              }}
+                              className="text-[10px] text-primary hover:underline shrink-0 uppercase font-bold"
+                            >
+                              Marcar lido
+                            </button>
+                          )}
+                        </div>
+
+                        {/* LINKS DE AÇÃO DIRETA NAS NOTIFICAÇÕES */}
+                        {associatedPost && (
+                          <div className="flex items-center gap-3 pt-2 border-t border-white/5 flex-wrap text-[11px]">
+                            <a
+                              href={associatedPost.lang === "en" ? `/en/post/${postSlug}` : associatedPost.lang === "es" ? `/es/post/${postSlug}` : `/post/${postSlug}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 font-bold text-emerald-400 hover:underline bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-800/40"
+                            >
+                              <ExternalLink size={11} /> Visualizar Post
+                            </a>
+
+                            {/* LINK PARA IMAGEM ISOLADA E NA POSIÇÃO DO POST */}
+                            {postImgUrl && (
+                              <>
+                                <a
+                                  href={postImgUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-1 text-cyan-400 hover:underline bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-800/40"
+                                  title="Abrir imagem isolada em nova aba"
+                                >
+                                  <ImageIcon size={11} /> Imagem Isolada
+                                </a>
+                                <a
+                                  href={associatedPost.lang === "en" ? `/en/post/${postSlug}#img-1` : associatedPost.lang === "es" ? `/es/post/${postSlug}#img-1` : `/post/${postSlug}#img-1`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-1 text-muted-foreground hover:text-white"
+                                  title="Abrir direto na imagem do post"
+                                >
+                                  <Eye size={11} /> Imagem no Post
+                                </a>
+                              </>
+                            )}
+
+                            {/* LINK PARA ÁUDIO ISOLADO E NA POSIÇÃO DO POST */}
+                            {postAudioUrl && (
+                              <>
+                                <a
+                                  href={postAudioUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-1 text-amber-400 hover:underline bg-amber-950/40 px-2 py-0.5 rounded border border-amber-800/40"
+                                  title="Reproduzir áudio em nova aba"
+                                >
+                                  <Volume2 size={11} /> Áudio Isolado
+                                </a>
+                                <a
+                                  href={associatedPost.lang === "en" ? `/en/post/${postSlug}#audio` : associatedPost.lang === "es" ? `/es/post/${postSlug}#audio` : `/post/${postSlug}#audio`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-1 text-muted-foreground hover:text-white"
+                                  title="Abrir direto no player do post"
+                                >
+                                  <Eye size={11} /> Áudio no Post
+                                </a>
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

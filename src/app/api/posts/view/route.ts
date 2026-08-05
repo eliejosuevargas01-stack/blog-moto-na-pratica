@@ -24,9 +24,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, isIgnoredAdmin: true });
     }
 
-    // Verificar se o post existe no banco de dados
-    const existingPost = await prisma.post.findUnique({
-      where: { id: postId },
+    // Verificar se o post existe no banco de dados (por ID ou Slug)
+    const existingPost = await prisma.post.findFirst({
+      where: {
+        OR: [
+          { id: String(postId) },
+          { slug: String(postId) }
+        ]
+      },
       select: { id: true, views: true }
     });
 
@@ -36,7 +41,7 @@ export async function POST(req: Request) {
 
     // Caso contrário, incrementar o número de visualizações reais do leitor
     const updatedPost = await prisma.post.update({
-      where: { id: postId },
+      where: { id: existingPost.id },
       data: { views: { increment: 1 } },
       select: { views: true },
     });

@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "motonapratica-default-jwt-secret-key-123456";
 
-// GET: List comments for a post
+// GET: List comments for a post (by post ID or slug)
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -15,13 +15,23 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "O parâmetro postId é obrigatório." }, { status: 400 });
     }
 
-    const numericPostId = parseInt(String(postId), 10);
-    if (isNaN(numericPostId)) {
+    // Buscar post pelo id ou slug
+    const post = await prisma.post.findFirst({
+      where: {
+        OR: [
+          { id: String(postId) },
+          { slug: String(postId) }
+        ]
+      },
+      select: { id: true }
+    });
+
+    if (!post) {
       return NextResponse.json({ comments: [] });
     }
 
     const comments = await prisma.comment.findMany({
-      where: { postId: numericPostId },
+      where: { postId: post.id },
       include: {
         user: {
           select: {
@@ -67,9 +77,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "O postId é obrigatório." }, { status: 400 });
     }
 
-    // Verify if the post exists
-    const post = await prisma.post.findUnique({
-      where: { id: postId }
+    // Buscar post pelo ID ou Slug
+    const post = await prisma.post.findFirst({
+      where: {
+        OR: [
+          { id: String(postId) },
+          { slug: String(postId) }
+        ]
+      },
+      select: { id: true }
     });
 
     if (!post) {
@@ -80,7 +96,7 @@ export async function POST(request: Request) {
     const comment = await prisma.comment.create({
       data: {
         content: content.trim(),
-        postId,
+        postId: post.id,
         userId: decoded.userId
       },
       include: {

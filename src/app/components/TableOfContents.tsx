@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { List, ChevronDown, ChevronUp } from "lucide-react";
+import { List, ChevronDown, ChevronUp, Bookmark } from "lucide-react";
 import { TEKO, slugify } from "../data";
 
 interface Heading {
@@ -77,7 +77,7 @@ export default function TableOfContents({ blocks }: TableOfContentsProps) {
     e.preventDefault();
     const element = document.getElementById(id);
     if (element) {
-      const offset = 80; // offset header
+      const offset = 90; // offset header
       const bodyRect = document.body.getBoundingClientRect().top;
       const elementRect = element.getBoundingClientRect().top;
       const elementPosition = elementRect - bodyRect;
@@ -92,43 +92,59 @@ export default function TableOfContents({ blocks }: TableOfContentsProps) {
   };
 
   return (
-    <div className="bg-[#111111] border border-border rounded-sm p-5 mb-8 transition-all duration-300">
+    <div className="bg-[#141414] border border-primary/30 rounded-lg p-5 mb-10 shadow-xl relative overflow-hidden transition-all duration-300">
+      {/* Background Subtle Accent Glow */}
+      <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
+
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between text-left outline-none"
+        className="w-full flex items-center justify-between text-left outline-none group"
       >
-        <div className="flex items-center gap-2">
-          <List size={16} className="text-primary" />
-          <span style={TEKO} className="text-[18px] uppercase tracking-wider text-foreground">
-            Índice de Tópicos
+        <div className="flex items-center gap-2.5">
+          <div className="p-1.5 bg-primary/10 border border-primary/30 rounded text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+            <List size={18} />
+          </div>
+          <span style={TEKO} className="text-[22px] uppercase tracking-wider text-white font-semibold">
+            Índice de Tópicos do Artigo
+          </span>
+          <span className="text-[11px] font-mono bg-[#222222] text-muted-foreground px-2 py-0.5 rounded-full border border-border">
+            {headings.length} tópicos
           </span>
         </div>
-        <div className="text-muted-foreground hover:text-white transition-colors">
-          {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        <div className="text-muted-foreground group-hover:text-white transition-colors p-1">
+          {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
         </div>
       </button>
 
       {isOpen && (
-        <ul className="mt-4 space-y-2 border-t border-border/40 pt-4 transition-all duration-300">
+        <ul className="mt-4 space-y-1.5 border-t border-white/10 pt-4 transition-all duration-300">
           {headings.map((h, idx) => {
             const isActive = activeId === h.id;
+            const isH2 = h.level === 2;
+
             return (
               <li
                 key={`${h.id}-${idx}`}
                 style={{
-                  paddingLeft: h.level === 3 ? "1rem" : "0px",
+                  paddingLeft: isH2 ? "0px" : "1.25rem",
                 }}
               >
                 <a
                   href={`#${h.id}`}
                   onClick={(e) => scrollToSection(e, h.id)}
-                  className={`block text-[13px] leading-relaxed transition-all duration-200 border-l pl-3 py-0.5 ${
+                  className={`flex items-start gap-2 text-[14px] leading-relaxed transition-all duration-200 border-l-2 px-3 py-1.5 rounded-r-sm ${
                     isActive
-                      ? "border-primary text-primary font-medium"
-                      : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+                      ? "border-primary bg-primary/15 text-primary font-bold shadow-sm"
+                      : isH2
+                      ? "border-white/10 text-white font-medium hover:text-white hover:bg-white/[0.06] hover:border-primary/50"
+                      : "border-transparent text-[#CCCCCC] text-[13.5px] hover:text-white hover:bg-white/[0.04] hover:border-primary/40"
                   }`}
                 >
-                  {h.text}
+                  <span className={`text-[11px] font-mono shrink-0 mt-0.5 ${isActive ? "text-primary font-bold" : "text-muted-foreground"}`}>
+                    {isH2 ? `•` : `└`}
+                  </span>
+                  <span>{h.text}</span>
                 </a>
               </li>
             );

@@ -433,14 +433,38 @@ export async function POST(req: Request) {
     } = body;
 
     const finalTranslationGroupId = translationGroupId || body.group_id || body.groupId || body.id || body.post_id || body.postId || null;
-    const targetLang = (lang || "pt").toLowerCase();
+    const rawLang = body.lang || body.language || body.idioma;
+    let targetLang = rawLang ? String(rawLang).toLowerCase().trim() : "";
+
+    // Se o idioma não for informado explicitamente, inferir pelo slug/título para evitar salvar posts em inglês como 'pt'
+    if (!targetLang) {
+      const textToTest = `${customSlug || ""} ${title || ""}`.toLowerCase();
+      if (
+        textToTest.includes("is the") || textToTest.includes("is-the") ||
+        textToTest.includes("the future") || textToTest.includes("the-future") ||
+        textToTest.includes("work motorcycle") || textToTest.includes("work-motorcycle") ||
+        textToTest.includes("why your") || textToTest.includes("why-your") ||
+        textToTest.includes("is it worth") || textToTest.includes("is-it-worth") ||
+        textToTest.includes("financing a") || textToTest.includes("financing-a")
+      ) {
+        targetLang = "en";
+      } else if (
+        textToTest.includes("el futuro") || textToTest.includes("el-futuro") ||
+        textToTest.includes("por que") || textToTest.includes("por-que") ||
+        textToTest.includes("para trabajar") || textToTest.includes("para-trabajar") ||
+        textToTest.includes("vale la pena") || textToTest.includes("vale-la-pena")
+      ) {
+        targetLang = "es";
+      } else {
+        targetLang = "pt";
+      }
+    }
 
     if (!title) {
       return NextResponse.json({ error: "O título do post é obrigatório." }, { status: 400 });
     }
 
     // REGRA DE MATCHING:
-    // Desconsiderar slug e título para identificar o post a ser atualizado!
     // Buscar se já existe um post com o mesmo translationGroupId E o mesmo idioma (lang).
     let existingSinglePost = null;
     if (finalTranslationGroupId) {
@@ -453,16 +477,19 @@ export async function POST(req: Request) {
       });
     }
 
-    // Se não encontrou por translationGroupId + lang, busca por ID direto (se fornecido)
+    // Se não encontrou por translationGroupId + lang, busca por ID direto (apenas se pertencer ao mesmo idioma)
     if (!existingSinglePost && (body.id || body.post_id || body.postId)) {
       const rawIdStr = String(body.id || body.post_id || body.postId).trim();
-      existingSinglePost = await prisma.post.findUnique({ where: { id: rawIdStr } });
+      const byId = await prisma.post.findUnique({ where: { id: rawIdStr } });
+      if (byId && byId.lang === targetLang) {
+        existingSinglePost = byId;
+      }
     }
 
-    // Manter o slug original caso o post já exista, mesmo que a IA tenha alterado o título
+    // Manter o slug original caso o post já exista no mesmo idioma
     const finalSlug = existingSinglePost
       ? existingSinglePost.slug
-      : await generateUniqueSlug(title);
+      : (customSlug || await generateUniqueSlug(title));
 
     const extractedMentionedSlugs: Set<string> = new Set(explicitMentionedSlugs);
 
