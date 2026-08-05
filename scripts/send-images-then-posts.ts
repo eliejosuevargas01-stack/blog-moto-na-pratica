@@ -3,6 +3,8 @@ import { processImageBase64, saveOptimizedImageBuffer } from "../src/lib/image-u
 import fs from "fs";
 import path from "path";
 
+import { toNumericGroupId } from "../src/app/data";
+
 const prisma = new PrismaClient();
 
 function isDefaultImage(url?: string | null): boolean {
@@ -64,7 +66,7 @@ export interface MultiLangPostPayload {
  */
 export async function sendImagesThenPosts(payload: MultiLangPostPayload) {
   console.log("=== FLUXO: ENVIANDO IMAGENS PRIMEIRO, DEPOIS POSTS ===");
-  const groupId = payload.groupId || `group-${Date.now()}`;
+  const groupId = toNumericGroupId(payload.groupId);
   const uploadedImageUrls: Record<string, string> = {};
 
   // Step 1: Upload / Processar Imagens Primeiro

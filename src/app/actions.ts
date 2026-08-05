@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { notifyGoogleIndexing } from "../lib/google-indexing";
 import { calculateReadTime } from "../lib/image-utils";
+import { toNumericGroupId } from "./data";
 
 // --- AUTENTICAÇÃO ---
 
@@ -331,7 +332,7 @@ export async function triggerImprovePostWithAIAction(data: {
     }
 
     const apiKey = process.env.API_SECRET_KEY || process.env.NEXT_PUBLIC_API_SECRET_KEY || "motonapratica-secret-key-2026";
-    const groupId = data.translationGroupId || (data.id ? String(data.id) : `group-${Date.now()}`);
+    const groupId = toNumericGroupId(data.translationGroupId || data.id);
 
     const urlObj = new URL(webhookUrl);
     urlObj.searchParams.set("action", "update");
@@ -424,7 +425,7 @@ export async function triggerGenerateImagesAction(data: {
     }
 
     const apiKey = process.env.API_SECRET_KEY || process.env.NEXT_PUBLIC_API_SECRET_KEY || "motonapratica-secret-key-2026";
-    const groupId = data.translationGroupId || (data.id ? String(data.id) : `group-${Date.now()}`);
+    const groupId = toNumericGroupId(data.translationGroupId || data.id);
 
     const stripHtmlTags = (html: string): string => {
       if (!html) return "";
@@ -559,7 +560,7 @@ export async function triggerCreateAudioAction(data: {
     }
 
     const apiKey = process.env.API_SECRET_KEY || process.env.NEXT_PUBLIC_API_SECRET_KEY || "motonapratica-secret-key-2026";
-    const groupId = data.translationGroupId || (data.id ? String(data.id) : `group-${Date.now()}`);
+    const groupId = toNumericGroupId(data.translationGroupId || data.id);
     const langKey = (data.lang || "pt").toLowerCase();
 
     const urlObj = new URL(webhookUrl);

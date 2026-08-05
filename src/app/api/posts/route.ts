@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/db";
 import { revalidatePath } from "next/cache";
 import { processImageBase64, saveAudioBuffer, calculateReadTime } from "@/lib/image-utils";
+import { toNumericGroupId } from "../../data";
 
 function generateSlug(title: string): string {
   return title
@@ -227,7 +228,8 @@ export async function POST(req: Request) {
 
     // SUPORTE A POST MULTI-IDIOMA (OUTPUT DE AUTOMACÃO N8N)
     if (output && typeof output === "object") {
-      const translationGroupId = String(output.id || output.pt?.id || output.en?.id || output.es?.id || body.id || body.post_id || body.translationGroupId || body.group_id || body.groupId || `group-${Date.now()}`).trim();
+      const rawGroupId = output.translationGroupId || output.group_id || output.groupId || output.id || output.pt?.id || output.en?.id || output.es?.id || body.translationGroupId || body.group_id || body.groupId || body.id || body.post_id;
+      const translationGroupId = toNumericGroupId(rawGroupId);
       const createdPosts: any[] = [];
       const extractedMentionedSlugs: Set<string> = new Set(explicitMentionedSlugs);
 
@@ -432,7 +434,7 @@ export async function POST(req: Request) {
       translationGroupId,
     } = body;
 
-    const finalTranslationGroupId = translationGroupId || body.group_id || body.groupId || body.id || body.post_id || body.postId || null;
+    const finalTranslationGroupId = toNumericGroupId(translationGroupId || body.group_id || body.groupId || body.id || body.post_id || body.postId);
     const rawLang = body.lang || body.language || body.idioma;
     let targetLang = rawLang ? String(rawLang).toLowerCase().trim() : "";
 
