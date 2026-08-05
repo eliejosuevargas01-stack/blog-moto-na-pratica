@@ -310,11 +310,14 @@ export async function triggerImprovePostWithAIAction(data: {
   lang?: string;
   tag?: string;
   category?: string;
+  force?: boolean;
 }) {
   try {
-    const rateCheck = await checkWebhookRateLimit("update");
-    if (!rateCheck.allowed) {
-      return { error: rateCheck.error };
+    if (!data.force) {
+      const rateCheck = await checkWebhookRateLimit("update");
+      if (!rateCheck.allowed) {
+        return { error: rateCheck.error };
+      }
     }
 
     const configPage = await prisma.page.findUnique({ where: { slug: "config" } });
