@@ -63,13 +63,13 @@ export default async function DynamicPage({ params }: DynamicPageProps) {
   let targetPost: any = null;
   try {
     const cleanId = slug.trim();
+    const numericGroupId = /^\d+$/.test(cleanId) ? parseInt(cleanId, 10) : undefined;
     targetPost = await prisma.post.findFirst({
       where: {
         OR: [
           { slug: cleanId },
           { id: cleanId },
-          { translationGroupId: cleanId },
-          { translationGroupId: `group-${cleanId}` }
+          ...(numericGroupId ? [{ translationGroupId: numericGroupId }] : [])
         ]
       }
     });

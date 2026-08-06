@@ -63,6 +63,7 @@ export async function savePostAction(data: {
   seoDescription?: string;
   seoKeywords?: string;
   lang?: string;
+  blocks?: any[];
 }) {
   try {
     const targetPostId = data.id ? String(data.id).trim() : undefined;
@@ -313,9 +314,7 @@ export async function setPostStatusAction(idOrGroupId: string | number, status: 
       where: {
         OR: [
           { id: targetStr },
-          { translationGroupId: groupId },
-          { translationGroupId: `group-${groupId}` },
-          ...(groupId ? [{ translationGroupId: String(groupId) }] : [])
+          { translationGroupId: groupId }
         ]
       },
       data: { status }
@@ -331,7 +330,7 @@ export async function setPostStatusAction(idOrGroupId: string | number, status: 
 }
 
 export async function triggerImprovePostWithAIAction(data: {
-  translationGroupId?: string;
+  translationGroupId?: number | string;
   id?: string | number;
   title: string;
   excerpt: string;
@@ -372,7 +371,7 @@ export async function triggerImprovePostWithAIAction(data: {
       where: {
         OR: [
           ...(targetIdStr ? [{ id: targetIdStr }] : []),
-          ...(groupId ? [{ translationGroupId: groupId }, { translationGroupId: `group-${groupId}` }] : [])
+          ...(groupId ? [{ translationGroupId: groupId }] : [])
         ]
       },
       data: { status: "em_edicao" }
@@ -420,7 +419,7 @@ export async function triggerImprovePostWithAIAction(data: {
         type: "AI_ACTION_UPDATE",
         message: `✨ Requisição de Melhoria por IA (status=em_edicao) enviada para o post "${data.title}"`,
         postTitle: data.title,
-        postId: groupId,
+        postId: String(groupId),
       }
     });
 
@@ -433,7 +432,7 @@ export async function triggerImprovePostWithAIAction(data: {
 }
 
 export async function triggerGenerateImagesAction(data: {
-  translationGroupId?: string;
+  translationGroupId?: number | string;
   id?: string | number;
   title: string;
   excerpt: string;
@@ -557,7 +556,7 @@ export async function triggerGenerateImagesAction(data: {
         type: "AI_ACTION_IMG",
         message: `🖼️ Requisição de Geração de Imagens (action=img) enviada para o post "${data.title}"`,
         postTitle: data.title,
-        postId: groupId,
+        postId: String(groupId),
       }
     });
 
@@ -569,7 +568,7 @@ export async function triggerGenerateImagesAction(data: {
 }
 
 export async function triggerCreateAudioAction(data: {
-  translationGroupId?: string;
+  translationGroupId?: number | string;
   id?: string | number;
   title: string;
   excerpt: string;
@@ -674,7 +673,7 @@ export async function triggerCreateAudioAction(data: {
         type: "AI_ACTION_AUDIO",
         message: `🎧 Requisição de Criar Narração (action=audio) enviada para o post "${data.title}"`,
         postTitle: data.title,
-        postId: groupId,
+        postId: String(groupId),
       }
     });
 

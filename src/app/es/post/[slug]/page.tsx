@@ -1,4 +1,5 @@
-import PostPage, { generateMetadata as baseGenerateMetadata } from "../../../post/[slug]/page";
+import PostPage from "../../../post/[slug]/page";
+import { generatePostMetadata } from "@/lib/post-helpers";
 
 interface LangPostPageProps {
   params: {
@@ -7,10 +8,10 @@ interface LangPostPageProps {
 }
 
 export async function generateMetadata(props: LangPostPageProps) {
-  return baseGenerateMetadata({ ...props, lang: "es" });
+  return generatePostMetadata(props.params.slug, "es");
 }
 
 export default async function EsPostPage(props: LangPostPageProps) {
-  return PostPage({ ...props, lang: "es" });
+  return PostPage(props, "es");
 }
 

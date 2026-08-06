@@ -56,26 +56,17 @@ async function run() {
   let updatedCount = 0;
 
   for (const post of allPosts) {
-    let newGroupId: string | null = null;
+    let newGroupId: number | null = null;
+    const strGid = post.translationGroupId ? String(post.translationGroupId) : null;
 
-    if (post.translationGroupId && groupMapping[post.translationGroupId]) {
-      newGroupId = groupMapping[post.translationGroupId];
-    } else if (post.translationGroupId && /^\d+$/.test(post.translationGroupId)) {
+    if (strGid && groupMapping[strGid]) {
+      newGroupId = parseInt(groupMapping[strGid], 10);
+    } else if (post.translationGroupId) {
       newGroupId = post.translationGroupId;
     } else if (standaloneSlugMapping[post.slug]) {
-      newGroupId = standaloneSlugMapping[post.slug];
-    } else if (post.translationGroupId) {
-      // Se tiver outro formato de texto não previsto, gera um numérico único consistente baseado na string
-      let numericHash = 0;
-      for (let i = 0; i < post.translationGroupId.length; i++) {
-        numericHash = ((numericHash << 5) - numericHash) + post.translationGroupId.charCodeAt(i);
-        numericHash |= 0;
-      }
-      newGroupId = String(Math.abs(numericHash) + 100000);
-      groupMapping[post.translationGroupId] = newGroupId;
+      newGroupId = parseInt(standaloneSlugMapping[post.slug], 10);
     } else {
-      // Se não tiver nenhum translationGroupId
-      newGroupId = `700${Math.floor(1000 + Math.random() * 9000)}`;
+      newGroupId = parseInt(`700${Math.floor(1000 + Math.random() * 9000)}`, 10);
     }
 
     if (post.translationGroupId !== newGroupId) {

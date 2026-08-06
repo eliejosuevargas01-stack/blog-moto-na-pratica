@@ -37,7 +37,7 @@ model Post {
 
   // Campos de internacionalização e CMS
   lang                String?  @default("pt")
-  translationGroupId  String?  @map("translation_group_id")
+  translationGroupId  Int?     @map("translation_group_id")
   published           Boolean  @default(true)
   imageGenerationSent Boolean  @default(false) @map("image_generation_sent")
 

@@ -246,9 +246,7 @@ export async function POST(req: Request) {
       // Buscar posts existentes do mesmo translationGroupId para aproveitar imagens reais já cadastradas
       const existingGroupPosts = translationGroupId ? await prisma.post.findMany({
         where: {
-          translationGroupId: {
-            in: [translationGroupId, `group-${translationGroupId}`]
-          }
+          translationGroupId
         },
         select: { img: true, blocks: true }
       }) : [];
@@ -275,9 +273,7 @@ export async function POST(req: Request) {
         // O 'id' fornecido representa o ID do Grupo de Tradução (translationGroupId)
         const existingPostForLang = await prisma.post.findFirst({
           where: {
-            translationGroupId: {
-              in: [translationGroupId, `group-${translationGroupId}`]
-            },
+            translationGroupId,
             lang
           }
         });
@@ -483,10 +479,9 @@ export async function POST(req: Request) {
     // Buscar se já existe um post com o mesmo translationGroupId E o mesmo idioma (lang).
     let existingSinglePost = null;
     if (finalTranslationGroupId) {
-      const gidStr = String(finalTranslationGroupId).trim();
       existingSinglePost = await prisma.post.findFirst({
         where: {
-          translationGroupId: { in: [gidStr, `group-${gidStr}`] },
+          translationGroupId: finalTranslationGroupId,
           lang: targetLang
         }
       });
@@ -549,7 +544,7 @@ export async function POST(req: Request) {
           seoTitle: seoTitle || title,
           seoDescription: seoDescription || excerpt,
           seoKeywords: seoKeywords || `${finalTag}, Moto na Prática`,
-          translationGroupId: finalTranslationGroupId ? String(finalTranslationGroupId).trim() : existingSinglePost.translationGroupId,
+          translationGroupId: finalTranslationGroupId || existingSinglePost.translationGroupId,
           lang: targetLang,
           updatedAt: new Date(),
         }
@@ -572,7 +567,7 @@ export async function POST(req: Request) {
           seoTitle: seoTitle || title,
           seoDescription: seoDescription || excerpt,
           seoKeywords: seoKeywords || `${finalTag}, Moto na Prática`,
-          translationGroupId: finalTranslationGroupId ? String(finalTranslationGroupId).trim() : null,
+          translationGroupId: finalTranslationGroupId || null,
           lang: targetLang,
           date: new Date(),
         },
@@ -760,14 +755,14 @@ export async function PATCH(req: Request) {
     }
 
     const targetIdentifierStr = String(targetIdentifier).trim();
+    const numericTargetId = /^\d+$/.test(targetIdentifierStr) ? parseInt(targetIdentifierStr, 10) : undefined;
 
     // O 'id' fornecido representa o ID do Grupo de Tradução (translationGroupId), ID do post ou slug do post
     const initialPosts = await prisma.post.findMany({
       where: {
         OR: [
           { id: targetIdentifierStr },
-          { translationGroupId: targetIdentifierStr },
-          { translationGroupId: `group-${targetIdentifierStr}` },
+          ...(numericTargetId ? [{ translationGroupId: numericTargetId }] : []),
           { slug: targetIdentifierStr }
         ]
       }
@@ -777,7 +772,7 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: "Nenhum post encontrado com o id, slug ou translationGroupId fornecido." }, { status: 404 });
     }
 
-    const groupIds = Array.from(new Set(initialPosts.map(p => p.translationGroupId).filter(Boolean))) as string[];
+    const groupIds = Array.from(new Set(initialPosts.map(p => p.translationGroupId).filter((g): g is number => g !== null && g !== undefined)));
     let postsToUpdate = await prisma.post.findMany({
       where: {
         OR: [

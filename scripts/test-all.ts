@@ -58,7 +58,7 @@ async function runAllTests() {
 
   // --- TESTE 2: CRIAÇÃO E CONSULTA DE POSTS (MULTI-IDIOMA E ÚNICO) ---
   console.log("\n2. Testando Inserção e Edição de Posts (Multi-Idioma & Único)...");
-  const testGroupId = "999888";
+  const testGroupId = 999888;
   let createdPostPt: any = null;
   let createdPostEn: any = null;
 

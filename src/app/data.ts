@@ -281,25 +281,27 @@ export function formatPostUrl(slug: string, lang?: string | null): string {
   return `/post/${clean}`;
 }
 
-export function toNumericGroupId(val: any): string {
+export function toNumericGroupId(val: any): number {
+  if (typeof val === "number" && !isNaN(val)) {
+    return Math.floor(val);
+  }
   if (!val) {
-    return String(Math.floor(100000 + Math.random() * 900000));
+    return Math.floor(100000 + Math.random() * 900000);
   }
   const rawStr = String(val).trim();
-  // Se for uma string puramente numérica, retorna direto
   if (/^\d+$/.test(rawStr)) {
-    return rawStr;
+    const parsed = parseInt(rawStr, 10);
+    if (!isNaN(parsed)) return parsed;
   }
-  // Se tiver dígitos numéricos internos, extrai os dígitos
   const digitsOnly = rawStr.replace(/\D/g, "");
   if (digitsOnly.length >= 4) {
-    return digitsOnly.slice(0, 8);
+    const parsed = parseInt(digitsOnly.slice(0, 8), 10);
+    if (!isNaN(parsed)) return parsed;
   }
-  // Se for texto/UUID sem dígitos suficientes, gera um hash numérico de 6 dígitos (ex: "551298")
   let hash = 0;
   for (let i = 0; i < rawStr.length; i++) {
     hash = ((hash << 5) - hash) + rawStr.charCodeAt(i);
     hash |= 0;
   }
-  return String((Math.abs(hash) % 900000) + 100000);
+  return (Math.abs(hash) % 900000) + 100000;
 }
