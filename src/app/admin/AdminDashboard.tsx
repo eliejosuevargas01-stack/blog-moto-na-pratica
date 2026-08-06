@@ -1443,7 +1443,14 @@ function BlockLinkMapper({
                               </span>
                             </td>
                             <td className="p-4 font-medium text-foreground">
-                              {stripHtml(post.title)}
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span>{stripHtml(post.title)}</span>
+                                {(post.status === "em_edicao" || sisterPosts.some(s => s.status === "em_edicao")) && (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 border rounded-sm bg-amber-950/90 border-amber-500/80 text-amber-300 animate-pulse shadow-sm" title="Post em edição no banco de dados para identificação pela IA">
+                                    ✏️ Em Edição (IA)
+                                  </span>
+                                )}
+                              </div>
                               <div className="text-[11px] text-muted-foreground font-mono">/post/{post.slug}</div>
                             </td>
                             <td className="p-4 text-muted-foreground">{post.tag}</td>

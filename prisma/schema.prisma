@@ -20,6 +20,9 @@ model Post {
   imgFocalPoint  String   @default("center") // Ponto focal CSS da imagem (ex: "center", "top", "50% 50%")
   audioUrl       String?  // URL do áudio de narração do post (MP3, WAV, etc.)
 
+  // Status do post (ex: "publicado", "em_edicao", "rascunho")
+  status         String   @default("publicado")
+
   // Blocos dinâmicos de Texto/Imagem: [{ text: string, image: string, focalPoint: string }]
   blocks         Json     
 

@@ -160,11 +160,18 @@ export async function GET(req: Request) {
     const validOrderByFields = ["createdAt", "mentions", "views", "likes", "title"];
     const orderByField = validOrderByFields.includes(orderByParam) ? orderByParam : "createdAt";
 
+    const statusParam = url.searchParams.get("status");
+
     const posts = await prisma.post.findMany({
       where: {
-        OR: [
-          { lang },
-          ...(lang === "pt" ? [{ lang: null }] : [])
+        AND: [
+          statusParam ? { status: statusParam } : {},
+          {
+            OR: [
+              { lang },
+              ...(lang === "pt" ? [{ lang: null }] : [])
+            ]
+          }
         ]
       },
       orderBy: { [orderByField]: order },
@@ -177,6 +184,7 @@ export async function GET(req: Request) {
         tag: true,
         category: true,
         lang: true,
+        status: true,
         mentions: true,
         views: true,
         likes: true,
@@ -319,6 +327,8 @@ export async function POST(req: Request) {
 
         const calculatedReadTime = calculateReadTime({ title: langData.title, excerpt: langData.summary, blocks });
 
+        const postStatus = langData.status || output.status || body.status || "publicado";
+
         let post;
         if (existingPostForLang) {
           post = await prisma.post.update({
@@ -332,6 +342,7 @@ export async function POST(req: Request) {
               readTime: calculatedReadTime,
               img: featuredImg,
               audioUrl: finalAudioUrl,
+              status: postStatus,
               blocks,
               seoTitle: langData["meta-title"] || langData.title,
               seoDescription: langData["meta-description"] || langData.summary,
@@ -350,6 +361,7 @@ export async function POST(req: Request) {
               readTime: calculatedReadTime,
               img: featuredImg,
               audioUrl: finalAudioUrl,
+              status: postStatus,
               blocks,
               seoTitle: langData["meta-title"] || langData.title,
               seoDescription: langData["meta-description"] || langData.summary,
@@ -366,6 +378,7 @@ export async function POST(req: Request) {
               readTime: calculatedReadTime,
               img: featuredImg,
               audioUrl: finalAudioUrl,
+              status: postStatus,
               imgFocalPoint: "center",
               blocks,
               seoTitle: langData["meta-title"] || langData.title,
@@ -517,6 +530,8 @@ export async function POST(req: Request) {
       ? body.readTime
       : calculateReadTime({ title, excerpt, blocks: cleanedBlocks });
 
+    const singleStatus = body.status || "publicado";
+
     let post;
     if (existingSinglePost) {
       // UPDATE: Se o post do mesmo translationGroupId e idioma existe, ATUALIZA ele!
@@ -529,6 +544,7 @@ export async function POST(req: Request) {
           excerpt: excerpt || title,
           readTime: finalReadTime,
           audioUrl: finalAudioUrlSingle || existingSinglePost.audioUrl,
+          status: singleStatus,
           blocks: cleanedBlocks,
           seoTitle: seoTitle || title,
           seoDescription: seoDescription || excerpt,
@@ -551,6 +567,7 @@ export async function POST(req: Request) {
           img: img || "",
           imgFocalPoint: imgFocalPoint || "center",
           audioUrl: finalAudioUrlSingle,
+          status: singleStatus,
           blocks: cleanedBlocks,
           seoTitle: seoTitle || title,
           seoDescription: seoDescription || excerpt,

@@ -19,13 +19,59 @@ function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, "");
 }
 
+function normalizeProsConsHtml(html: string): string {
+  if (!html || (!html.includes('box-pros-cons') && !html.includes('pros-contras'))) return html;
+
+  return html.replace(/<div\b([^>]*)class=[\"']([^\"']*(?:box-pros-cons|pros-contras)[^\"']*)[\"']([^>]*)>([\s\S]*?)<\/div>/gi, (match, p1, cls, p3, inner) => {
+    let titleHtml = '';
+    let body = inner.replace(/<(h[1-6])\b[^>]*>([\s\S]*?)<\/\1>/gi, (m, tag, text) => {
+      const cleanT = text.trim();
+      if ((cleanT === 'Prós' || cleanT === 'Pros' || cleanT.includes('✅')) && !text.includes('Contras')) {
+        return m;
+      }
+      if ((cleanT === 'Contras' || cleanT.includes('❌')) && !text.includes('Prós')) {
+        return m;
+      }
+      titleHtml += `<h3 class="text-[26px] md:text-[28px] font-semibold text-white uppercase mb-4 font-teko tracking-wide w-full col-span-full">${text}</h3>`;
+      return '';
+    });
+
+    if (body.includes('class="pros"') || body.includes('class="cons"') || body.includes("class='pros'") || body.includes("class='cons'")) {
+      if (body.includes('<li')) {
+        const prosItems: string[] = [];
+        const consItems: string[] = [];
+        body.replace(/<li\b[^>]*class=[\"']([^\"']*pros[^\"']*)[\"'][^>]*>([\s\S]*?)<\/li>/gi, (m, c, content) => {
+          prosItems.push(`<li>${content}</li>`);
+        });
+        body.replace(/<li\b[^>]*class=[\"']([^\"']*cons[^\"']*)[\"'][^>]*>([\s\S]*?)<\/li>/gi, (m, c, content) => {
+          consItems.push(`<li>${content}</li>`);
+        });
+
+        if (prosItems.length > 0 || consItems.length > 0) {
+          const prosBox = prosItems.length > 0 ? `<div class="box-pros"><h4>✅ Prós</h4><ul>${prosItems.join('')}</ul></div>` : '';
+          const consBox = consItems.length > 0 ? `<div class="box-cons"><h4>❌ Contras</h4><ul>${consItems.join('')}</ul></div>` : '';
+          return `<div class="box-pros-cons">${titleHtml}${prosBox}${consBox}</div>`;
+        }
+      }
+    }
+
+    return `<div class="box-pros-cons">${titleHtml}${body}</div>`;
+  });
+}
+
 function cleanBlockHtml(html: string): string {
   if (!html) return "";
-  return html
+  let cleaned = html
     .replace(/<p>\s*(?:Image|Imagem)\s*URL\s*:?\s*https?:\/\/[^\s<]+\s*<\/p>/gi, "")
     .replace(/(?:Image|Imagem)\s*URL\s*:?\s*https?:\/\/[^\s<]+/gi, "")
     .replace(/\{[^}]*\}=\d+\{[^}]*\}/gi, "")
     .trim();
+
+  if (cleaned.includes("<table") && !cleaned.includes('class="table-wrapper"')) {
+    cleaned = cleaned.replace(/<table\b([^>]*)>([\s\S]*?)<\/table>/gi, '<div class="table-wrapper"><table$1>$2</table></div>');
+  }
+
+  return normalizeProsConsHtml(cleaned);
 }
 
 function injectHeadingIds(html: string): string {

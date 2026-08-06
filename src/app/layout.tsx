@@ -103,6 +103,11 @@ export default async function RootLayout({
         <link rel="icon" type="image/png" href="/favicon.png" />
         <link rel="preconnect" href="https://images.unsplash.com" />
         <meta name="google-site-verification" content="fbASypBsg3iwxoSLbdAaR_U4bHoizv_FGbwhS9FBmqQ" />
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8759260479603327"
+          crossOrigin="anonymous"
+        />
         <GoogleAnalytics gaId="G-WS2JW3944T" />
       </head>
       <body suppressHydrationWarning className="min-h-screen bg-background text-foreground flex flex-col" style={BODY}>

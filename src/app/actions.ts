@@ -58,7 +58,7 @@ export async function savePostAction(data: {
   imgFocalPoint: string;
   audioUrl?: string | null;
   audioUrlsByLang?: Record<string, string | null>;
-  blocks: { text: string; image: string; focalPoint: string }[];
+  status?: string;
   seoTitle?: string;
   seoDescription?: string;
   seoKeywords?: string;
@@ -106,6 +106,7 @@ export async function savePostAction(data: {
           img: data.img,
           imgFocalPoint: data.imgFocalPoint,
           audioUrl: targetAudio || null,
+          status: data.status || "publicado",
           blocks: data.blocks as any,
           seoTitle: data.seoTitle || data.title,
           seoDescription: data.seoDescription || data.excerpt,
@@ -161,6 +162,7 @@ export async function savePostAction(data: {
               imgFocalPoint: data.imgFocalPoint,
               readTime: sisterComputedReadTime,
               audioUrl: sisterAudio || null,
+              status: data.status || "publicado",
               blocks: updatedSisterBlocks as any
             }
           });
@@ -179,6 +181,7 @@ export async function savePostAction(data: {
           img: data.img,
           imgFocalPoint: data.imgFocalPoint,
           audioUrl: data.audioUrl || null,
+          status: data.status || "publicado",
           blocks: data.blocks as any,
           seoTitle: data.seoTitle || data.title,
           seoDescription: data.seoDescription || data.excerpt,
@@ -301,6 +304,32 @@ async function checkWebhookRateLimit(actionType: string): Promise<{ allowed: boo
   return { allowed: true };
 }
 
+export async function setPostStatusAction(idOrGroupId: string | number, status: string) {
+  try {
+    const groupId = toNumericGroupId(idOrGroupId);
+    const targetStr = String(idOrGroupId).trim();
+
+    await prisma.post.updateMany({
+      where: {
+        OR: [
+          { id: targetStr },
+          { translationGroupId: groupId },
+          { translationGroupId: `group-${groupId}` },
+          ...(groupId ? [{ translationGroupId: String(groupId) }] : [])
+        ]
+      },
+      data: { status }
+    });
+
+    revalidatePath("/admin");
+    revalidatePath("/posts");
+    return { success: true };
+  } catch (err: any) {
+    console.error("Erro ao atualizar status do post:", err);
+    return { error: err.message || "Erro ao atualizar status do post." };
+  }
+}
+
 export async function triggerImprovePostWithAIAction(data: {
   translationGroupId?: string;
   id?: string | number;
@@ -337,6 +366,18 @@ export async function triggerImprovePostWithAIAction(data: {
     const apiKey = process.env.API_SECRET_KEY || process.env.NEXT_PUBLIC_API_SECRET_KEY || "motonapratica-secret-key-2026";
     const groupId = toNumericGroupId(data.translationGroupId || data.id);
 
+    // ATUALIZAR STATUS NO BANCO DE DADOS PARA 'em_edicao'
+    const targetIdStr = data.id ? String(data.id).trim() : undefined;
+    await prisma.post.updateMany({
+      where: {
+        OR: [
+          ...(targetIdStr ? [{ id: targetIdStr }] : []),
+          ...(groupId ? [{ translationGroupId: groupId }, { translationGroupId: `group-${groupId}` }] : [])
+        ]
+      },
+      data: { status: "em_edicao" }
+    });
+
     const urlObj = new URL(webhookUrl);
     urlObj.searchParams.set("action", "update");
     urlObj.searchParams.set("api_key", apiKey);
@@ -346,6 +387,7 @@ export async function triggerImprovePostWithAIAction(data: {
       translation_group_id: groupId,
       groupId: groupId,
       id: data.id || groupId,
+      status: "em_edicao",
       title: data.title,
       titulo: data.title,
       excerpt: data.excerpt,
@@ -357,7 +399,7 @@ export async function triggerImprovePostWithAIAction(data: {
       category: data.category || "",
     };
 
-    console.log(`[AI Webhook: Melhorar com IA] Disparando (action=update) -> ${urlObj.toString()}`);
+    console.log(`[AI Webhook: Melhorar com IA] Disparando (action=update, status=em_edicao) -> ${urlObj.toString()}`);
 
     const res = await fetch(urlObj.toString(), {
       method: "POST",
@@ -376,13 +418,14 @@ export async function triggerImprovePostWithAIAction(data: {
     await prisma.notification.create({
       data: {
         type: "AI_ACTION_UPDATE",
-        message: `✨ Requisição de Melhoria por IA (action=update) enviada para o post "${data.title}"`,
+        message: `✨ Requisição de Melhoria por IA (status=em_edicao) enviada para o post "${data.title}"`,
         postTitle: data.title,
         postId: groupId,
       }
     });
 
-    return { success: true, message: "Requisição enviada com sucesso para o Webhook de IA (action=update)!" };
+    revalidatePath("/admin");
+    return { success: true, message: "Requisição enviada com sucesso para o Webhook de IA (status setado para 'em_edicao')!" };
   } catch (error: any) {
     console.error("Erro ao disparar webhook de Melhorar com IA:", error);
     return { error: error.message || "Falha de conexão com o Webhook." };
@@ -654,7 +697,18 @@ export async function triggerImprovePostAction(data: {
   try {
     const webhookUrl = process.env.N8N_WEBHOOK_URL || process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || "";
 
-    console.log(`[Server Action] Disparando webhook de IA Redatora para "${data.title}" -> ${webhookUrl}`);
+    const targetStr = String(data.id).trim();
+    await prisma.post.updateMany({
+      where: {
+        OR: [
+          { id: targetStr },
+          { slug: data.slug }
+        ]
+      },
+      data: { status: "em_edicao" }
+    });
+
+    console.log(`[Server Action] Disparando webhook de IA Redatora (status=em_edicao) para "${data.title}" -> ${webhookUrl}`);
 
     const res = await fetch(webhookUrl, {
       method: "POST",
@@ -663,6 +717,7 @@ export async function triggerImprovePostAction(data: {
         action: "improve_post",
         id: data.id,
         post_id: data.id,
+        status: "em_edicao",
         title: data.title,
         slug: data.slug,
         category: data.category || "",
@@ -676,6 +731,7 @@ export async function triggerImprovePostAction(data: {
       return { error: `Webhook respondeu com status HTTP ${res.status}` };
     }
 
+    revalidatePath("/admin");
     return { success: true };
   } catch (error: any) {
     console.error("Erro ao disparar webhook no servidor:", error);
