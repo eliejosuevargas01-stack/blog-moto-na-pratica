@@ -17,9 +17,7 @@ const nextConfig = {
       },
     ],
   },
-  experimental: {
-    optimizePackageImports: ['lucide-react', '@mui/material', '@mui/icons-material', 'date-fns'],
-  },
+
   typescript: {
     ignoreBuildErrors: true,
   },
