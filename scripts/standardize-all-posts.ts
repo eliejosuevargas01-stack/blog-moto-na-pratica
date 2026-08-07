@@ -24,14 +24,18 @@ function extractListOrContent(htmlSnippet: string): string {
 function normalizeProsConsHtml(html: string, lang: string = "pt"): string {
   if (!html) return "";
 
+  if (html.includes('class="box-pros-cons"') || html.includes('class="pros-contras-box"')) {
+    return html;
+  }
+
   let cleanInput = html
     .replace(/^<ul[^>]*>\s*<li[^>]*>/i, '')
     .replace(/<\/li>\s*<\/ul>$/i, '');
 
   const hasProsKeyword = /(?:pontos\s+fortes|prós|pros|vantagens|strengths|puntos\s+fuertes|ventajas|👍|✅)/i.test(cleanInput);
-  const hasConsKeyword = /(?:pontos\s+fracos|contras|desvantagens|cons|weaknesses|puntos\0\s+débiles|desventajas|👎|❌)/i.test(cleanInput);
+  const hasConsKeyword = /(?:pontos\s+fracos|contras|desvantagens|cons|weaknesses|puntos\s+débiles|desventajas|👎|❌)/i.test(cleanInput);
 
-  if (!hasProsKeyword && !hasConsKeyword && !cleanInput.includes('box-pros-cons') && !cleanInput.includes('pros-contras')) {
+  if (!hasProsKeyword && !hasConsKeyword) {
     return cleanInput;
   }
 
@@ -43,7 +47,7 @@ function normalizeProsConsHtml(html: string, lang: string = "pt"): string {
     return cleanInput;
   }
 
-  // 1. Caso de lista de <li> contendo explicitamente Prós e Contras
+  // 1. Caso de lista de <li> contendo explicitamente Prós e Contras com marcadores nos <li>
   const allLiMatches = Array.from(cleanInput.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi));
   if (allLiMatches.length > 0) {
     const prosLis: string[] = [];
@@ -92,12 +96,12 @@ function normalizeProsConsHtml(html: string, lang: string = "pt"): string {
     }
   }
 
-  // 2. Seções com Títulos H2/H3 separados
-  const prosTagRegex = /<(h[1-6]|p|div|strong)\b[^>]*>[\s\S]*?(?:pontos\s+fortes|prós|pros|vantagens|strengths|puntos\s+fuertes|ventajas|👍|✅)[\s\S]*?<\/\1>/gi;
-  const consTagRegex = /<(h[1-6]|p|div|strong)\b[^>]*>[\s\S]*?(?:pontos\s+fracos|contras|desvantagens|cons|weaknesses|puntos\s+débiles|desventajas|👎|❌)[\s\S]*?<\/\1>/gi;
+  // 2. Seções com Títulos H2-H4 dedicados exclusivamente a "Prós" e "Contras"
+  const prosHeaderRegex = /<(h[2-4])\b[^>]*>\s*(?:pontos\s+fortes|prós|pros|vantagens|strengths|puntos\s+fuertes|ventajas|👍|✅)\s*:?\s*<\/\1>/gi;
+  const consHeaderRegex = /<(h[2-4])\b[^>]*>\s*(?:pontos\s+fracos|contras|desvantagens|cons|weaknesses|puntos\s+débiles|desventajas|👎|❌)\s*:?\s*<\/\1>/gi;
 
-  const prosMatch = prosTagRegex.exec(cleanInput);
-  const consMatch = consTagRegex.exec(cleanInput);
+  const prosMatch = prosHeaderRegex.exec(cleanInput);
+  const consMatch = consHeaderRegex.exec(cleanInput);
 
   if (prosMatch && consMatch) {
     const prosStart = prosMatch.index;
@@ -120,9 +124,9 @@ function normalizeProsConsHtml(html: string, lang: string = "pt"): string {
     const prosList = extractListOrContent(prosSection);
     const consList = extractListOrContent(consSection);
 
-    if (prosList || consList) {
-      const prosBox = prosList ? `<div class="box-pros"><h4>${prosTitle}</h4>${prosList}</div>` : "";
-      const consBox = consList ? `<div class="box-cons"><h4>${consTitle}</h4>${consList}</div>` : "";
+    if (prosList && consList) {
+      const prosBox = `<div class="box-pros"><h4>${prosTitle}</h4>${prosList}</div>`;
+      const consBox = `<div class="box-cons"><h4>${consTitle}</h4>${consList}</div>`;
       return `${prefix}<div class="box-pros-cons">${prosBox}${consBox}</div>`;
     }
   }
