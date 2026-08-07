@@ -11,6 +11,7 @@ import SafeHtml from "../../components/SafeHtml";
 import PostActionsBar from "../../components/PostActionsBar";
 import PostViewTracker from "../../components/PostViewTracker";
 import AudioNarrationPlayer from "../../components/AudioNarrationPlayer";
+import { findPostBySlugOrId, generatePostMetadata } from "@/lib/post-helpers";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,7 @@ function extractListOrContent(htmlSnippet: string): string {
     if (items.length > 0) {
       return `<ul>${items.join('')}</ul>`;
     }
+  }
   return "";
 }
 
@@ -168,8 +170,6 @@ function injectHeadingIds(html: string): string {
     return `<${tag}${attrs} id="${id}">${content}</${tag}>`;
   });
 }
-
-import { findPostBySlugOrId, generatePostMetadata } from "@/lib/post-helpers";
 
 interface PostPageProps {
   params: {
