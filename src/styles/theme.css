@@ -457,37 +457,41 @@
 }
 
 /* --- TABELAS COMPARATIVAS RESPONSIVAS E PERFEITAS (.table-wrapper, .prose table, .tabela-comparativa) --- */
+/* --- TABELAS COMPARATIVAS RESPONSIVAS E PERFEITAS (.table-wrapper, .prose table, .tabela-comparativa) --- */
 .table-wrapper {
   width: 100%;
   max-width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+  overflow-x: hidden;
   margin: 2rem 0;
   border-radius: 8px;
   border: 1.5px solid rgba(200, 16, 46, 0.35);
   background: #141414;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  box-sizing: border-box;
 }
 
 .prose table, .tabela-comparativa {
   width: 100%;
-  min-width: 100%;
+  max-width: 100%;
   border-collapse: separate;
   border-spacing: 0;
   font-size: 14.5px;
   background: transparent;
   margin: 0;
+  table-layout: fixed;
 }
 
 /* Quando a tabela estiver solta dentro de .prose sem o wrapper */
 .prose > table {
   display: table;
   width: 100%;
+  max-width: 100%;
   margin: 2rem 0;
   border: 1.5px solid rgba(200, 16, 46, 0.35);
   border-radius: 8px;
   background: #141414;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  table-layout: fixed;
 }
 
 .prose table th, .tabela-comparativa th {
@@ -498,16 +502,22 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: 14px 18px;
+  padding: 12px 14px;
   text-align: left;
   border-bottom: 2px solid var(--primary, #C8102E);
-  white-space: nowrap;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: 1.15;
 }
 
 .prose table td, .tabela-comparativa td {
-  padding: 13px 18px;
+  padding: 12px 14px;
   color: #E2E2E2;
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .prose table td strong, .tabela-comparativa td strong {
@@ -531,9 +541,13 @@
     font-size: 13px;
   }
   .prose table th, .tabela-comparativa th {
-    padding: 10px 14px;
-    font-size: 18px;
+    padding: 10px 10px;
+    font-size: 17px;
   }
+  .prose table td, .tabela-comparativa td {
+    padding: 10px 10px;
+  }
+}
   .prose table td, .tabela-comparativa td {
     padding: 10px 14px;
   }
