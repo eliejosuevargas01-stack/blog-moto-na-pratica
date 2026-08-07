@@ -242,7 +242,7 @@ export default async function PostPage(props: PostPageProps, langOverride?: stri
           unoptimized={post.img.includes("/uploads/")}
         />
         <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,.90) 0%, rgba(0,0,0,.40) 55%, rgba(0,0,0,.15) 100%)" }} />
-        <div className="absolute inset-0 flex flex-col justify-end px-6 pb-10 md:px-12 max-w-[900px] z-10">
+        <div className="absolute inset-0 flex flex-col justify-end px-4 md:px-6 pb-10 max-w-[1200px] mx-auto z-10">
           <Link
             href="/"
             className="flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-white uppercase tracking-wider mb-5 transition-colors w-fit"
@@ -272,7 +272,7 @@ export default async function PostPage(props: PostPageProps, langOverride?: stri
 
       {/* CONTENT AREA */}
       <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-16 grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-14">
-        <div>
+        <div className="min-w-0">
           {/* Excerpt */}
           <p className="text-[17px] text-[#BBBBBB] leading-relaxed border-l-2 border-primary pl-5 mb-10" style={BODY}>
             {post.excerpt}

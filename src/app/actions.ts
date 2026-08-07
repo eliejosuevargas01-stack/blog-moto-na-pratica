@@ -68,27 +68,20 @@ export async function savePostAction(data: {
   try {
     const targetPostId = data.id ? String(data.id).trim() : undefined;
 
-    // Validar slug
-    const existing = await prisma.post.findFirst({
-      where: {
-        slug: data.slug,
-        id: targetPostId ? { not: targetPostId } : undefined
-      }
-    });
-
-    if (existing) {
-      return { error: "Já existe um post com esta URL (slug). Escolha outro." };
+    // Buscar se o post já existe por ID ou por Slug
+    let currentPost = targetPostId ? await prisma.post.findUnique({ where: { id: targetPostId } }) : null;
+    if (!currentPost && data.slug) {
+      currentPost = await prisma.post.findUnique({ where: { slug: data.slug.trim() } });
     }
 
     const lang = data.lang || "pt";
-
     const computedReadTime = calculateReadTime({ title: data.title, excerpt: data.excerpt, blocks: data.blocks });
     const finalReadTime = (data.readTime && data.readTime !== "5 min") ? data.readTime : computedReadTime;
 
-    if (targetPostId) {
-      // Obter post atual para capturar translationGroupId
-      const currentPost = await prisma.post.findUnique({ where: { id: targetPostId } });
-      const translationGroupId = currentPost?.translationGroupId;
+    if (currentPost) {
+      // PRESERVAR O SLUG ORIGINAL DO POST PARA PROTEGER O GOOGLE SEARCH CONSOLE
+      const finalSlug = currentPost.slug;
+      const translationGroupId = currentPost.translationGroupId;
 
       const targetAudio = data.audioUrlsByLang && data.audioUrlsByLang[lang] !== undefined
         ? data.audioUrlsByLang[lang]
@@ -96,9 +89,9 @@ export async function savePostAction(data: {
 
       // Atualização do post alvo
       await prisma.post.update({
-        where: { id: targetPostId },
+        where: { id: currentPost.id },
         data: {
-          slug: data.slug,
+          slug: finalSlug,
           tag: data.tag,
           category: data.category,
           title: data.title,
@@ -170,7 +163,12 @@ export async function savePostAction(data: {
         }
       }
     } else {
-      // Criação
+      // Criação de novo post
+      const existingSlug = await prisma.post.findUnique({ where: { slug: data.slug.trim() } });
+      if (existingSlug) {
+        return { error: "Já existe um post com esta URL (slug). Escolha outro." };
+      }
+
       await prisma.post.create({
         data: {
           slug: data.slug,

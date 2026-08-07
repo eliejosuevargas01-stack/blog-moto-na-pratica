@@ -14,24 +14,45 @@ function generateSlug(title: string): string {
     .replace(/\s+/g, "-");
 }
 
-async function generateUniqueSlug(title: string, existingId?: number | string): Promise<string> {
+async function generateUniqueSlug(title: string, existingId?: number | string, lang?: string): Promise<string> {
   const baseSlug = generateSlug(title) || `post-${Date.now()}`;
   let slug = baseSlug;
-  let counter = 1;
   const strExistingId = existingId ? String(existingId) : undefined;
 
+  const existing = await prisma.post.findUnique({
+    where: { slug },
+    select: { id: true }
+  });
+
+  if (!existing || (strExistingId && existing.id === strExistingId)) {
+    return slug;
+  }
+
+  // Se colidir com outro post (ex: versão PT), usar sufixo semântico de idioma (-en, -es) em vez de número (-2)
+  if (lang && lang !== "pt") {
+    const langSlug = `${baseSlug}-${lang.toLowerCase()}`;
+    const existingLang = await prisma.post.findUnique({
+      where: { slug: langSlug },
+      select: { id: true }
+    });
+    if (!existingLang || (strExistingId && existingLang.id === strExistingId)) {
+      return langSlug;
+    }
+  }
+
+  let counter = 2;
   while (true) {
-    const existing = await prisma.post.findUnique({
-      where: { slug },
+    const testSlug = `${baseSlug}-${counter}`;
+    const existingTest = await prisma.post.findUnique({
+      where: { slug: testSlug },
       select: { id: true }
     });
 
-    if (!existing || (strExistingId && existing.id === strExistingId)) {
-      return slug;
+    if (!existingTest || (strExistingId && existingTest.id === strExistingId)) {
+      return testSlug;
     }
 
     counter++;
-    slug = `${baseSlug}-${counter}`;
   }
 }
 
@@ -270,17 +291,40 @@ export async function POST(req: Request) {
         const langData = output[lang];
         if (!langData || !langData.title) continue;
 
-        // O 'id' fornecido representa o ID do Grupo de Tradução (translationGroupId)
-        const existingPostForLang = await prisma.post.findFirst({
-          where: {
-            translationGroupId,
-            lang
-          }
-        });
+        // O 'id' fornecido representa o ID do Grupo de Tradução (translationGroupId), ID do post ou Slug do post
+        const targetLangId = langData.id ? String(langData.id).trim() : (body.id || body.post_id || body.postId) ? String(body.id || body.post_id || body.postId).trim() : undefined;
+        const targetLangSlug = langData.slug ? cleanSlug(langData.slug) : body.slug ? cleanSlug(body.slug) : undefined;
 
+        let existingPostForLang = null;
+
+        // 1. Buscar por translationGroupId + lang
+        if (translationGroupId) {
+          existingPostForLang = await prisma.post.findFirst({
+            where: { translationGroupId, lang }
+          });
+        }
+
+        // 2. Buscar por ID do post
+        if (!existingPostForLang && targetLangId) {
+          const byId = await prisma.post.findUnique({ where: { id: targetLangId } });
+          if (byId && (byId.lang === lang || !byId.lang)) {
+            existingPostForLang = byId;
+          }
+        }
+
+        // 3. Buscar por Slug do post
+        if (!existingPostForLang && targetLangSlug) {
+          const bySlug = await prisma.post.findUnique({ where: { slug: targetLangSlug } });
+          if (bySlug && (bySlug.lang === lang || !bySlug.lang)) {
+            existingPostForLang = bySlug;
+          }
+        }
+
+        // SE O POST JÁ EXISTIR NO BANCO DE DADOS, PRESERVA O SLUG ORIGINAL!
+        // NUNCA GERAR NOVO SLUG NEM ALTERAR O SLUG/URL DE UM POST QUE JÁ EXISTE NO GOOGLE.
         const finalSlug = existingPostForLang
-          ? (langData.slug || existingPostForLang.slug)
-          : await generateUniqueSlug(langData.title, existingPostForLang?.id);
+          ? existingPostForLang.slug
+          : (targetLangSlug || await generateUniqueSlug(langData.title, existingPostForLang?.id, lang));
 
         const featuredImg =
           (await extractImageUrl(langData["img-1"])) ||
@@ -418,7 +462,7 @@ export async function POST(req: Request) {
 
       return NextResponse.json({
         success: true,
-        message: `Post multi-idioma (${createdPosts.length} versões) criado com sucesso!`,
+        message: `Post multi-idioma (${createdPosts.length} versões) salvo com sucesso!`,
         translationGroupId,
         mentionedSlugsCount: extractedMentionedSlugs.size,
         posts: createdPosts,
@@ -475,9 +519,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "O título do post é obrigatório." }, { status: 400 });
     }
 
-    // REGRA DE MATCHING:
-    // Buscar se já existe um post com o mesmo translationGroupId E o mesmo idioma (lang).
+    // REGRA DE MATCHING E PRESERVAÇÃO DE SLUG/UUID NO ENDPOINT:
+    const targetIdStr = (body.id || body.post_id || body.postId) ? String(body.id || body.post_id || body.postId).trim() : undefined;
+    const targetSlugStr = customSlug ? cleanSlug(customSlug) : body.slug ? cleanSlug(body.slug) : undefined;
+
     let existingSinglePost = null;
+
+    // 1. Tentar por translationGroupId + lang
     if (finalTranslationGroupId) {
       existingSinglePost = await prisma.post.findFirst({
         where: {
@@ -487,19 +535,27 @@ export async function POST(req: Request) {
       });
     }
 
-    // Se não encontrou por translationGroupId + lang, busca por ID direto (apenas se pertencer ao mesmo idioma)
-    if (!existingSinglePost && (body.id || body.post_id || body.postId)) {
-      const rawIdStr = String(body.id || body.post_id || body.postId).trim();
-      const byId = await prisma.post.findUnique({ where: { id: rawIdStr } });
-      if (byId && byId.lang === targetLang) {
+    // 2. Tentar por ID do post
+    if (!existingSinglePost && targetIdStr) {
+      const byId = await prisma.post.findUnique({ where: { id: targetIdStr } });
+      if (byId) {
         existingSinglePost = byId;
       }
     }
 
-    // Manter o slug original caso o post já exista no mesmo idioma
+    // 3. Tentar por SLUG do post (garante que atualizações enviadas por slug encontrem o post original)
+    if (!existingSinglePost && targetSlugStr) {
+      const bySlug = await prisma.post.findUnique({ where: { slug: targetSlugStr } });
+      if (bySlug) {
+        existingSinglePost = bySlug;
+      }
+    }
+
+    // SE O POST JÁ EXISTE NO BANCO DE DADOS, PRESERVA ABSOLUTAMENTE O SLUG ORIGINAL!
+    // NUNCA MUDAR O SLUG NEM CRIAR UM NOVO UUID/POST PARA POSTS JÁ EXISTENTES.
     const finalSlug = existingSinglePost
       ? existingSinglePost.slug
-      : (customSlug || await generateUniqueSlug(title));
+      : (targetSlugStr || await generateUniqueSlug(title, existingSinglePost?.id, targetLang));
 
     const extractedMentionedSlugs: Set<string> = new Set(explicitMentionedSlugs);
 
