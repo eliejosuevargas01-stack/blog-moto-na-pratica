@@ -45,13 +45,62 @@ function normalizeProsConsHtml(html: string): string {
     .replace(/^<ul[^>]*>\s*<li[^>]*>/i, '')
     .replace(/<\/li>\s*<\/ul>$/i, '');
 
-  const hasPros = /(?:pontos\s+fortes|prós|pros|👍|✅)/i.test(cleanInput);
-  const hasCons = /(?:pontos\s+fracos|contras|👎|❌)/i.test(cleanInput);
+  const hasProsKeyword = /(?:pontos\s+fortes|prós|pros|👍|✅)/i.test(cleanInput);
+  const hasConsKeyword = /(?:pontos\s+fracos|contras|disadvantages|cons|👎|❌)/i.test(cleanInput);
 
-  if (!hasPros && !hasCons && !cleanInput.includes('box-pros-cons') && !cleanInput.includes('pros-contras')) {
+  if (!hasProsKeyword && !hasConsKeyword && !cleanInput.includes('box-pros-cons') && !cleanInput.includes('pros-contras')) {
     return cleanInput;
   }
 
+  // 1. CASO ESPECIAL: O HTML possui uma lista de <li> onde alguns são Prós e outros são Contras
+  const allLiMatches = Array.from(cleanInput.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi));
+  if (allLiMatches.length > 0) {
+    const prosLis: string[] = [];
+    const consLis: string[] = [];
+    let currentMode: 'pros' | 'cons' = 'pros';
+
+    for (const match of allLiMatches) {
+      const fullLi = match[0];
+      const liInner = match[1];
+      const cleanText = liInner.replace(/<[^>]*>/g, '').trim();
+
+      const isConsLi = /^(?:contras?|pontos\s+fracos|desvantagens|cons|👎|❌)\s*:?/i.test(cleanText) ||
+                       /<strong>\s*(?:contras?|pontos\s+fracos|desvantagens|cons|👎|❌)\s*:?\s*<\/strong>/i.test(liInner);
+      
+      const isProsLi = /^(?:prós|pros|pontos\s+fortes|vantagens|👍|✅)\s*:?/i.test(cleanText) ||
+                       /<strong>\s*(?:prós|pros|pontos\s+fortes|vantagens|👍|✅)\s*:?\s*<\/strong>/i.test(liInner);
+
+      if (isConsLi) {
+        currentMode = 'cons';
+        const cleanedLi = liInner
+          .replace(/^(?:<strong>)?\s*(?:contras?|pontos\s+fracos|desvantagens|cons|👎|❌)\s*:?\s*(?:<\/strong>)?\s*/i, '');
+        consLis.push(`<li>${cleanedLi}</li>`);
+      } else if (isProsLi) {
+        currentMode = 'pros';
+        const cleanedLi = liInner
+          .replace(/^(?:<strong>)?\s*(?:prós|pros|pontos\s+fortes|vantagens|👍|✅)\s*:?\s*(?:<\/strong>)?\s*/i, '');
+        prosLis.push(`<li>${cleanedLi}</li>`);
+      } else {
+        if (currentMode === 'cons') {
+          consLis.push(fullLi);
+        } else {
+          prosLis.push(fullLi);
+        }
+      }
+    }
+
+    if (prosLis.length > 0 && consLis.length > 0) {
+      const prosBox = `<div class="box-pros"><h4>👍 Pontos Fortes</h4><ul>${prosLis.join('')}</ul></div>`;
+      const consBox = `<div class="box-cons"><h4>👎 Pontos Fracos</h4><ul>${consLis.join('')}</ul></div>`;
+      
+      const prefixMatch = cleanInput.split(/<(h[1-6]|p|ul|ol)\b/i);
+      const prefix = prefixMatch && prefixMatch[0] ? prefixMatch[0] : "";
+      
+      return `${prefix}<div class="box-pros-cons">${prosBox}${consBox}</div>`;
+    }
+  }
+
+  // 2. CASO GERAL: Seções com H2/H3 separados de Pontos Fortes e Pontos Fracos
   if (cleanInput.includes('box-pros') && cleanInput.includes('box-cons')) {
     cleanInput = cleanInput.replace(/<li[^>]*>\s*(<div\b[^>]*class=["'][^"']*box-pros-cons[\s\S]*?<\/div>)\s*<\/li>/gi, '$1');
     return cleanInput;
