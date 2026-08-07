@@ -69,14 +69,14 @@ export default function ExemplosVisuaisPage() {
                 </div>
                 <ul className="ficha-lista">
                   <li>
-                    <span class="spec-label">Cilindrada</span>
-                    <span class="spec-value">249 cc</span>
-                    <span class="spec-asfalto"><strong>Tradução:</strong> Resposta rápida e ágil no trânsito urbano.</span>
+                    <span className="spec-label">Cilindrada</span>
+                    <span className="spec-value">249 cc</span>
+                    <span className="spec-asfalto"><strong>Tradução:</strong> Resposta rápida e ágil no trânsito urbano.</span>
                   </li>
                   <li>
-                    <span class="spec-label">Potência Máxima</span>
-                    <span class="spec-value">21,5 cv a 8.000 rpm</span>
-                    <span class="spec-asfalto"><strong>Tradução:</strong> Mantém 110 km/h de cruzeiro com folga.</span>
+                    <span className="spec-label">Potência Máxima</span>
+                    <span className="spec-value">21,5 cv a 8.000 rpm</span>
+                    <span className="spec-asfalto"><strong>Tradução:</strong> Mantém 110 km/h de cruzeiro com folga.</span>
                   </li>
                 </ul>
               </div>
