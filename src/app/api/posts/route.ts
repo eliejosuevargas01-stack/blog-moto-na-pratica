@@ -5,13 +5,16 @@ import { processImageBase64, saveAudioBuffer, calculateReadTime } from "@/lib/im
 import { toNumericGroupId } from "../../data";
 
 function generateSlug(title: string): string {
-  return title
+  if (!title) return "";
+  const cleanTitle = title.replace(/<[^>]*>/g, "");
+  return cleanTitle
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9\s-]/g, "")
     .trim()
-    .replace(/\s+/g, "-");
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
 }
 
 async function generateUniqueSlug(title: string, existingId?: number | string, lang?: string): Promise<string> {
@@ -58,10 +61,16 @@ async function generateUniqueSlug(title: string, existingId?: number | string, l
 
 function cleanSlug(slug?: string): string {
   if (!slug) return "";
-  return slug
+  const noHtml = slug.replace(/<[^>]*>/g, "");
+  return noHtml
     .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/^\/?(posts|post|reviews|resenas|avaliacoes)\//i, "")
-    .replace(/^\/+/, "");
+    .replace(/[^a-z0-9-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 async function extractImageUrl(imgField: any): Promise<string> {

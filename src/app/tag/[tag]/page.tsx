@@ -22,6 +22,10 @@ export async function generateMetadata({ params }: TagPageProps) {
   return {
     title: `Posts sobre ${decodedTag} · Moto na Prática`,
     description: `Confira todos os artigos e postagens marcados com a tag ${decodedTag} no blog Moto na Prática.`,
+    robots: {
+      index: false,
+      follow: true,
+    },
   };
 }
 

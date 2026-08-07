@@ -32,12 +32,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.warn("Failed to fetch pages for sitemap.", e);
   }
 
-  const dynamicPageRoutes = dbPages.map((page) => ({
-    url: `${baseUrl}/${page.slug}`,
-    lastModified: new Date(page.updatedAt),
-    changeFrequency: "weekly" as const,
-    priority: 0.6,
-  }));
+  const dynamicPageRoutes = dbPages
+    .filter((page) => page.slug && !page.slug.toLowerCase().includes("tag"))
+    .map((page) => ({
+      url: `${baseUrl}/${page.slug}`,
+      lastModified: new Date(page.updatedAt),
+      changeFrequency: "weekly" as const,
+      priority: 0.6,
+    }));
 
   // Buscar todos os posts dinâmicos do banco
   let dbPosts: any[] = [];
@@ -49,12 +51,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.warn("Failed to fetch posts for sitemap.", e);
   }
 
-  const postRoutes = dbPosts.map((post) => ({
-    url: `${baseUrl}/post/${post.slug}`,
-    lastModified: new Date(post.updatedAt),
-    changeFrequency: "weekly" as const,
-    priority: 0.8,
-  }));
+  const postRoutes = dbPosts
+    .filter((post) => post.slug && !post.slug.toLowerCase().includes("tag"))
+    .map((post) => ({
+      url: `${baseUrl}/post/${post.slug}`,
+      lastModified: new Date(post.updatedAt),
+      changeFrequency: "weekly" as const,
+      priority: 0.8,
+    }));
 
   return [...routes, ...dynamicPageRoutes, ...postRoutes];
 }
