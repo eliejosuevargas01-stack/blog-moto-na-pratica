@@ -548,10 +548,6 @@
     padding: 10px 10px;
   }
 }
-  .prose table td, .tabela-comparativa td {
-    padding: 10px 14px;
-  }
-}
 
 /* --- CAIXAS DE PRÓS E CONTRAS (.box-pros-cons, .pros-contras-box) --- */
 .box-pros-cons, .pros-contras-box {
