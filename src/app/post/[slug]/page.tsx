@@ -148,6 +148,7 @@ function normalizeProsConsHtml(html: string): string {
 function cleanBlockHtml(html: string): string {
   if (!html) return "";
   let cleaned = html
+    .replace(/\\"/g, '"')
     .replace(/\\n/g, "")
     .replace(/>\s*\r?\n\s*</g, "><")
     .replace(/<p>\s*(?:Image|Imagem)\s*URL\s*:?\s*https?:\/\/[^\s<]+\s*<\/p>/gi, "")
