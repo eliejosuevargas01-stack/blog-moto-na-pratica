@@ -143,6 +143,7 @@ export default async function Home({ searchParams }: HomeProps) {
         alt={stripHtml(heroTitle)}
         fill
         priority
+        fetchPriority="high"
         sizes="100vw"
         className="object-cover" 
         style={{ objectPosition: heroFocalPoint }}
@@ -216,14 +217,16 @@ export default async function Home({ searchParams }: HomeProps) {
               <article className="group bg-card border border-border overflow-hidden mb-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
                 <Link href={formatPostUrl(featuredPost.slug, featuredPost.lang)} className="block">
                   <div className="relative overflow-hidden w-full h-[280px]">
-                    <img 
+                    <Image 
                       src={optimizeImageUrl(featuredPost.img, 750, 420)} 
                       alt={stripHtml(featuredPost.title)} 
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                      fill
+                      sizes="(max-width: 768px) 100vw, 750px"
+                      className="object-cover group-hover:scale-105 transition-transform duration-500" 
                       style={{ objectPosition: featuredPost.imgFocalPoint || "center" }}
-                      loading="lazy"
+                      unoptimized={featuredPost.img?.includes("/uploads/")}
                     />
-                    <span className={`absolute top-3 left-3 text-[11px] font-bold uppercase tracking-widest px-2 py-1 ${TAG_COLORS[featuredPost.tag] || "bg-[#252525] text-white"}`}>
+                    <span className={`absolute top-3 left-3 text-[11px] font-bold uppercase tracking-widest px-2 py-1 z-10 ${TAG_COLORS[featuredPost.tag] || "bg-[#252525] text-white"}`}>
                       {featuredPost.tag}
                     </span>
                   </div>
@@ -256,14 +259,16 @@ export default async function Home({ searchParams }: HomeProps) {
                   <article key={post.id} className="group bg-card border border-border overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                     <Link href={formatPostUrl(post.slug, post.lang)} className="flex flex-col flex-1">
                       <div className="relative overflow-hidden w-full h-[185px]">
-                        <img 
+                        <Image 
                           src={optimizeImageUrl(post.img, 450, 260)} 
                           alt={stripHtml(post.title)} 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                          fill
+                          sizes="(max-width: 640px) 100vw, 450px"
+                          className="object-cover group-hover:scale-105 transition-transform duration-500" 
                           style={{ objectPosition: post.imgFocalPoint || "center" }}
-                          loading="lazy"
+                          unoptimized={post.img?.includes("/uploads/")}
                         />
-                        <span className={`absolute top-2 left-2 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 ${TAG_COLORS[post.tag] || "bg-[#252525] text-white"}`}>
+                        <span className={`absolute top-2 left-2 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 z-10 ${TAG_COLORS[post.tag] || "bg-[#252525] text-white"}`}>
                           {post.tag}
                         </span>
                       </div>
@@ -304,12 +309,14 @@ export default async function Home({ searchParams }: HomeProps) {
 
   const renderBanner = () => (
     <section key="banner" className="relative overflow-hidden border-t border-b border-border" style={{ height: "220px" }}>
-      <img 
+      <Image 
         src={optimizeImageUrl(homeContent.bannerImage, 1200, 400)} 
         alt={homeContent.bannerTitle} 
-        className="w-full h-full object-cover" 
+        fill
+        sizes="100vw"
+        className="object-cover" 
         style={{ objectPosition: homeContent.bannerFocalPoint || "center" }}
-        loading="lazy"
+        unoptimized={homeContent.bannerImage?.includes("/uploads/")}
       />
       <div className="absolute inset-0" style={{ background: "linear-gradient(rgba(0,0,0,.75), rgba(0,0,0,.35))" }} />
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 z-10">

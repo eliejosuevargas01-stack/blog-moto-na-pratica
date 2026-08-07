@@ -2,7 +2,10 @@
 const nextConfig = {
   output: 'standalone',
   images: {
-    unoptimized: true,
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 31536000,
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     remotePatterns: [
       {
         protocol: 'https',
@@ -14,12 +17,48 @@ const nextConfig = {
       },
     ],
   },
-  // Desabilita avisos de lint ou typescript no build caso precise pular validação
+  experimental: {
+    optimizePackageImports: ['lucide-react', '@mui/material', '@mui/icons-material', 'date-fns'],
+  },
   typescript: {
     ignoreBuildErrors: true,
   },
   eslint: {
     ignoreDuringBuilds: true,
+  },
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000; includeSubDomains',
+          },
+        ],
+      },
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+    ];
   },
   async redirects() {
     return [

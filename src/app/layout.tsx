@@ -9,6 +9,7 @@ import GoogleAnalytics from "./components/GoogleAnalytics";
 import SocialLinks from "./components/SocialLinks";
 import { cookies } from "next/headers";
 import { getTranslation } from "./i18n/translations";
+import Script from "next/script";
 
 const tekoFont = TekoFont({
   subsets: ["latin"],
@@ -102,10 +103,12 @@ export default async function RootLayout({
       <head>
         <link rel="icon" type="image/png" href="/favicon.png" />
         <link rel="preconnect" href="https://images.unsplash.com" />
+        <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com" />
+        <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossOrigin="anonymous" />
         <meta name="google-site-verification" content="fbASypBsg3iwxoSLbdAaR_U4bHoizv_FGbwhS9FBmqQ" />
-        <script
-          async
+        <Script
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8759260479603327"
+          strategy="lazyOnload"
           crossOrigin="anonymous"
         />
         <GoogleAnalytics gaId="G-WS2JW3944T" />
