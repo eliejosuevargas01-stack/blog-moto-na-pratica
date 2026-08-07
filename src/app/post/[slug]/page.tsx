@@ -20,40 +20,70 @@ function stripHtml(html: string): string {
 }
 
 function normalizeProsConsHtml(html: string): string {
-  if (!html || (!html.includes('box-pros-cons') && !html.includes('pros-contras'))) return html;
+  if (!html) return "";
 
+  // 1. Se o HTML não tem a div wrapper, mas possui cabeçalhos/seções de Prós e Contras ou Pontos Fortes e Fracos
+  if (!html.includes('box-pros-cons') && !html.includes('pros-contras')) {
+    const hasProsHeader = /<(h[1-6]|p|strong)[^>]*>[^<]*(?:pontos\s+fortes|prós|pros|👍|✅)[^<]*<\/\1>/gi.test(html);
+    const hasConsHeader = /<(h[1-6]|p|strong)[^>]*>[^<]*(?:pontos\s+fracos|contras|👎|❌)[^<]*<\/\1>/gi.test(html);
+
+    if (hasProsHeader || hasConsHeader) {
+      let prosHtml = "";
+      let consHtml = "";
+
+      const prosMatch = html.match(/<(h[1-6]|p|strong)[^>]*>[^<]*(?:pontos\s+fortes|prós|pros|👍|✅)[^<]*<\/\1>([\s\S]*?)(?=(<(h[1-6]|p|strong)[^>]*>[^<]*(?:pontos\s+fracos|contras|👎|❌)[^<]*<\/\1>)|$)/i);
+      if (prosMatch) {
+        prosHtml = prosMatch[2] || "";
+      }
+
+      const consMatch = html.match(/<(h[1-6]|p|strong)[^>]*>[^<]*(?:pontos\s+fracos|contras|👎|❌)[^<]*<\/\1>([\s\S]*?)$/i);
+      if (consMatch) {
+        consHtml = consMatch[2] || "";
+      }
+
+      const extractItems = (content: string) => {
+        if (!content) return "";
+        const listMatch = content.match(/<ul[\s\S]*?<\/ul>|<ol[\s\S]*?<\/ol>/i);
+        if (listMatch) return listMatch[0];
+        
+        const paragraphMatches = content.match(/<p[\s\S]*?<\/p>/gi);
+        if (paragraphMatches && paragraphMatches.length > 0) {
+          const lis = paragraphMatches.map(p => `<li>${p.replace(/<\/?p[^>]*>/g, '').replace(/^[•\-\*\s]+/, '')}</li>`).join('');
+          return `<ul>${lis}</ul>`;
+        }
+        return content;
+      };
+
+      const prosList = extractItems(prosHtml);
+      const consList = extractItems(consHtml);
+
+      if (prosList || consList) {
+        const prosBox = prosList ? `<div class="box-pros"><h4>👍 Pontos Fortes</h4>${prosList}</div>` : "";
+        const consBox = consList ? `<div class="box-cons"><h4>👎 Pontos Fracos</h4>${consList}</div>` : "";
+        
+        const beforeMatch = html.split(/<(h[1-6]|p|strong)[^>]*>[^<]*(?:pontos\s+fortes|prós|pros|👍|✅)[^<]*<\/\1>/i);
+        const prefix = beforeMatch && beforeMatch[0] ? beforeMatch[0] : "";
+
+        return `${prefix}<div class="box-pros-cons">${prosBox}${consBox}</div>`;
+      }
+    }
+    return html;
+  }
+
+  // 2. Se já possui a div wrapper <div class="box-pros-cons">
   return html.replace(/<div\b([^>]*)class=[\"']([^\"']*(?:box-pros-cons|pros-contras)[^\"']*)[\"']([^>]*)>([\s\S]*?)<\/div>/gi, (match, p1, cls, p3, inner) => {
     let titleHtml = '';
     let body = inner.replace(/<(h[1-6])\b[^>]*>([\s\S]*?)<\/\1>/gi, (m, tag, text) => {
       const cleanT = text.trim();
-      if ((cleanT === 'Prós' || cleanT === 'Pros' || cleanT.includes('✅')) && !text.includes('Contras')) {
+      if ((cleanT === 'Prós' || cleanT === 'Pros' || cleanT.includes('✅') || cleanT.includes('👍')) && !text.includes('Contras')) {
         return m;
       }
-      if ((cleanT === 'Contras' || cleanT.includes('❌')) && !text.includes('Prós')) {
+      if ((cleanT === 'Contras' || cleanT.includes('❌') || cleanT.includes('👎')) && !text.includes('Prós')) {
         return m;
       }
       titleHtml += `<h3 class="text-[26px] md:text-[28px] font-semibold text-white uppercase mb-4 font-teko tracking-wide w-full col-span-full">${text}</h3>`;
       return '';
     });
-
-    if (body.includes('class="pros"') || body.includes('class="cons"') || body.includes("class='pros'") || body.includes("class='cons'")) {
-      if (body.includes('<li')) {
-        const prosItems: string[] = [];
-        const consItems: string[] = [];
-        body.replace(/<li\b[^>]*class=[\"']([^\"']*pros[^\"']*)[\"'][^>]*>([\s\S]*?)<\/li>/gi, (m, c, content) => {
-          prosItems.push(`<li>${content}</li>`);
-        });
-        body.replace(/<li\b[^>]*class=[\"']([^\"']*cons[^\"']*)[\"'][^>]*>([\s\S]*?)<\/li>/gi, (m, c, content) => {
-          consItems.push(`<li>${content}</li>`);
-        });
-
-        if (prosItems.length > 0 || consItems.length > 0) {
-          const prosBox = prosItems.length > 0 ? `<div class="box-pros"><h4>✅ Prós</h4><ul>${prosItems.join('')}</ul></div>` : '';
-          const consBox = consItems.length > 0 ? `<div class="box-cons"><h4>❌ Contras</h4><ul>${consItems.join('')}</ul></div>` : '';
-          return `<div class="box-pros-cons">${titleHtml}${prosBox}${consBox}</div>`;
-        }
-      }
-    }
 
     return `<div class="box-pros-cons">${titleHtml}${body}</div>`;
   });
@@ -62,6 +92,7 @@ function normalizeProsConsHtml(html: string): string {
 function cleanBlockHtml(html: string): string {
   if (!html) return "";
   let cleaned = html
+    .replace(/\\n/g, "")
     .replace(/<p>\s*(?:Image|Imagem)\s*URL\s*:?\s*https?:\/\/[^\s<]+\s*<\/p>/gi, "")
     .replace(/(?:Image|Imagem)\s*URL\s*:?\s*https?:\/\/[^\s<]+/gi, "")
     .replace(/\{[^}]*\}=\d+\{[^}]*\}/gi, "")

@@ -133,6 +133,7 @@ function extractMentionedSlugsFromHtml(html: string, selfSlug?: string): string[
 function cleanBlockHtml(html: string): string {
   if (!html) return "";
   return html
+    .replace(/\\n/g, "")
     .replace(/<p>\s*(?:Image|Imagem)\s*URL\s*:?\s*https?:\/\/[^\s<]+\s*<\/p>/gi, "")
     .replace(/(?:Image|Imagem)\s*URL\s*:?\s*https?:\/\/[^\s<]+/gi, "")
     .replace(/\{[^}]*\}=\d+\{[^}]*\}/gi, "")
