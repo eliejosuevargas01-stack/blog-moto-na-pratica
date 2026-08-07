@@ -34,7 +34,6 @@ function extractListOrContent(htmlSnippet: string): string {
     if (items.length > 0) {
       return `<ul>${items.join('')}</ul>`;
     }
-  }
   return "";
 }
 
@@ -46,9 +45,14 @@ function normalizeProsConsHtml(html: string): string {
     .replace(/<\/li>\s*<\/ul>$/i, '');
 
   const hasProsKeyword = /(?:pontos\s+fortes|prós|pros|👍|✅)/i.test(cleanInput);
-  const hasConsKeyword = /(?:pontos\s+fracos|contras|disadvantages|cons|👎|❌)/i.test(cleanInput);
+  const hasConsKeyword = /(?:pontos\s+fracos|contras|desvantagens|cons|👎|❌)/i.test(cleanInput);
 
   if (!hasProsKeyword && !hasConsKeyword && !cleanInput.includes('box-pros-cons') && !cleanInput.includes('pros-contras')) {
+    return cleanInput;
+  }
+
+  if (cleanInput.includes('box-pros') && cleanInput.includes('box-cons')) {
+    cleanInput = cleanInput.replace(/<li[^>]*>\s*(<div\b[^>]*class=["'][^"']*box-pros-cons[\s\S]*?<\/div>)\s*<\/li>/gi, '$1');
     return cleanInput;
   }
 
@@ -58,6 +62,7 @@ function normalizeProsConsHtml(html: string): string {
     const prosLis: string[] = [];
     const consLis: string[] = [];
     let currentMode: 'pros' | 'cons' = 'pros';
+    let foundExplicitLabels = false;
 
     for (const match of allLiMatches) {
       const fullLi = match[0];
@@ -71,11 +76,13 @@ function normalizeProsConsHtml(html: string): string {
                        /<strong>\s*(?:prós|pros|pontos\s+fortes|vantagens|👍|✅)\s*:?\s*<\/strong>/i.test(liInner);
 
       if (isConsLi) {
+        foundExplicitLabels = true;
         currentMode = 'cons';
         const cleanedLi = liInner
           .replace(/^(?:<strong>)?\s*(?:contras?|pontos\s+fracos|desvantagens|cons|👎|❌)\s*:?\s*(?:<\/strong>)?\s*/i, '');
         consLis.push(`<li>${cleanedLi}</li>`);
       } else if (isProsLi) {
+        foundExplicitLabels = true;
         currentMode = 'pros';
         const cleanedLi = liInner
           .replace(/^(?:<strong>)?\s*(?:prós|pros|pontos\s+fortes|vantagens|👍|✅)\s*:?\s*(?:<\/strong>)?\s*/i, '');
@@ -89,73 +96,47 @@ function normalizeProsConsHtml(html: string): string {
       }
     }
 
-    if (prosLis.length > 0 && consLis.length > 0) {
+    if (foundExplicitLabels && prosLis.length > 0 && consLis.length > 0) {
       const prosBox = `<div class="box-pros"><h4>👍 Pontos Fortes</h4><ul>${prosLis.join('')}</ul></div>`;
       const consBox = `<div class="box-cons"><h4>👎 Pontos Fracos</h4><ul>${consLis.join('')}</ul></div>`;
-      
       const prefixMatch = cleanInput.split(/<(h[1-6]|p|ul|ol)\b/i);
       const prefix = prefixMatch && prefixMatch[0] ? prefixMatch[0] : "";
-      
       return `${prefix}<div class="box-pros-cons">${prosBox}${consBox}</div>`;
     }
   }
 
-  // 2. CASO GERAL: Seções com H2/H3 separados de Pontos Fortes e Pontos Fracos
-  if (cleanInput.includes('box-pros') && cleanInput.includes('box-cons')) {
-    cleanInput = cleanInput.replace(/<li[^>]*>\s*(<div\b[^>]*class=["'][^"']*box-pros-cons[\s\S]*?<\/div>)\s*<\/li>/gi, '$1');
-    return cleanInput;
-  }
+  // 2. CASO GERAL: Seções com Títulos H2/H3 separados (ex: MT-09 com H3 "Pontos Fortes" e H3 "Pontos Fracos")
+  const prosTagRegex = /<(h[1-6]|p|div|strong)\b[^>]*>[\s\S]*?(?:pontos\s+fortes|prós|pros|👍|✅)[\s\S]*?<\/\1>/gi;
+  const consTagRegex = /<(h[1-6]|p|div|strong)\b[^>]*>[\s\S]*?(?:pontos\s+fracos|contras|desvantagens|👎|❌)[\s\S]*?<\/\1>/gi;
 
-  const prosHeaderRegex = /<(h[1-6]|p|div|strong|li)\b[^>]*>[\s\S]*?(?:pontos\s+fortes|prós|pros|👍|✅)[\s\S]*?<\/\1>/i;
-  const consHeaderRegex = /<(h[1-6]|p|div|strong|li)\b[^>]*>[\s\S]*?(?:pontos\s+fracos|contras|👎|❌)[\s\S]*?<\/\1>/i;
+  const prosMatch = prosTagRegex.exec(cleanInput);
+  const consMatch = consTagRegex.exec(cleanInput);
 
-  const prosMatch = cleanInput.match(prosHeaderRegex);
-  const consMatch = cleanInput.match(consHeaderRegex);
+  if (prosMatch && consMatch) {
+    const prosStart = prosMatch.index;
+    const consStart = consMatch.index;
 
-  if (prosMatch || consMatch) {
-    const prosIndex = prosMatch ? cleanInput.indexOf(prosMatch[0]) : -1;
-    const consIndex = consMatch ? cleanInput.indexOf(consMatch[0]) : -1;
+    let prefix = "";
+    let prosSection = "";
+    let consSection = "";
 
-    let prefixHtml = "";
-    let prosListHtml = "";
-    let consListHtml = "";
-
-    if (prosIndex !== -1 && (consIndex === -1 || prosIndex < consIndex)) {
-      prefixHtml = cleanInput.substring(0, prosIndex);
-      const prosAndBeyond = cleanInput.substring(prosIndex);
-      
-      if (consIndex !== -1) {
-        const consOffsetInSub = prosAndBeyond.search(consHeaderRegex);
-        const prosSection = prosAndBeyond.substring(0, consOffsetInSub);
-        const consSection = prosAndBeyond.substring(consOffsetInSub);
-
-        prosListHtml = extractListOrContent(prosSection);
-        consListHtml = extractListOrContent(consSection);
-      } else {
-        prosListHtml = extractListOrContent(prosAndBeyond);
-      }
-    } else if (consIndex !== -1) {
-      prefixHtml = cleanInput.substring(0, consIndex);
-      const consAndBeyond = cleanInput.substring(consIndex);
-
-      if (prosIndex !== -1) {
-        const prosOffsetInSub = consAndBeyond.search(prosHeaderRegex);
-        const consSection = consAndBeyond.substring(0, prosOffsetInSub);
-        const prosSection = cleanInput.substring(prosIndex);
-
-        consListHtml = extractListOrContent(consSection);
-        prosListHtml = extractListOrContent(prosSection);
-      } else {
-        consListHtml = extractListOrContent(consAndBeyond);
-      }
+    if (prosStart < consStart) {
+      prefix = cleanInput.substring(0, prosStart);
+      prosSection = cleanInput.substring(prosStart + prosMatch[0].length, consStart);
+      consSection = cleanInput.substring(consStart + consMatch[0].length);
+    } else {
+      prefix = cleanInput.substring(0, consStart);
+      consSection = cleanInput.substring(consStart + consMatch[0].length, prosStart);
+      prosSection = cleanInput.substring(prosStart + prosMatch[0].length);
     }
 
-    prefixHtml = prefixHtml.replace(/<ul[^>]*>\s*$/i, '').replace(/<li[^>]*>\s*$/i, '');
+    const prosList = extractListOrContent(prosSection);
+    const consList = extractListOrContent(consSection);
 
-    if (prosListHtml || consListHtml) {
-      const prosBox = prosListHtml ? `<div class="box-pros"><h4>👍 Pontos Fortes</h4>${prosListHtml}</div>` : "";
-      const consBox = consListHtml ? `<div class="box-cons"><h4>👎 Pontos Fracos</h4>${consListHtml}</div>` : "";
-      return `${prefixHtml}<div class="box-pros-cons">${prosBox}${consBox}</div>`;
+    if (prosList || consList) {
+      const prosBox = prosList ? `<div class="box-pros"><h4>👍 Pontos Fortes</h4>${prosList}</div>` : "";
+      const consBox = consList ? `<div class="box-cons"><h4>👎 Pontos Fracos</h4>${consList}</div>` : "";
+      return `${prefix}<div class="box-pros-cons">${prosBox}${consBox}</div>`;
     }
   }
 
