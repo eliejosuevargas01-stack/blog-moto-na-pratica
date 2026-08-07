@@ -41,34 +41,39 @@ function extractListOrContent(htmlSnippet: string): string {
 function normalizeProsConsHtml(html: string): string {
   if (!html) return "";
 
-  const hasPros = /(?:pontos\s+fortes|prós|pros|👍|✅)/i.test(html);
-  const hasCons = /(?:pontos\s+fracos|contras|👎|❌)/i.test(html);
+  let cleanInput = html
+    .replace(/^<ul[^>]*>\s*<li[^>]*>/i, '')
+    .replace(/<\/li>\s*<\/ul>$/i, '');
 
-  if (!hasPros && !hasCons && !html.includes('box-pros-cons') && !html.includes('pros-contras')) {
-    return html;
+  const hasPros = /(?:pontos\s+fortes|prós|pros|👍|✅)/i.test(cleanInput);
+  const hasCons = /(?:pontos\s+fracos|contras|👎|❌)/i.test(cleanInput);
+
+  if (!hasPros && !hasCons && !cleanInput.includes('box-pros-cons') && !cleanInput.includes('pros-contras')) {
+    return cleanInput;
   }
 
-  if (html.includes('box-pros') && html.includes('box-cons')) {
-    return html;
+  if (cleanInput.includes('box-pros') && cleanInput.includes('box-cons')) {
+    cleanInput = cleanInput.replace(/<li[^>]*>\s*(<div\b[^>]*class=["'][^"']*box-pros-cons[\s\S]*?<\/div>)\s*<\/li>/gi, '$1');
+    return cleanInput;
   }
 
-  const prosHeaderRegex = /<(h[1-6]|p|div|strong)\b[^>]*>[\s\S]*?(?:pontos\s+fortes|prós|pros|👍|✅)[\s\S]*?<\/\1>/i;
-  const consHeaderRegex = /<(h[1-6]|p|div|strong)\b[^>]*>[\s\S]*?(?:pontos\s+fracos|contras|👎|❌)[\s\S]*?<\/\1>/i;
+  const prosHeaderRegex = /<(h[1-6]|p|div|strong|li)\b[^>]*>[\s\S]*?(?:pontos\s+fortes|prós|pros|👍|✅)[\s\S]*?<\/\1>/i;
+  const consHeaderRegex = /<(h[1-6]|p|div|strong|li)\b[^>]*>[\s\S]*?(?:pontos\s+fracos|contras|👎|❌)[\s\S]*?<\/\1>/i;
 
-  const prosMatch = html.match(prosHeaderRegex);
-  const consMatch = html.match(consHeaderRegex);
+  const prosMatch = cleanInput.match(prosHeaderRegex);
+  const consMatch = cleanInput.match(consHeaderRegex);
 
   if (prosMatch || consMatch) {
-    const prosIndex = prosMatch ? html.indexOf(prosMatch[0]) : -1;
-    const consIndex = consMatch ? html.indexOf(consMatch[0]) : -1;
+    const prosIndex = prosMatch ? cleanInput.indexOf(prosMatch[0]) : -1;
+    const consIndex = consMatch ? cleanInput.indexOf(consMatch[0]) : -1;
 
     let prefixHtml = "";
     let prosListHtml = "";
     let consListHtml = "";
 
     if (prosIndex !== -1 && (consIndex === -1 || prosIndex < consIndex)) {
-      prefixHtml = html.substring(0, prosIndex);
-      const prosAndBeyond = html.substring(prosIndex);
+      prefixHtml = cleanInput.substring(0, prosIndex);
+      const prosAndBeyond = cleanInput.substring(prosIndex);
       
       if (consIndex !== -1) {
         const consOffsetInSub = prosAndBeyond.search(consHeaderRegex);
@@ -81,13 +86,13 @@ function normalizeProsConsHtml(html: string): string {
         prosListHtml = extractListOrContent(prosAndBeyond);
       }
     } else if (consIndex !== -1) {
-      prefixHtml = html.substring(0, consIndex);
-      const consAndBeyond = html.substring(consIndex);
+      prefixHtml = cleanInput.substring(0, consIndex);
+      const consAndBeyond = cleanInput.substring(consIndex);
 
       if (prosIndex !== -1) {
         const prosOffsetInSub = consAndBeyond.search(prosHeaderRegex);
         const consSection = consAndBeyond.substring(0, prosOffsetInSub);
-        const prosSection = consAndBeyond.substring(prosOffsetInSub);
+        const prosSection = cleanInput.substring(prosIndex);
 
         consListHtml = extractListOrContent(consSection);
         prosListHtml = extractListOrContent(prosSection);
@@ -96,6 +101,8 @@ function normalizeProsConsHtml(html: string): string {
       }
     }
 
+    prefixHtml = prefixHtml.replace(/<ul[^>]*>\s*$/i, '').replace(/<li[^>]*>\s*$/i, '');
+
     if (prosListHtml || consListHtml) {
       const prosBox = prosListHtml ? `<div class="box-pros"><h4>👍 Pontos Fortes</h4>${prosListHtml}</div>` : "";
       const consBox = consListHtml ? `<div class="box-cons"><h4>👎 Pontos Fracos</h4>${consListHtml}</div>` : "";
@@ -103,7 +110,7 @@ function normalizeProsConsHtml(html: string): string {
     }
   }
 
-  return html;
+  return cleanInput;
 }
 
 function cleanBlockHtml(html: string): string {

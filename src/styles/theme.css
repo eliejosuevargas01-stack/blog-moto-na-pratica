@@ -551,41 +551,32 @@
 
 /* --- CAIXAS DE PRÓS E CONTRAS (.box-pros-cons, .pros-contras-box) --- */
 .box-pros-cons, .pros-contras-box {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.25rem;
-  margin: 2rem 0;
-  width: 100%;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 1.25rem !important;
+  margin: 2rem 0 !important;
+  width: 100% !important;
+  list-style: none !important;
 }
 
 @media (min-width: 640px) {
   .box-pros-cons, .pros-contras-box {
-    grid-template-columns: 1fr 1fr;
-    gap: 1.25rem;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 1.25rem !important;
   }
 }
 
-/* Força qualquer título (h1, h2, h3, h4) dentro do container a ocupar 100% da largura no topo */
-.box-pros-cons > h1, .box-pros-cons > h2, .box-pros-cons > h3, .box-pros-cons > h4,
-.pros-contras-box > h1, .pros-contras-box > h2, .pros-contras-box > h3, .pros-contras-box > h4 {
-  grid-column: 1 / -1 !important;
-  width: 100% !important;
-  margin-top: 0 !important;
-  margin-bottom: 0.75rem !important;
-  font-family: 'Teko', sans-serif !important;
-  font-size: 28px !important;
-  text-transform: uppercase !important;
-  color: #FFFFFF !important;
-  letter-spacing: 0.04em;
-  border-top: none !important;
-  padding-top: 0 !important;
+/* Remove marcadores das caixas externas de prós/contras caso estejam num contexto de lista */
+.prose ul > li:has(> .box-pros-cons),
+.prose ul > li:has(> .box-pros),
+.prose ul > li:has(> .box-cons) {
+  list-style-type: none !important;
+  padding-left: 0 !important;
 }
 
-/* Força tabelas ou wrappers dentro de pros-cons a ocupar 100% */
-.box-pros-cons > table, .pros-contras-box > table,
-.box-pros-cons > .table-wrapper, .pros-contras-box > .table-wrapper {
-  grid-column: 1 / -1 !important;
-  width: 100% !important;
+.box-pros-cons::marker, .box-pros::marker, .box-cons::marker {
+  display: none !important;
+  content: "" !important;
 }
 
 .box-pros, .pros {
@@ -595,6 +586,7 @@
   padding: 1.25rem 1.4rem;
   box-shadow: 0 4px 15px rgba(34, 197, 94, 0.06);
   height: 100%;
+  box-sizing: border-box;
 }
 
 .box-cons, .cons {
@@ -604,6 +596,7 @@
   padding: 1.25rem 1.4rem;
   box-shadow: 0 4px 15px rgba(239, 68, 68, 0.06);
   height: 100%;
+  box-sizing: border-box;
 }
 
 .box-pros h4, .pros h4 {
@@ -634,8 +627,17 @@
 
 .box-pros ul, .box-cons ul, .pros ul, .cons ul {
   margin-bottom: 0 !important;
-  padding-left: 1.15rem !important;
+  padding-left: 1.25rem !important;
   color: #E2E2E2 !important;
+  list-style-type: disc !important;
+}
+
+.box-pros li::marker {
+  color: #4ade80 !important;
+}
+
+.box-cons li::marker {
+  color: #f87171 !important;
 }
 
 .box-pros li, .box-cons li, .pros li, .cons li {
