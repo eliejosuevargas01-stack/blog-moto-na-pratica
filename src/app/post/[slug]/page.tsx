@@ -330,7 +330,6 @@ export default async function PostPage(props: PostPageProps, langOverride?: stri
           sizes="100vw"
           className="object-cover"
           style={{ objectPosition: post.imgFocalPoint || "center" }}
-          unoptimized={post.img.includes("/uploads/")}
         />
         <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,.90) 0%, rgba(0,0,0,.40) 55%, rgba(0,0,0,.15) 100%)" }} />
         <div className="absolute inset-0 flex flex-col justify-end px-4 md:px-6 pb-10 max-w-[1200px] mx-auto z-10">
