@@ -102,12 +102,36 @@ export async function generatePostMetadata(slug: string, lang: string = "pt") {
       description: post.seoDescription || post.excerpt,
       keywords: post.seoKeywords || `${post.tag}, Fazer 250, Moto`,
       alternates,
+      robots: {
+        index: true,
+        follow: true,
+        googleBot: {
+          index: true,
+          follow: true,
+          "max-image-preview": "large",
+          "max-snippet": -1,
+          "max-video-preview": -1,
+        },
+      },
       openGraph: {
         title: stripHtml(post.title),
         description: post.excerpt,
-        images: [{ url: post.img }],
+        images: [
+          {
+            url: post.img,
+            width: 1200,
+            height: 675,
+            alt: stripHtml(post.title),
+          },
+        ],
         type: "article",
-      }
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: stripHtml(post.title),
+        description: post.excerpt,
+        images: [post.img],
+      },
     };
   } catch (error) {
     return {
