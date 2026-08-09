@@ -4,15 +4,25 @@ import { createHash } from "crypto";
 import { writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 
-export async function saveOptimizedImageBuffer(inputBuffer: Buffer): Promise<string> {
-  const optimizedBuffer = await sharp(inputBuffer)
-    .rotate() // Corrigir orientação EXIF automaticamente
-    .resize({ width: 1400, withoutEnlargement: true }) // Redimensionar para max 1400px
-    .webp({ quality: 82 })
-    .toBuffer();
+export async function saveOptimizedImageBuffer(inputBuffer: Buffer, originalExt?: string): Promise<string> {
+  let optimizedBuffer: Buffer;
+  let isWebp = true;
+
+  try {
+    optimizedBuffer = await sharp(inputBuffer)
+      .rotate() // Corrigir orientação EXIF automaticamente
+      .resize({ width: 1400, withoutEnlargement: true }) // Redimensionar para max 1400px
+      .webp({ quality: 82 })
+      .toBuffer();
+  } catch (err) {
+    console.warn("Sharp image optimization failed, falling back to raw buffer:", err);
+    optimizedBuffer = inputBuffer;
+    isWebp = false;
+  }
 
   const fileHash = createHash("md5").update(optimizedBuffer).digest("hex");
-  const filename = `img-${fileHash}.webp`;
+  const ext = isWebp ? "webp" : (originalExt?.replace(/^\./, "").toLowerCase() || "png");
+  const filename = `img-${fileHash}.${ext}`;
   const uploadDir = path.join(process.cwd(), "uploads");
   const filePath = path.join(uploadDir, filename);
 

@@ -36,11 +36,12 @@ export async function POST(request: Request) {
       }
 
       const isAudio = file.type.startsWith("audio/") || /\.(mp3|wav|ogg|m4a|aac|webm)$/i.test(file.name);
-      const allowedImageTypes = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"];
+      const mimeType = (file.type || "").toLowerCase();
+      const isImage = mimeType.startsWith("image/") || /\.(jpg|jpeg|png|webp|gif|avif|svg)$/i.test(file.name);
 
-      if (!isAudio && !allowedImageTypes.includes(file.type)) {
+      if (!isAudio && !isImage) {
         return NextResponse.json(
-          { error: "Apenas imagens (JPEG, PNG, WEBP, AVIF, GIF) e áudios (MP3, WAV, OGG, M4A, AAC, WEBM) são permitidos." },
+          { error: "Apenas imagens (JPEG, PNG, WEBP, AVIF, GIF, SVG) e áudios (MP3, WAV, OGG, M4A, AAC, WEBM) são permitidos." },
           { status: 400 }
         );
       }
@@ -62,13 +63,14 @@ export async function POST(request: Request) {
         return NextResponse.json({ url: audioUrl });
       }
 
-      const imageUrl = await saveOptimizedImageBuffer(inputBuffer);
+      const ext = file.name.split(".").pop() || "png";
+      const imageUrl = await saveOptimizedImageBuffer(inputBuffer, ext);
       return NextResponse.json({ url: imageUrl });
     }
   } catch (error: any) {
     console.error("Erro durante o upload do arquivo:", error);
     return NextResponse.json(
-      { error: "Erro interno ao salvar arquivo no servidor." },
+      { error: `Erro interno ao salvar arquivo no servidor: ${error?.message || error}` },
       { status: 500 }
     );
   }
