@@ -30,6 +30,10 @@ const nextConfig = {
         source: '/:path*',
         headers: [
           {
+            key: 'Alt-Svc',
+            value: 'clear',
+          },
+          {
             key: 'X-Content-Type-Options',
             value: 'nosniff',
           },

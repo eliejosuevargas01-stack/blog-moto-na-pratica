@@ -914,15 +914,18 @@ function AdminDashboardContent({ initialPosts, initialPages }: AdminDashboardPro
         body: formData
       });
       const data = await res.json();
-      if (data.url) {
+      if (res.ok && data.url) {
         callback(data.url);
         setMessage({ type: "success", text: "Arquivo enviado com sucesso!" });
       } else {
-        setMessage({ type: "error", text: data.error || "Erro no upload." });
+        console.error("Erro retornado pelo servidor no upload:", data);
+        setMessage({ type: "error", text: data.error || `Erro no upload (HTTP ${res.status}).` });
       }
-    } catch (err) {
-      setMessage({ type: "error", text: "Erro ao enviar arquivo." });
+    } catch (err: any) {
+      console.error("Exceção ao enviar arquivo:", err);
+      setMessage({ type: "error", text: `Erro de conexão ao enviar arquivo: ${err?.message || err}` });
     } finally {
+      e.target.value = "";
       setLoading(false);
     }
   };
