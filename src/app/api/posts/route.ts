@@ -321,7 +321,8 @@ export async function GET(req: Request) {
     const lang = url.searchParams.get("lang") || "pt";
     const orderByParam = url.searchParams.get("orderBy") || "createdAt";
     const order = url.searchParams.get("order") === "asc" ? "asc" : "desc";
-    const limit = parseInt(url.searchParams.get("limit") || "50", 10);
+    let limit = parseInt(url.searchParams.get("limit") || "50", 10);
+    if (isNaN(limit) || limit <= 0) limit = 50;
 
     const validOrderByFields = ["createdAt", "mentions", "views", "likes", "title"];
     const orderByField = validOrderByFields.includes(orderByParam) ? orderByParam : "createdAt";
@@ -374,7 +375,8 @@ export async function POST(req: Request) {
     const url = new URL(req.url);
     const apiKeyQuery = url.searchParams.get("api_key");
 
-    const expectedKey = process.env.API_SECRET_KEY || "motonapratica-secret-key-2026";
+    const expectedKey = process.env.API_SECRET_KEY;
+    if (!expectedKey) throw new Error("API_SECRET_KEY not configured");
     const providedKey = apiKeyHeader || apiKeyQuery;
 
     if (!providedKey || providedKey !== expectedKey) {
@@ -830,7 +832,8 @@ export async function PATCH(req: Request) {
     const reqUrl = new URL(req.url);
     const apiKeyQuery = reqUrl.searchParams.get("api_key");
 
-    const expectedKey = process.env.API_SECRET_KEY || "motonapratica-secret-key-2026";
+    const expectedKey = process.env.API_SECRET_KEY;
+    if (!expectedKey) throw new Error("API_SECRET_KEY not configured");
     const providedKey = apiKeyHeader || apiKeyQuery;
 
     if (!providedKey || providedKey !== expectedKey) {

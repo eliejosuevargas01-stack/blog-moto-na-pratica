@@ -13,4 +13,4 @@ pnpm-debug.log*
 *.log
 .aider*
 /uploads
-
+.git

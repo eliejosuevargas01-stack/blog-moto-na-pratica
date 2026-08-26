@@ -1,13 +1,21 @@
 "use server";
 
 import { prisma } from "../lib/db";
-import { signToken, checkCredentials } from "../lib/auth";
+import { signToken, checkCredentials, verifyToken } from "../lib/auth";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { notifyGoogleIndexing } from "../lib/google-indexing";
 import { calculateReadTime } from "../lib/image-utils";
 import { toNumericGroupId } from "./data";
+
+
+async function requireAdmin() {
+  const token = cookies().get("admin_token")?.value;
+  if (!token) throw new Error("Unauthorized");
+  const user = await verifyToken(token);
+  if (!user) throw new Error("Unauthorized");
+}
 
 // --- AUTENTICAÇÃO ---
 
@@ -65,7 +73,8 @@ export async function savePostAction(data: {
   lang?: string;
   blocks?: any[];
 }) {
-  try {
+    await requireAdmin();
+try {
     const targetPostId = data.id ? String(data.id).trim() : undefined;
 
     // Buscar se o post já existe por ID ou por Slug
@@ -242,7 +251,8 @@ export async function savePostAction(data: {
 }
 
 export async function deletePostAction(id: number | string) {
-  try {
+    await requireAdmin();
+try {
     const targetIdStr = String(id).trim();
     const post = await prisma.post.findUnique({ where: { id: targetIdStr } });
     if (!post) {
@@ -304,7 +314,8 @@ async function checkWebhookRateLimit(actionType: string): Promise<{ allowed: boo
 }
 
 export async function setPostStatusAction(idOrGroupId: string | number, status: string) {
-  try {
+    await requireAdmin();
+try {
     const groupId = toNumericGroupId(idOrGroupId);
     const targetStr = String(idOrGroupId).trim();
 
@@ -338,7 +349,8 @@ export async function triggerImprovePostWithAIAction(data: {
   category?: string;
   force?: boolean;
 }) {
-  try {
+    await requireAdmin();
+try {
     if (!data.force) {
       const rateCheck = await checkWebhookRateLimit("update");
       if (!rateCheck.allowed) {
@@ -447,7 +459,8 @@ export async function triggerGenerateImagesAction(data: {
   seoKeywords?: string;
   blocks: Array<{ text: string; image?: string; focalPoint?: string; alt?: string }>;
 }) {
-  try {
+    await requireAdmin();
+try {
     const rateCheck = await checkWebhookRateLimit("img");
     if (!rateCheck.allowed) {
       return { error: rateCheck.error };
@@ -582,7 +595,8 @@ export async function triggerCreateAudioAction(data: {
   seoKeywords?: string;
   blocks: Array<{ text: string; image?: string; focalPoint?: string; alt?: string }>;
 }) {
-  try {
+    await requireAdmin();
+try {
     const rateCheck = await checkWebhookRateLimit("audio");
     if (!rateCheck.allowed) {
       return { error: rateCheck.error };
@@ -691,7 +705,8 @@ export async function triggerImprovePostAction(data: {
   content?: string;
   lang?: string;
 }) {
-  try {
+    await requireAdmin();
+try {
     const webhookUrl = process.env.N8N_WEBHOOK_URL || process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || "";
 
     const targetStr = String(data.id).trim();
@@ -776,7 +791,8 @@ export async function triggerN8nWebhook(post: any) {
 }
 
 export async function getNotificationsAction() {
-  try {
+    await requireAdmin();
+try {
     const notifications = await prisma.notification.findMany({
       orderBy: { createdAt: "desc" },
       take: 50,
@@ -788,7 +804,8 @@ export async function getNotificationsAction() {
 }
 
 export async function getSubscribersAction() {
-  try {
+    await requireAdmin();
+try {
     const subscribers = await prisma.subscriber.findMany({
       orderBy: { createdAt: "desc" },
     });
@@ -799,7 +816,8 @@ export async function getSubscribersAction() {
 }
 
 export async function markNotificationAsReadAction(id: string) {
-  try {
+    await requireAdmin();
+try {
     await prisma.notification.update({
       where: { id },
       data: { read: true },
@@ -811,7 +829,8 @@ export async function markNotificationAsReadAction(id: string) {
 }
 
 export async function markAllNotificationsAsReadAction() {
-  try {
+    await requireAdmin();
+try {
     await prisma.notification.updateMany({
       where: { read: false },
       data: { read: true },
@@ -833,7 +852,8 @@ export async function savePageAction(data: {
   seoTitle?: string;
   seoDescription?: string;
 }) {
-  try {
+    await requireAdmin();
+try {
     // Validar slug
     const existing = await prisma.page.findFirst({
       where: {
@@ -887,7 +907,8 @@ export async function savePageAction(data: {
 }
 
 export async function deletePageAction(id: string) {
-  try {
+    await requireAdmin();
+try {
     const page = await prisma.page.findUnique({ where: { id } });
     if (page?.isStatic) {
       return { error: "Páginas fixas do sistema (Home e Sobre) não podem ser deletadas." };

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import fs from "fs";
+import fs from "fs/promises";
 import path from "path";
 import sharp from "sharp";
+import { existsSync } from "fs";
 
 export const dynamic = "force-dynamic";
 
@@ -13,11 +14,12 @@ export async function GET(
 ) {
   try {
     const { filename } = params;
-    const ext = path.extname(filename).toLowerCase();
-    const filePath = path.join(UPLOADS_DIR, filename);
+    const safeFilename = path.basename(filename);
+    const ext = path.extname(safeFilename).toLowerCase();
+    const filePath = path.join(UPLOADS_DIR, safeFilename);
 
     // Verificar se o arquivo original existe. Se não existir, retornar SVG placeholder amigável
-    if (!fs.existsSync(filePath)) {
+    if (!existsSync(filePath)) {
       const fallbackSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675">
   <rect width="1200" height="675" fill="#151515"/>
   <rect x="2" y="2" width="1196" height="671" fill="none" stroke="#262626" stroke-width="2"/>
@@ -52,25 +54,25 @@ export async function GET(
     if (ext === ".jpg" || ext === ".jpeg" || ext === ".png" || ext === ".webp") {
       // Guardar arquivos de cache em uma pasta oculta uploads/.cache para não poluir a galeria
       const cacheDir = path.join(UPLOADS_DIR, ".cache");
-      if (!fs.existsSync(cacheDir)) {
-        fs.mkdirSync(cacheDir, { recursive: true });
+      if (!existsSync(cacheDir)) {
+        await fs.mkdir(cacheDir, { recursive: true });
       }
 
-      const cacheFilename = filename.replace(/\.(jpe?g|png|webp)$/i, "") + `.w${targetWidth}.webp`;
+      const cacheFilename = safeFilename.replace(/\.(jpe?g|png|webp)$/i, "") + `.w${targetWidth}.webp`;
       const cachePath = path.join(cacheDir, cacheFilename);
 
       // Checar se já existe versão correspondente em cache no disco
-      if (!fs.existsSync(cachePath)) {
-        const inputBuffer = fs.readFileSync(filePath);
+      if (!existsSync(cachePath)) {
+        const inputBuffer = await fs.readFile(filePath);
         const webpBuffer = await sharp(inputBuffer)
           .rotate() // Corrigir orientação EXIF automaticamente
           .resize({ width: targetWidth, withoutEnlargement: true })
           .webp({ quality: 82 })
           .toBuffer();
-        fs.writeFileSync(cachePath, webpBuffer);
+        await fs.writeFile(cachePath, webpBuffer);
       }
 
-      const webpBuffer = fs.readFileSync(cachePath);
+      const webpBuffer = await fs.readFile(cachePath);
       return new Response(new Uint8Array(webpBuffer), {
         headers: {
           "Content-Type": "image/webp",
@@ -80,7 +82,7 @@ export async function GET(
     }
 
     // Para outros formatos (ex: gif, svg): servir diretamente
-    const fileBuffer = fs.readFileSync(filePath);
+    const fileBuffer = await fs.readFile(filePath);
     let contentType = "application/octet-stream";
     if (ext === ".gif") contentType = "image/gif";
     else if (ext === ".svg") contentType = "image/svg+xml";
@@ -97,3 +99,4 @@ export async function GET(
     return new Response("Erro interno do servidor", { status: 500 });
   }
 }
+

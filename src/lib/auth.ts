@@ -1,4 +1,7 @@
-const SECRET = process.env.JWT_SECRET || "moto-na-pratica-segredo-super-secreto-2026";
+const SECRET = process.env.JWT_SECRET;
+if (!SECRET) {
+  throw new Error("JWT_SECRET is not set in environment variables");
+}
 
 // Função interna auxiliar para gerar assinatura HMAC-SHA256
 async function generateSignature(data: string, secret: string): Promise<string> {
@@ -26,7 +29,7 @@ async function generateSignature(data: string, secret: string): Promise<string> 
 export async function signToken(username: string): Promise<string> {
   const expiry = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 dias
   const data = `${username}:${expiry}`;
-  const signature = await generateSignature(data, SECRET);
+  const signature = await generateSignature(data, SECRET!);
   return `${data}:${signature}`;
 }
 
@@ -43,7 +46,7 @@ export async function verifyToken(token: string): Promise<{ username: string } |
     if (expiry < Date.now()) return null;
     
     const data = `${username}:${expiryStr}`;
-    const expectedSignature = await generateSignature(data, SECRET);
+    const expectedSignature = await generateSignature(data, SECRET!);
     
     if (signature === expectedSignature) {
       return { username };
@@ -55,8 +58,12 @@ export async function verifyToken(token: string): Promise<{ username: string } |
 }
 
 export function checkCredentials(user: string, pass: string): boolean {
-  const correctUser = process.env.ADMIN_USERNAME || "admin";
-  const correctPass = process.env.ADMIN_PASSWORD || "sua_senha_segura";
+  const correctUser = process.env.ADMIN_USERNAME;
+  const correctPass = process.env.ADMIN_PASSWORD;
+
+  if (!correctUser || !correctPass) {
+    throw new Error("ADMIN_USERNAME or ADMIN_PASSWORD is not set in environment variables");
+  }
 
   return user === correctUser && pass === correctPass;
 }
