@@ -46,6 +46,8 @@ export async function POST(request: Request) {
       user: { id: user.id, name: user.name, email: user.email }
     });
 
+    console.log(JSON.stringify({ timestamp: new Date().toISOString(), user_id: user.email, action: 'api/auth/login', status: 'success' }));
+
     // Set cookie
     response.cookies.set({
       name: "auth_token",

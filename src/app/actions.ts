@@ -10,11 +10,19 @@ import { calculateReadTime } from "../lib/image-utils";
 import { toNumericGroupId } from "./data";
 
 
-async function requireAdmin() {
-  const token = cookies().get("admin_token")?.value;
-  if (!token) throw new Error("Unauthorized");
+async function requireAdmin(actionName: string) {
+  const token = cookies().get("admin_token")?.value || cookies().get("auth_token")?.value;
+  if (!token) {
+    console.log(JSON.stringify({ timestamp: new Date().toISOString(), user_id: 'anonymous', action: actionName, status: 'unauthorized' }));
+    throw new Error("Unauthorized");
+  }
   const user = await verifyToken(token);
-  if (!user) throw new Error("Unauthorized");
+  if (!user) {
+    console.log(JSON.stringify({ timestamp: new Date().toISOString(), user_id: 'anonymous', action: actionName, status: 'unauthorized' }));
+    throw new Error("Unauthorized");
+  }
+  console.log(JSON.stringify({ timestamp: new Date().toISOString(), user_id: user.username, action: actionName, status: 'success' }));
+  return user;
 }
 
 // --- AUTENTICAÇÃO ---
@@ -44,6 +52,7 @@ export async function loginAction(prevState: any, formData: FormData) {
     maxAge: 60 * 60 * 24 * 7, // 7 dias
   });
 
+  console.log(JSON.stringify({ timestamp: new Date().toISOString(), user_id: username, action: "loginAction", status: "success" }));
   return { success: true };
 }
 
@@ -73,7 +82,7 @@ export async function savePostAction(data: {
   lang?: string;
   blocks?: any[];
 }) {
-    await requireAdmin();
+    await requireAdmin("savePostAction");
 try {
     const targetPostId = data.id ? String(data.id).trim() : undefined;
 
@@ -251,7 +260,7 @@ try {
 }
 
 export async function deletePostAction(id: number | string) {
-    await requireAdmin();
+    await requireAdmin("deletePostAction");
 try {
     const targetIdStr = String(id).trim();
     const post = await prisma.post.findUnique({ where: { id: targetIdStr } });
@@ -314,7 +323,7 @@ async function checkWebhookRateLimit(actionType: string): Promise<{ allowed: boo
 }
 
 export async function setPostStatusAction(idOrGroupId: string | number, status: string) {
-    await requireAdmin();
+    await requireAdmin("setPostStatusAction");
 try {
     const groupId = toNumericGroupId(idOrGroupId);
     const targetStr = String(idOrGroupId).trim();
@@ -349,7 +358,7 @@ export async function triggerImprovePostWithAIAction(data: {
   category?: string;
   force?: boolean;
 }) {
-    await requireAdmin();
+    await requireAdmin("triggerImprovePostWithAIAction");
 try {
     if (!data.force) {
       const rateCheck = await checkWebhookRateLimit("update");
@@ -459,7 +468,7 @@ export async function triggerGenerateImagesAction(data: {
   seoKeywords?: string;
   blocks: Array<{ text: string; image?: string; focalPoint?: string; alt?: string }>;
 }) {
-    await requireAdmin();
+    await requireAdmin("triggerGenerateImagesAction");
 try {
     const rateCheck = await checkWebhookRateLimit("img");
     if (!rateCheck.allowed) {
@@ -595,7 +604,7 @@ export async function triggerCreateAudioAction(data: {
   seoKeywords?: string;
   blocks: Array<{ text: string; image?: string; focalPoint?: string; alt?: string }>;
 }) {
-    await requireAdmin();
+    await requireAdmin("triggerCreateAudioAction");
 try {
     const rateCheck = await checkWebhookRateLimit("audio");
     if (!rateCheck.allowed) {
@@ -705,7 +714,7 @@ export async function triggerImprovePostAction(data: {
   content?: string;
   lang?: string;
 }) {
-    await requireAdmin();
+    await requireAdmin("triggerImprovePostAction");
 try {
     const webhookUrl = process.env.N8N_WEBHOOK_URL || process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || "";
 
@@ -791,7 +800,7 @@ export async function triggerN8nWebhook(post: any) {
 }
 
 export async function getNotificationsAction() {
-    await requireAdmin();
+    await requireAdmin("getNotificationsAction");
 try {
     const notifications = await prisma.notification.findMany({
       orderBy: { createdAt: "desc" },
@@ -804,7 +813,7 @@ try {
 }
 
 export async function getSubscribersAction() {
-    await requireAdmin();
+    await requireAdmin("getSubscribersAction");
 try {
     const subscribers = await prisma.subscriber.findMany({
       orderBy: { createdAt: "desc" },
@@ -816,7 +825,7 @@ try {
 }
 
 export async function markNotificationAsReadAction(id: string) {
-    await requireAdmin();
+    await requireAdmin("markNotificationAsReadAction");
 try {
     await prisma.notification.update({
       where: { id },
@@ -829,7 +838,7 @@ try {
 }
 
 export async function markAllNotificationsAsReadAction() {
-    await requireAdmin();
+    await requireAdmin("markAllNotificationsAsReadAction");
 try {
     await prisma.notification.updateMany({
       where: { read: false },
@@ -852,7 +861,7 @@ export async function savePageAction(data: {
   seoTitle?: string;
   seoDescription?: string;
 }) {
-    await requireAdmin();
+    await requireAdmin("savePageAction");
 try {
     // Validar slug
     const existing = await prisma.page.findFirst({
@@ -907,7 +916,7 @@ try {
 }
 
 export async function deletePageAction(id: string) {
-    await requireAdmin();
+    await requireAdmin("deletePageAction");
 try {
     const page = await prisma.page.findUnique({ where: { id } });
     if (page?.isStatic) {

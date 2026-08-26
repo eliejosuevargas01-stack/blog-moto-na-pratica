@@ -317,6 +317,8 @@ async function processImagePlaceholdersInHtml(htmlText: string, langData: any): 
 
 export async function GET(req: Request) {
   try {
+    console.log(JSON.stringify({ timestamp: new Date().toISOString(), user_id: 'API', action: 'api/posts GET', status: 'success' }));
+
     const url = new URL(req.url);
     const lang = url.searchParams.get("lang") || "pt";
     const orderByParam = url.searchParams.get("orderBy") || "createdAt";
@@ -371,6 +373,8 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    console.log(JSON.stringify({ timestamp: new Date().toISOString(), user_id: 'API', action: 'api/posts POST', status: 'success' }));
+
     const apiKeyHeader = req.headers.get("x-api-key") || req.headers.get("authorization")?.replace("Bearer ", "");
     const url = new URL(req.url);
     const apiKeyQuery = url.searchParams.get("api_key");
@@ -828,6 +832,8 @@ export async function POST(req: Request) {
 
 export async function PATCH(req: Request) {
   try {
+    console.log(JSON.stringify({ timestamp: new Date().toISOString(), user_id: 'API', action: 'api/posts PATCH', status: 'success' }));
+
     const apiKeyHeader = req.headers.get("x-api-key") || req.headers.get("authorization")?.replace("Bearer ", "");
     const reqUrl = new URL(req.url);
     const apiKeyQuery = reqUrl.searchParams.get("api_key");

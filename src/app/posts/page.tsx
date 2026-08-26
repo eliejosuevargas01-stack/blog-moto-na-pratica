@@ -1,6 +1,7 @@
 import { prisma } from "../../lib/db";
 import { POSTS, TAG_COLORS, TEKO, BODY, optimizeImageUrl, formatPostUrl } from "../data";
 import Link from "next/link";
+import SafeHtml from "./components/SafeHtml";
 import { Clock, Search, ArrowRight, Tag } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import { cookies } from "next/headers";
@@ -131,11 +132,9 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
                         </span>
                       </div>
                       <div className="p-5 flex flex-col flex-1">
-                        <h2 
-                          style={TEKO} 
+                        <SafeHtml tag="h2" style={TEKO} 
                           className="text-[24px] font-semibold uppercase leading-tight text-foreground mb-2 group-hover:text-primary transition-colors"
-                          dangerouslySetInnerHTML={{ __html: post.title }}
-                        />
+                           html={post.title} />
                         <p className="text-[13px] text-muted-foreground leading-relaxed mb-4 flex-1">
                           {post.excerpt}
                         </p>

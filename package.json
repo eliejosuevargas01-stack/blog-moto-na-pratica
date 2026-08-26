@@ -7,7 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "tsx scripts/test-all.ts",
+    "test": "vitest run", "coverage": "vitest run --coverage",
     "prisma:generate": "prisma generate",
     "prisma:db:push": "prisma db push",
     "prisma:seed": "prisma db seed"

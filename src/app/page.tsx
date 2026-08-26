@@ -1,6 +1,7 @@
 import { prisma } from "../lib/db";
 import { POSTS, CATEGORIES, TAG_COLORS, TEKO, BODY, optimizeImageUrl, formatPostUrl } from "./data";
 import Link from "next/link";
+import SafeHtml from "./components/SafeHtml";
 import { Clock, Tag, ChevronRight, ArrowRight, Star, Calendar, MapPin, Wrench } from "lucide-react";
 import Image from "next/image";
 import Sidebar from "./components/Sidebar";
@@ -155,11 +156,9 @@ export default async function Home({ searchParams }: HomeProps) {
         <div className="flex items-center gap-3 mb-4">
           <span className="bg-primary text-white text-[11px] font-bold uppercase tracking-widest px-2 py-1">{t.hero.badge}</span>
         </div>
-        <h1 
-          style={TEKO} 
+        <SafeHtml tag="h1" style={TEKO} 
           className="text-[52px] md:text-[72px] font-semibold leading-none uppercase tracking-wide text-foreground mb-4 whitespace-pre-line"
-          dangerouslySetInnerHTML={{ __html: heroTitle }}
-        />
+           html={heroTitle} />
         <p className="text-[15px] text-[#BBBBBB] max-w-[520px] leading-relaxed mb-7">
           {heroSubtitle}
         </p>
@@ -176,7 +175,7 @@ export default async function Home({ searchParams }: HomeProps) {
   const renderBreaking = () => (
     <div key="breaking" className="bg-[#151515] border-y border-border h-10 px-6 flex items-center gap-3 overflow-hidden z-20 relative">
       <span style={TEKO} className="text-white text-[15px] font-semibold uppercase tracking-widest shrink-0 bg-[#E31E24] px-2 py-0.5">{t.ticker.badge}</span>
-      <span className="text-white text-[14px] truncate" dangerouslySetInnerHTML={{ __html: breakingText }} />
+      <SafeHtml tag="span" className="text-white text-[14px] truncate"  html={breakingText} />
       <Link
         href={formatPostUrl(breakingSlug, breakingLang)}
         className="text-white/80 hover:text-white text-[13px] font-semibold uppercase ml-auto shrink-0 flex items-center gap-1"
@@ -231,11 +230,9 @@ export default async function Home({ searchParams }: HomeProps) {
                     </span>
                   </div>
                   <div className="p-6">
-                    <h3 
-                      style={TEKO} 
+                    <SafeHtml tag="h3" style={TEKO} 
                       className="text-[32px] font-semibold uppercase leading-tight text-foreground mb-3 group-hover:text-primary transition-colors"
-                      dangerouslySetInnerHTML={{ __html: featuredPost.title }}
-                    />
+                       html={featuredPost.title} />
                     <p className="text-[14px] text-muted-foreground leading-relaxed mb-5">
                       {featuredPost.excerpt}
                     </p>
@@ -273,11 +270,9 @@ export default async function Home({ searchParams }: HomeProps) {
                         </span>
                       </div>
                       <div className="p-5 flex flex-col flex-1">
-                        <h3 
-                          style={TEKO} 
+                        <SafeHtml tag="h3" style={TEKO} 
                           className="text-[22px] font-semibold uppercase leading-tight text-foreground mb-2 group-hover:text-primary transition-colors"
-                          dangerouslySetInnerHTML={{ __html: post.title }}
-                        />
+                           html={post.title} />
                         <p className="text-[13px] text-muted-foreground leading-relaxed mb-4 flex-1">
                           {post.excerpt}
                         </p>

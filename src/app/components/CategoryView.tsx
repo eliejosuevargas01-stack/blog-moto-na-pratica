@@ -2,6 +2,7 @@ import { prisma } from "../../lib/db";
 import { POSTS, TAG_COLORS, TEKO, BODY, optimizeUnsplashUrl, formatPostUrl } from "../data";
 import Sidebar from "./Sidebar";
 import Link from "next/link";
+import SafeHtml from "./components/SafeHtml";
 import { Clock, ArrowRight, ChevronRight, Star, Wrench, Navigation, ShieldCheck } from "lucide-react";
 import { cookies } from "next/headers";
 import { getTranslation } from "../i18n/translations";
@@ -128,11 +129,9 @@ export default async function CategoryView({ tag, title, description, heroImg, i
                       <span className={`absolute top-2 left-2 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 ${TAG_COLORS[firstPost.tag] || "bg-[#252525]"}`}>{firstPost.tag}</span>
                     </div>
                     <div className="p-6 flex flex-col justify-center flex-1">
-                      <h3 
-                        style={TEKO} 
+                      <SafeHtml tag="h3" style={TEKO} 
                         className="text-[28px] font-semibold uppercase leading-tight text-foreground mb-2 group-hover:text-primary transition-colors"
-                        dangerouslySetInnerHTML={{ __html: firstPost.title }}
-                      />
+                         html={firstPost.title} />
                       <p className="text-[13px] text-muted-foreground leading-relaxed mb-4">{firstPost.excerpt}</p>
                       <div className="flex items-center justify-between">
                         <span className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
@@ -161,11 +160,9 @@ export default async function CategoryView({ tag, title, description, heroImg, i
                           <span className={`absolute top-2 left-2 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 ${TAG_COLORS[post.tag] || "bg-[#252525]"}`}>{post.tag}</span>
                         </div>
                         <div className="p-5 flex flex-col flex-1">
-                          <h3 
-                            style={TEKO} 
+                          <SafeHtml tag="h3" style={TEKO} 
                             className="text-[22px] font-semibold uppercase leading-tight text-foreground mb-2 group-hover:text-primary transition-colors"
-                            dangerouslySetInnerHTML={{ __html: post.title }}
-                          />
+                             html={post.title} />
                           <p className="text-[13px] text-muted-foreground leading-relaxed mb-4 flex-1">{post.excerpt}</p>
                           <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                             <Clock size={10} /> {post.readTime} · {post.date instanceof Date ? post.date.toLocaleDateString(currentLang === "en" ? "en-US" : currentLang === "es" ? "es-ES" : "pt-BR", { day: '2-digit', month: 'short', year: 'numeric' }) : post.date}
@@ -212,11 +209,9 @@ export default async function CategoryView({ tag, title, description, heroImg, i
                         <span className={`absolute top-2 left-2 text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 ${TAG_COLORS[o.tag] || "bg-[#252525]"}`}>{o.tag}</span>
                       </div>
                       <div className="p-3">
-                        <h4 
-                          style={TEKO} 
+                        <SafeHtml tag="h4" style={TEKO} 
                           className="text-[17px] font-semibold uppercase leading-tight text-foreground group-hover:text-primary transition-colors line-clamp-2"
-                          dangerouslySetInnerHTML={{ __html: o.title }}
-                        />
+                           html={o.title} />
                       </div>
                     </Link>
                   </article>

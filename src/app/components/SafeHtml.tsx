@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 interface SafeHtmlProps {
   html: string;
   className?: string;
+  style?: React.CSSProperties;
   tag?: keyof JSX.IntrinsicElements;
 }
 
@@ -13,7 +14,7 @@ function stripHtml(html: string) {
   return html.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "").replace(/<[^>]*>/g, "");
 }
 
-export default function SafeHtml({ html, className, tag = "div" }: SafeHtmlProps) {
+export default function SafeHtml({ html, className, style, tag = "div" }: SafeHtmlProps) {
   const Tag = tag as any;
   // Initial render (SSR): use a safe stripped version to avoid importing jsdom on server
   const [sanitized, setSanitized] = useState<string>(() => stripHtml(html || ""));
@@ -34,5 +35,5 @@ export default function SafeHtml({ html, className, tag = "div" }: SafeHtmlProps
     return () => { mounted = false; };
   }, [html]);
 
-  return <Tag className={className} dangerouslySetInnerHTML={{ __html: sanitized }} />;
+  return <Tag className={className} style={style} dangerouslySetInnerHTML={{ __html: sanitized }} />;
 }
