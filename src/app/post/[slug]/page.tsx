@@ -7,7 +7,8 @@ import { notFound, redirect } from "next/navigation";
 import { Clock, ChevronLeft, Tag, Eye, Globe } from "lucide-react";
 import TableOfContents from "../../components/TableOfContents";
 import CommentsSection from "../../components/CommentsSection";
-import SafeHtml from "../../components/SafeHtml";
+import SafeHtml, { SAFE_DOMPURIFY_CONFIG } from "../../components/SafeHtml";
+import DOMPurify from "isomorphic-dompurify";
 import PostActionsBar from "../../components/PostActionsBar";
 import PostViewTracker from "../../components/PostViewTracker";
 import AudioNarrationPlayer from "../../components/AudioNarrationPlayer";
@@ -335,109 +336,135 @@ export default async function PostPage(props: PostPageProps, langOverride?: stri
         <div className="absolute inset-0 flex flex-col justify-end px-4 md:px-6 pb-10 max-w-[1200px] mx-auto z-10">
           <Link
             href="/"
-            className="flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-white uppercase tracking-wider mb-5 transition-colors w-fit"
+            className="flex items-center gap-1.5 text-[12px] text-white/80 hover:text-white uppercase tracking-wider mb-5 transition-colors w-fit"
           >
             <ChevronLeft size={14} /> {backHomeText}
           </Link>
           <div className="flex flex-wrap items-center gap-3 mb-3">
-            <span className={`text-[11px] font-bold uppercase tracking-widest px-2 py-1 ${TAG_COLORS[post.tag] ?? "bg-secondary text-muted-foreground"}`}>
+            <span className={`text-[11px] font-bold uppercase tracking-widest px-2 py-1 ${TAG_COLORS[post.tag] ?? "bg-white/20 text-white"}`}>
               {post.tag}
             </span>
-            <span className="flex items-center gap-1 text-[12px] text-muted-foreground"><Clock size={11} /> {post.readTime} {readTimeSuffix}</span>
-            <span className="flex items-center gap-1 text-[12px] text-muted-foreground"><Eye size={11} /> {post.views || 0} {viewsSuffix}</span>
-            <span className="text-[12px] text-muted-foreground">{formattedCreated}</span>
+            <span className="flex items-center gap-1 text-[12px] text-white/80"><Clock size={11} /> {post.readTime} {readTimeSuffix}</span>
+            <span className="flex items-center gap-1 text-[12px] text-white/80"><Eye size={11} /> {post.views || 0} {viewsSuffix}</span>
+            <span className="text-[12px] text-white/80">{formattedCreated}</span>
             {isUpdated && (
-              <span className="text-[11px] text-primary/80 italic">
+              <span className="text-[11px] text-gray-300 italic">
                 ({updatedPrefix} {formattedUpdated})
               </span>
             )}
           </div>
-          <h1 
+          <SafeHtml 
+            tag="h1"
             style={TEKO} 
             className="text-[48px] md:text-[64px] font-semibold leading-none uppercase tracking-wide text-white"
-            dangerouslySetInnerHTML={{ __html: post.title }}
+            html={post.title}
           />
         </div>
       </div>
 
       {/* CONTENT AREA */}
-      <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-16 grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-14">
-        <div className="min-w-0">
+      <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-12 md:py-16 grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-12 lg:gap-14">
+        <div className="min-w-0 max-w-[70ch] mx-auto w-full">
           {/* Excerpt */}
-          <p className="text-[17px] text-[#BBBBBB] leading-relaxed border-l-2 border-primary pl-5 mb-10" style={BODY}>
+          <p className="text-[17px] md:text-[18px] text-[#374151] leading-relaxed border-l-4 border-primary pl-5 mb-10 font-normal" style={BODY}>
             {post.excerpt}
           </p>
 
           {/* Player de Áudio de Narração do Post com Âncora #audio */}
-          <div id="audio" className="scroll-mt-24">
+          <div id="audio" className="scroll-mt-24 mb-6">
             <AudioNarrationPlayer audioUrl={post.audioUrl} title={stripHtml(post.title)} lang={currentLang} />
           </div>
 
           {/* Bar de Curtir e Compartilhar */}
-          <PostActionsBar postId={post.id} postTitle={stripHtml(post.title)} initialLikes={post.likes || 0} />
+          <div className="mb-8">
+            <PostActionsBar postId={post.id} postTitle={stripHtml(post.title)} initialLikes={post.likes || 0} />
+          </div>
 
           {/* Índice de Tópicos do Artigo (Table of Contents) */}
           <TableOfContents blocks={blocks} />
 
           {/* Article body with Dynamic HTML Blocks */}
           <div className="space-y-8" style={BODY}>
-            {blocks.map((block: any, i: number) => {
-              const cleanedText = cleanBlockHtml(injectHeadingIds(block.text || ""));
-              const hasImageInText = cleanedText.includes("<img");
-              const isImageAlreadyInText = block.image && cleanedText.includes(block.image);
-              const blockImgId = `img-${i + 2}`;
+            {(() => {
+              let mediaBlockCount = 0;
+              const MAX_MEDIA_BLOCKS = 2;
 
-              return (
-                <div key={i} id={`block-${i + 1}`} className="flex flex-col gap-6 scroll-mt-24">
-                  <div 
-                    className="prose prose-invert max-w-none text-muted-foreground text-[15px] leading-relaxed [&_a]:text-primary [&_a]:underline [&_a:hover]:text-primary/80 [&_a]:transition-colors"
-                    dangerouslySetInnerHTML={{ __html: cleanedText }}
-                  />
-                  
-                  {block.image && !hasImageInText && !isImageAlreadyInText && (
-                    <div id={blockImgId} className="relative overflow-hidden w-full h-[360px] border border-border rounded-sm scroll-mt-24">
-                      <img
-                        src={optimizeImageUrl(block.image, 800)}
-                        alt={`Ilustração do bloco ${i + 1}`}
-                        className="w-full h-full object-cover"
-                        style={{ objectPosition: block.focalPoint || "center" }}
-                        loading="lazy"
-                      />
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+              return blocks.map((block: any, i: number) => {
+                const cleanedText = cleanBlockHtml(injectHeadingIds(block.text || ""));
+                const sanitizedBlockText = DOMPurify.sanitize(cleanedText, SAFE_DOMPURIFY_CONFIG);
+                const hasImageInText = cleanedText.includes("<img");
+                const isImageAlreadyInText = block.image && cleanedText.includes(block.image);
+                const shouldRenderImage = Boolean(block.image && !hasImageInText && !isImageAlreadyInText && mediaBlockCount < MAX_MEDIA_BLOCKS);
+
+                if (shouldRenderImage) {
+                  mediaBlockCount++;
+                }
+
+                const blockImgId = `img-${i + 2}`;
+
+                return (
+                  <div key={i} id={`block-${i + 1}`} className="flex flex-col gap-6 scroll-mt-24">
+                    <div 
+                      className="prose max-w-none text-foreground text-[16px] md:text-[17.5px] leading-relaxed [&_a]:text-accent [&_a]:underline [&_a:hover]:text-accent/80 [&_a]:transition-colors"
+                      dangerouslySetInnerHTML={{ __html: sanitizedBlockText }}
+                    />
+                    
+                    {shouldRenderImage && (
+                      <figure id={blockImgId} className="w-full my-6 scroll-mt-24">
+                        <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-border bg-muted shadow-xs">
+                          <img
+                            src={optimizeImageUrl(block.image, 960)}
+                            alt={block.caption || `Ilustração do artigo - parte ${mediaBlockCount}`}
+                            className="w-full h-full object-cover"
+                            style={{ objectPosition: block.focalPoint || "center" }}
+                            loading="lazy"
+                          />
+                        </div>
+                        {block.caption ? (
+                          <figcaption className="text-xs text-muted-foreground text-center mt-2.5 italic">
+                            {block.caption}
+                          </figcaption>
+                        ) : (
+                          <figcaption className="text-xs text-muted-foreground text-center mt-2.5 italic">
+                            Registro fotográfico e detalhes: {stripHtml(post.title)}
+                          </figcaption>
+                        )}
+                      </figure>
+                    )}
+                  </div>
+                );
+              });
+            })()}
           </div>
 
           {/* Dynamic Post Tags */}
-          <div className="mt-10 pt-8 border-t border-border flex items-center gap-3 flex-wrap">
-            <span className="text-[12px] text-muted-foreground uppercase tracking-wider">Tags:</span>
+          <div className="mt-10 pt-8 border-t border-border flex items-center gap-2.5 flex-wrap">
+            <span className="text-[12px] font-bold text-foreground uppercase tracking-wider mr-1">Tags:</span>
             {dynamicPostTags.map((tag) => (
               <Link 
                 key={tag} 
                 href={`/tag/${encodeURIComponent(tag)}`}
-                className="flex items-center gap-1 px-2.5 py-1 bg-secondary border border-border text-[11px] text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors uppercase tracking-wide"
+                className="flex items-center gap-1.5 px-3 py-1 bg-muted border border-border rounded-md text-[12px] font-medium text-foreground hover:text-primary hover:border-primary/50 transition-colors uppercase tracking-wide"
               >
-                <Tag size={9} />{tag}
+                <Tag size={10} className="text-muted-foreground" />{tag}
               </Link>
             ))}
           </div>
 
           {/* Related posts (filtrados pelo idioma ativo) */}
           {related.length > 0 && (
-            <div className="mt-12">
+            <div className="mt-12 pt-8 border-t border-border">
               <div className="flex items-center gap-3 mb-6">
-                <span className="block w-1 h-6 bg-primary" />
-                <h3 style={TEKO} className="text-[22px] font-semibold uppercase tracking-wide">{recommendedSectionTitle}</h3>
+                <span className="block w-1.5 h-6 bg-primary rounded-full" />
+                <h3 style={TEKO} className="text-[24px] font-bold uppercase tracking-wide text-foreground">{recommendedSectionTitle}</h3>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 {related.map((p) => {
                   const pUrl = p.lang === "en" ? `/en/post/${p.slug}` : p.lang === "es" ? `/es/post/${p.slug}` : `/post/${p.slug}`;
                   return (
-                    <article key={p.id} className="group bg-card border border-border overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                    <article key={p.id} className="group bg-card border border-border rounded-lg overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
                       <Link href={pUrl} className="block">
-                        <div className="relative overflow-hidden" style={{ height: "160px" }}>
+                        <div className="relative w-full aspect-video overflow-hidden">
                           <img 
                             src={optimizeImageUrl(p.img, 450, 260)} 
                             alt={stripHtml(p.title)} 
@@ -445,7 +472,7 @@ export default async function PostPage(props: PostPageProps, langOverride?: stri
                             style={{ objectPosition: p.imgFocalPoint || "center" }}
                             loading="lazy"
                           />
-                          <span className={`absolute top-2 left-2 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 ${TAG_COLORS[p.tag] || "bg-[#252525] text-white"}`}>
+                          <span className={`absolute top-2.5 left-2.5 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded shadow-sm ${TAG_COLORS[p.tag] || "bg-foreground text-background"}`}>
                             {p.tag}
                           </span>
                         </div>
@@ -453,10 +480,10 @@ export default async function PostPage(props: PostPageProps, langOverride?: stri
                           <SafeHtml
                             html={p.title}
                             tag="h4"
-                            className="text-[20px] font-semibold uppercase leading-tight text-foreground mb-1 group-hover:text-primary transition-colors"
+                            className="text-[20px] font-bold uppercase leading-tight text-foreground mb-1.5 group-hover:text-primary transition-colors"
                           />
-                          <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                            <Clock size={10} /> {p.readTime}
+                          <span className="text-[12px] text-muted-foreground flex items-center gap-1">
+                            <Clock size={11} /> {p.readTime}
                           </span>
                         </div>
                       </Link>

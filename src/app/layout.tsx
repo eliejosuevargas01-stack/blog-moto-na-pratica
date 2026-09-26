@@ -1,6 +1,6 @@
 import "./globals.css";
 import { prisma } from "../lib/db";
-import { POSTS, TEKO, BODY } from "./data";
+import { TEKO, BODY } from "./data";
 import Header from "./components/Header";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
@@ -24,11 +24,6 @@ const barlowFont = BarlowFont({
   variable: "--font-barlow",
   display: "swap",
 });
-
-function stripHtml(html: string): string {
-  if (!html) return "";
-  return html.replace(/<[^>]*>/g, "");
-}
 
 export const dynamic = "force-dynamic";
 
@@ -55,15 +50,7 @@ export default async function RootLayout({
   const currentLang = cookieStore.get("NEXT_LOCALE")?.value || "pt";
   const t = getTranslation(currentLang);
 
-  const langFilter = {
-    OR: [
-      { lang: currentLang },
-      ...(currentLang === "pt" ? [{ lang: null }] : []),
-    ],
-  };
-
   let customPages: { title: string; slug: string }[] = [];
-  let recentPosts: { id: string; title: string; slug: string; lang?: string | null }[] = [];
 
   try {
     const pages = await prisma.page.findMany({
@@ -71,41 +58,51 @@ export default async function RootLayout({
       select: { title: true, slug: true },
     });
     customPages = pages;
-
-    const posts = await prisma.post.findMany({
-      where: langFilter,
-      take: 3,
-      orderBy: { createdAt: "desc" },
-      select: { id: true, title: true, slug: true, lang: true },
-    });
-    recentPosts = posts;
   } catch (error) {
     console.warn("Database connection failed during SSR, using static fallbacks.", error);
-    recentPosts = POSTS.slice(0, 3).map(p => ({
-      id: String(p.id),
-      title: p.title,
-      slug: p.slug
-    }));
   }
 
-  const navLinks = [
-    { label: t.nav.home, path: "/" },
-    { label: t.nav.reviews, path: "/reviews" },
-    { label: t.nav.maintenance, path: "/manutencao" },
-    { label: t.nav.routes, path: "/rotas" },
-    { label: t.nav.gear, path: "/equipamentos" },
-    { label: t.nav.events, path: "/eventos" },
-    { label: t.nav.about, path: "/sobre" },
-  ];
+  const newsMediaSchema = {
+    "@context": "https://schema.org",
+    "@type": "NewsMediaOrganization",
+    "name": "Moto na Prática",
+    "alternateName": "Portal Moto na Prática",
+    "url": "https://motonapratica.com.br",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://motonapratica.com.br/favicon.png",
+      "width": 512,
+      "height": 512
+    },
+    "description": "Portal informativo e jornalismo independente de motociclismo. Testes reais sem patrocínio velado, medição real de consumo na bomba, oficina prática e cobertura esportiva com compromisso E-E-A-T.",
+    "foundingDate": "2026-01-01",
+    "founder": {
+      "@type": "Person",
+      "name": "Eliezer"
+    },
+    "ethicsPolicy": "https://motonapratica.com.br/politica-editorial",
+    "publishingPrinciples": "https://motonapratica.com.br/politica-editorial",
+    "correctionsPolicy": "https://motonapratica.com.br/politica-editorial#correcoes",
+    "diversityPolicy": "https://motonapratica.com.br/politica-editorial#diversidade",
+    "verificationFactCheckingPolicy": "https://motonapratica.com.br/politica-editorial#checagem",
+    "sameAs": [
+      "https://instagram.com/motonapratica",
+      "https://youtube.com/@motonapratica"
+    ]
+  };
 
   return (
-    <html lang={currentLang} suppressHydrationWarning className={`dark ${tekoFont.variable} ${barlowFont.variable}`}>
+    <html lang={currentLang} suppressHydrationWarning className={`${tekoFont.variable} ${barlowFont.variable}`}>
       <head>
         <link rel="icon" type="image/png" href="/favicon.png" />
         <link rel="preconnect" href="https://images.unsplash.com" />
         <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com" />
         <link rel="preconnect" href="https://pagead2.googlesyndication.com" crossOrigin="anonymous" />
         <meta name="google-site-verification" content="fbASypBsg3iwxoSLbdAaR_U4bHoizv_FGbwhS9FBmqQ" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(newsMediaSchema) }}
+        />
         <Script
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8759260479603327"
           strategy="lazyOnload"
@@ -120,57 +117,134 @@ export default async function RootLayout({
           {children}
         </main>
 
-        <footer className="bg-[#0A0A0A] border-t border-border mt-auto">
-          <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-14 grid grid-cols-1 md:grid-cols-3 gap-12">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
+        <footer className="bg-card border-t border-border mt-auto">
+          <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-14 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+            {/* Coluna 1 (Identidade & Manifesto) */}
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2 mb-3">
                 <span className="block w-1 h-7 bg-primary" />
-                <span style={TEKO} className="text-[24px] font-semibold uppercase tracking-wide text-foreground">
+                <span style={TEKO} className="text-[26px] font-semibold uppercase tracking-wide text-foreground">
                   MOTO<span className="text-primary">NA</span>PRÁTICA
                 </span>
               </div>
-              <p className="text-[13px] text-muted-foreground leading-relaxed">
-                {t.footer.description}
+              <div className="mb-3">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[10.5px] font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
+                  Jornalismo Independente
+                </span>
+              </div>
+              <p className="text-[13px] text-muted-foreground leading-relaxed mb-5">
+                Portal de jornalismo independente especializado no universo das duas rodas. Análises técnicas rigorosas, testes reais sem patrocínio velado, manutenção na oficina e cobertura esportiva com credibilidade, transparência e respeito inegociável ao motociclista.
               </p>
-              <div className="mt-5">
+              <div className="mt-auto">
                 <SocialLinks iconSize={16} />
               </div>
             </div>
-            
+
+            {/* Coluna 2 (Editorias de Notícias & Testes) */}
             <div>
-              <h3 style={TEKO} className="text-[18px] font-semibold uppercase tracking-widest text-foreground mb-5">{t.footer.quickLinks}</h3>
+              <h3 style={TEKO} className="text-[19px] font-semibold uppercase tracking-widest text-foreground mb-4">
+                Editorias & Testes
+              </h3>
               <ul className="space-y-2.5">
-                {navLinks.map(({ label, path }) => (
-                  <li key={path}>
-                    <Link href={path} className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors">
-                      <ChevronRight size={11} className="text-primary" /> {label}
-                    </Link>
-                  </li>
-                ))}
+                <li>
+                  <Link href="/posts?tag=Lançamentos" className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors">
+                    <ChevronRight size={11} className="text-primary shrink-0" /> Lançamentos
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/reviews" className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors">
+                    <ChevronRight size={11} className="text-primary shrink-0" /> Testes & Avaliações
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/eventos" className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors">
+                    <ChevronRight size={11} className="text-primary shrink-0" /> MotoGP & Motorsport
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/manutencao" className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors">
+                    <ChevronRight size={11} className="text-primary shrink-0" /> Oficina & Manutenção
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/rotas" className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors">
+                    <ChevronRight size={11} className="text-primary shrink-0" /> Rotas & Viagens
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/equipamentos" className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors">
+                    <ChevronRight size={11} className="text-primary shrink-0" /> Equipamentos
+                  </Link>
+                </li>
               </ul>
             </div>
 
+            {/* Coluna 3 (Institucional & E-E-A-T) */}
             <div>
-              <h3 style={TEKO} className="text-[18px] font-semibold uppercase tracking-widest text-foreground mb-5">{t.posts.title}</h3>
-              <ul className="space-y-4">
-                {recentPosts.map((post) => {
-                  const postPath = post.lang === "en" ? `/en/post/${post.slug}` : post.lang === "es" ? `/es/post/${post.slug}` : `/post/${post.slug}`;
-                  return (
-                    <li key={post.id}>
-                      <Link href={postPath} className="group flex items-start gap-2 text-left">
-                        <span className="block w-0.5 shrink-0 bg-border group-hover:bg-primary transition-colors mt-1" style={{ minHeight: "14px" }} />
-                        <span className="text-[12px] text-muted-foreground group-hover:text-foreground leading-snug transition-colors">
-                          {stripHtml(post.title)}
-                        </span>
-                      </Link>
-                    </li>
-                  );
-                })}
+              <h3 style={TEKO} className="text-[19px] font-semibold uppercase tracking-widest text-foreground mb-4">
+                Institucional & E-E-A-T
+              </h3>
+              <ul className="space-y-2.5">
+                <li>
+                  <Link href="/sobre" className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors">
+                    <ChevronRight size={11} className="text-primary shrink-0" /> Quem Somos
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/politica-editorial" className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors">
+                    <ChevronRight size={11} className="text-primary shrink-0" /> Política Editorial
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/equipe" className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors">
+                    <ChevronRight size={11} className="text-primary shrink-0" /> Equipe Editorial
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/contato" className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors">
+                    <ChevronRight size={11} className="text-primary shrink-0" /> Fale com a Redação
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/anuncie" className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors">
+                    <ChevronRight size={11} className="text-primary shrink-0" /> Mídia Kit / Anuncie
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Coluna 4 (Transparência & Legal) */}
+            <div>
+              <h3 style={TEKO} className="text-[19px] font-semibold uppercase tracking-widest text-foreground mb-4">
+                Transparência & Legal
+              </h3>
+              <ul className="space-y-2.5">
+                <li>
+                  <Link href="/termos-de-uso" className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors">
+                    <ChevronRight size={11} className="text-primary shrink-0" /> Termos de Uso
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/politica-de-privacidade" className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors">
+                    <ChevronRight size={11} className="text-primary shrink-0" /> Política de Privacidade & LGPD
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/politica-editorial#metodologia" className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors">
+                    <ChevronRight size={11} className="text-primary shrink-0" /> Metodologia de Testes
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/politica-de-privacidade#exclusao-dados" className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors">
+                    <ChevronRight size={11} className="text-primary shrink-0" /> Exclusão de Dados
+                  </Link>
+                </li>
               </ul>
             </div>
           </div>
-          <div className="border-t border-border py-4 text-center text-[11px] text-muted-foreground tracking-widest uppercase">
-            © 2026 Moto na Prática · {t.footer.rights}
+
+          <div className="border-t border-border py-5 px-4 text-center text-[11.5px] text-muted-foreground tracking-wider uppercase">
+            © 2026 Moto na Prática · Portal Informativo e Jornalismo Independente de Motociclismo · {t.footer.rights}
           </div>
         </footer>
       </body>

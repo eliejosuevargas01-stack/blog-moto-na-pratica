@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
+  experimental: {
+    serverComponentsExternalPackages: ['isomorphic-dompurify', 'jsdom'],
+  },
   images: {
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 31536000,

@@ -69,6 +69,7 @@ export default function PostActionsBar({ postId, postTitle, initialLikes = 0 }: 
         <button
           onClick={handleLike}
           disabled={hasLiked}
+          aria-label={hasLiked ? "Post já curtido" : "Curtir post"}
           className={`flex items-center gap-2 px-4 py-2 text-[13px] font-bold uppercase tracking-wider transition-all rounded-sm ${
             hasLiked
               ? "bg-primary text-white"
@@ -98,6 +99,7 @@ export default function PostActionsBar({ postId, postTitle, initialLikes = 0 }: 
           onClick={() => handleSocialClick("WhatsApp")}
           className="p-2 bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366] hover:text-white transition-colors rounded-sm"
           title="Compartilhar no WhatsApp"
+          aria-label="Compartilhar no WhatsApp"
         >
           <MessageCircle size={16} />
         </a>
@@ -110,6 +112,7 @@ export default function PostActionsBar({ postId, postTitle, initialLikes = 0 }: 
           onClick={() => handleSocialClick("X")}
           className="p-2 bg-secondary text-foreground hover:bg-white hover:text-black transition-colors rounded-sm"
           title="Compartilhar no X (Twitter)"
+          aria-label="Compartilhar no X (Twitter)"
         >
           <Twitter size={16} />
         </a>
@@ -122,6 +125,7 @@ export default function PostActionsBar({ postId, postTitle, initialLikes = 0 }: 
           onClick={() => handleSocialClick("Facebook")}
           className="p-2 bg-[#1877F2]/10 text-[#1877F2] hover:bg-[#1877F2] hover:text-white transition-colors rounded-sm"
           title="Compartilhar no Facebook"
+          aria-label="Compartilhar no Facebook"
         >
           <Facebook size={16} />
         </a>
@@ -131,6 +135,7 @@ export default function PostActionsBar({ postId, postTitle, initialLikes = 0 }: 
           onClick={handleCopyLink}
           className="flex items-center gap-1 px-3 py-2 bg-secondary text-[12px] text-muted-foreground hover:text-foreground border border-border transition-colors rounded-sm"
           title="Copiar Link do Post"
+          aria-label={copied ? "Link copiado" : "Copiar link do post"}
         >
           {copied ? (
             <>

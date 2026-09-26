@@ -3,6 +3,7 @@ import { POSTS, TAG_COLORS, TEKO, BODY, optimizeImageUrl, formatPostUrl } from "
 import Link from "next/link";
 import { Clock, Tag, ArrowRight } from "lucide-react";
 import Sidebar from "../../components/Sidebar";
+import SafeHtml from "../../components/SafeHtml";
 
 export const dynamic = "force-dynamic";
 
@@ -52,7 +53,7 @@ export default async function TagPage({ params }: TagPageProps) {
   return (
     <div style={BODY}>
       {/* HEADER DA PÁGINA DE TAG */}
-      <section className="bg-[#0A0A0A] border-b border-border py-14 px-6">
+      <section className="bg-card border-b border-border py-14 px-6">
         <div className="max-w-[1200px] mx-auto">
           <div className="flex items-center gap-2 mb-2 text-primary">
             <Tag size={18} />
@@ -111,11 +112,7 @@ export default async function TagPage({ params }: TagPageProps) {
                         </span>
                       </div>
                       <div className="p-5 flex flex-col flex-1">
-                        <h2 
-                          style={TEKO} 
-                          className="text-[24px] font-semibold uppercase leading-tight text-foreground mb-2 group-hover:text-primary transition-colors"
-                          dangerouslySetInnerHTML={{ __html: post.title }}
-                        />
+                        <SafeHtml tag="h2" style={TEKO} className="text-[24px] font-semibold uppercase leading-tight text-foreground mb-2 group-hover:text-primary transition-colors" html={post.title} />
                         <p className="text-[13px] text-muted-foreground leading-relaxed mb-4 flex-1">
                           {post.excerpt}
                         </p>

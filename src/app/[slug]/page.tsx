@@ -1,6 +1,7 @@
 import { prisma } from "../../lib/db";
 import { notFound, redirect } from "next/navigation";
-import { TEKO, BODY } from "../data";
+import { TEKO, BODY, STATIC_INSTITUTIONAL_PAGES } from "../data";
+import SafeHtml from "../components/SafeHtml";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,15 @@ export async function generateMetadata({ params }: DynamicPageProps) {
       };
     }
   } catch (e) {}
+
+  if (STATIC_INSTITUTIONAL_PAGES[slug]) {
+    const staticPage = STATIC_INSTITUTIONAL_PAGES[slug];
+    return {
+      title: staticPage.seoTitle,
+      description: staticPage.seoDescription,
+    };
+  }
+
   return {};
 }
 
@@ -38,7 +48,7 @@ export default async function DynamicPage({ params }: DynamicPageProps) {
     console.error("Failed to query dynamic page", error);
   }
 
-  // Se existir uma página customizada (não estática), renderiza a página
+  // Se existir uma página customizada (não estática) no banco
   if (page && !page.isStatic) {
     const content = typeof page.content === "string" 
       ? JSON.parse(page.content) 
@@ -51,10 +61,25 @@ export default async function DynamicPage({ params }: DynamicPageProps) {
         <h1 style={TEKO} className="text-[44px] md:text-[56px] font-semibold uppercase leading-none text-foreground border-b border-border pb-4 mb-8">
           {page.title}
         </h1>
-        <div 
-          className="prose prose-invert max-w-none text-muted-foreground text-[15px] leading-relaxed space-y-6"
-          dangerouslySetInnerHTML={{ __html: bodyHtml }}
-        />
+        <SafeHtml html={bodyHtml} className="prose max-w-none text-foreground text-[15px] leading-relaxed space-y-6" />
+      </div>
+    );
+  }
+
+  // Fallback para páginas institucionais pré-definidas (E-E-A-T)
+  if (STATIC_INSTITUTIONAL_PAGES[slug]) {
+    const staticPage = STATIC_INSTITUTIONAL_PAGES[slug];
+    const bodyHtml = staticPage.bodyHtml;
+
+    return (
+      <div className="max-w-[800px] mx-auto px-4 md:px-6 py-16" style={BODY}>
+        <div className="mb-2">
+          <span className="text-primary text-[11px] font-bold uppercase tracking-widest">Institucional · Moto na Prática</span>
+        </div>
+        <h1 style={TEKO} className="text-[44px] md:text-[56px] font-semibold uppercase leading-none text-foreground border-b border-border pb-4 mb-8">
+          {staticPage.title}
+        </h1>
+        <SafeHtml html={bodyHtml} className="prose max-w-none text-foreground text-[15px] leading-relaxed space-y-6" />
       </div>
     );
   }

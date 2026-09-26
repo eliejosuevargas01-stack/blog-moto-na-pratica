@@ -92,33 +92,35 @@ export default function TableOfContents({ blocks }: TableOfContentsProps) {
   };
 
   return (
-    <div className="bg-[#141414] border border-primary/30 rounded-lg p-5 mb-10 shadow-xl relative overflow-hidden transition-all duration-300">
+    <div className="bg-card border border-border rounded-lg p-5 mb-10 shadow-xs relative overflow-hidden transition-all duration-300">
       {/* Background Subtle Accent Glow */}
       <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
 
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between text-left outline-none group"
+        aria-expanded={isOpen}
+        aria-label="Alternar índice de tópicos"
+        className="w-full flex items-center justify-between text-left outline-none group cursor-pointer"
       >
         <div className="flex items-center gap-2.5">
-          <div className="p-1.5 bg-primary/10 border border-primary/30 rounded text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+          <div className="p-1.5 bg-primary/10 border border-primary/20 rounded text-primary group-hover:bg-primary group-hover:text-white transition-colors">
             <List size={18} />
           </div>
-          <span style={TEKO} className="text-[22px] uppercase tracking-wider text-white font-semibold">
+          <span style={TEKO} className="text-[22px] uppercase tracking-wider text-foreground font-bold">
             Índice de Tópicos do Artigo
           </span>
-          <span className="text-[11px] font-mono bg-[#222222] text-muted-foreground px-2 py-0.5 rounded-full border border-border">
+          <span className="text-[11px] font-mono bg-muted text-muted-foreground px-2 py-0.5 rounded-full border border-border">
             {headings.length} tópicos
           </span>
         </div>
-        <div className="text-muted-foreground group-hover:text-white transition-colors p-1">
+        <div className="text-muted-foreground group-hover:text-foreground transition-colors p-1">
           {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
         </div>
       </button>
 
       {isOpen && (
-        <ul className="mt-4 space-y-1.5 border-t border-white/10 pt-4 transition-all duration-300">
+        <ul className="mt-4 space-y-1.5 border-t border-border pt-4 transition-all duration-300">
           {headings.map((h, idx) => {
             const isActive = activeId === h.id;
             const isH2 = h.level === 2;
@@ -135,10 +137,10 @@ export default function TableOfContents({ blocks }: TableOfContentsProps) {
                   onClick={(e) => scrollToSection(e, h.id)}
                   className={`flex items-start gap-2 text-[14px] leading-relaxed transition-all duration-200 border-l-2 px-3 py-1.5 rounded-r-sm ${
                     isActive
-                      ? "border-primary bg-primary/15 text-primary font-bold shadow-sm"
+                      ? "border-primary bg-primary/10 text-primary font-bold shadow-xs"
                       : isH2
-                      ? "border-white/10 text-white font-medium hover:text-white hover:bg-white/[0.06] hover:border-primary/50"
-                      : "border-transparent text-[#CCCCCC] text-[13.5px] hover:text-white hover:bg-white/[0.04] hover:border-primary/40"
+                      ? "border-border text-foreground font-semibold hover:text-primary hover:bg-muted/60 hover:border-primary/50"
+                      : "border-transparent text-muted-foreground text-[13.5px] hover:text-foreground hover:bg-muted/40 hover:border-primary/40"
                   }`}
                 >
                   <span className={`text-[11px] font-mono shrink-0 mt-0.5 ${isActive ? "text-primary font-bold" : "text-muted-foreground"}`}>

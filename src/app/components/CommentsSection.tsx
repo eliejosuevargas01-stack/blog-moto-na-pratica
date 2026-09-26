@@ -192,11 +192,11 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
       </div>
 
       {/* Auth and Comment Form Area */}
-      <div className="bg-[#0A0A0A] border border-border/80 rounded-sm p-6 mb-10">
+      <div className="bg-card border border-border rounded-lg p-6 mb-10 shadow-xs">
         {user ? (
           // Logged In Form
           <form onSubmit={handlePostComment} className="space-y-4">
-            <div className="flex items-center justify-between text-[12px] text-muted-foreground border-b border-border/40 pb-3">
+            <div className="flex items-center justify-between text-[12px] text-muted-foreground border-b border-border pb-3">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 <span>Logado como <strong className="text-foreground">{user.name}</strong> ({user.email})</span>
@@ -204,7 +204,7 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="flex items-center gap-1 text-primary hover:underline transition-colors uppercase tracking-wider font-semibold"
+                className="flex items-center gap-1 text-primary hover:underline transition-colors uppercase tracking-wider font-semibold cursor-pointer"
               >
                 <LogOut size={12} /> Sair
               </button>
@@ -217,7 +217,7 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="O que você achou desse post? Deixe sua opinião..."
                 rows={4}
-                className="w-full bg-[#111111] border border-border rounded-sm text-[14px] p-3 outline-none focus:border-primary/50 text-foreground resize-none transition-colors"
+                className="w-full bg-background border border-border rounded-md text-[14px] p-3 outline-none focus:border-primary/50 text-foreground resize-none transition-colors"
                 maxLength={1000}
               />
             </div>
@@ -231,7 +231,7 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
             <button
               type="submit"
               disabled={loading || !content.trim()}
-              className="bg-primary hover:bg-[#c2181d] text-white text-[12px] font-bold uppercase tracking-wider px-5 py-2.5 transition-colors disabled:opacity-40 disabled:hover:bg-primary"
+              className="bg-primary hover:bg-[#A00D24] text-white text-[12px] font-bold uppercase tracking-wider px-5 py-2.5 rounded-sm transition-colors disabled:opacity-40 disabled:hover:bg-primary cursor-pointer"
             >
               {loading ? "Enviando..." : "Publicar Comentário"}
             </button>
@@ -240,18 +240,18 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
           // Guest Box - Authentication Tabs
           <div>
             <div className="text-center mb-6">
-              <h4 style={TEKO} className="text-[20px] uppercase tracking-wide text-foreground mb-1">
+              <h4 style={TEKO} className="text-[22px] font-bold uppercase tracking-wide text-foreground mb-1">
                 Participe da discussão
               </h4>
-              <p className="text-[12px] text-muted-foreground max-w-[400px] mx-auto">
+              <p className="text-[13px] text-muted-foreground max-w-[400px] mx-auto">
                 Faça login ou cadastre-se rapidamente para enviar seu comentário. É simples e leva menos de 1 minuto!
               </p>
             </div>
 
-            <div className="flex border-b border-border/40 mb-6">
+            <div className="flex border-b border-border mb-6">
               <button
                 onClick={() => { setAuthMode("login"); setAuthError(""); }}
-                className={`flex-1 py-2 text-center text-[12px] font-bold uppercase tracking-wider border-b-2 transition-colors ${
+                className={`flex-1 py-2 text-center text-[12px] font-bold uppercase tracking-wider border-b-2 transition-colors cursor-pointer ${
                   authMode === "login" 
                     ? "border-primary text-primary" 
                     : "border-transparent text-muted-foreground hover:text-foreground"
@@ -261,7 +261,7 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
               </button>
               <button
                 onClick={() => { setAuthMode("register"); setAuthError(""); }}
-                className={`flex-1 py-2 text-center text-[12px] font-bold uppercase tracking-wider border-b-2 transition-colors ${
+                className={`flex-1 py-2 text-center text-[12px] font-bold uppercase tracking-wider border-b-2 transition-colors cursor-pointer ${
                   authMode === "register" 
                     ? "border-primary text-primary" 
                     : "border-transparent text-muted-foreground hover:text-foreground"
@@ -281,7 +281,7 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Seu nome"
                     required
-                    className="w-full bg-[#111111] border border-border rounded-sm text-[13px] px-3 py-2 outline-none focus:border-primary/50 text-foreground transition-colors"
+                    className="w-full bg-background border border-border rounded-md text-[13px] px-3 py-2 outline-none focus:border-primary/50 text-foreground transition-colors"
                   />
                 </div>
               )}
@@ -294,7 +294,7 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="seu@email.com"
                   required
-                  className="w-full bg-[#111111] border border-border rounded-sm text-[13px] px-3 py-2 outline-none focus:border-primary/50 text-foreground transition-colors"
+                  className="w-full bg-background border border-border rounded-md text-[13px] px-3 py-2 outline-none focus:border-primary/50 text-foreground transition-colors"
                 />
               </div>
 
@@ -306,7 +306,7 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Sua senha"
                   required
-                  className="w-full bg-[#111111] border border-border rounded-sm text-[13px] px-3 py-2 outline-none focus:border-primary/50 text-foreground transition-colors"
+                  className="w-full bg-background border border-border rounded-md text-[13px] px-3 py-2 outline-none focus:border-primary/50 text-foreground transition-colors"
                 />
               </div>
 
@@ -319,7 +319,7 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-primary hover:bg-[#c2181d] text-white text-[12px] font-bold uppercase tracking-wider py-2.5 transition-colors"
+                className="w-full bg-primary hover:bg-[#A00D24] text-white text-[12px] font-bold uppercase tracking-wider py-2.5 rounded-sm transition-colors cursor-pointer"
               >
                 {loading ? "Aguarde..." : authMode === "login" ? "Entrar e Comentar" : "Cadastrar e Comentar"}
               </button>
@@ -329,9 +329,9 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
       </div>
 
       {/* Comments List */}
-      <div className="space-y-6">
+      <div className="space-y-4">
         {comments.length === 0 ? (
-          <div className="text-center py-10 border border-dashed border-border/60 rounded-sm">
+          <div className="text-center py-10 border border-dashed border-border rounded-lg bg-card/50">
             <MessageSquare size={32} className="text-muted-foreground/40 mx-auto mb-3" />
             <p className="text-[13px] text-muted-foreground">Nenhum comentário por enquanto. Seja o primeiro a opinar!</p>
           </div>
@@ -341,7 +341,7 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
             return (
               <div 
                 key={comment.id} 
-                className="flex items-start gap-4 p-4 border border-border/40 bg-[#0c0c0c] rounded-sm hover:border-border/80 transition-all duration-300"
+                className="flex items-start gap-4 p-4 border border-border bg-card rounded-lg shadow-xs hover:border-primary/30 transition-all duration-300"
               >
                 {/* User Avatar Bubble */}
                 <div className="w-9 h-9 rounded-full bg-secondary border border-border flex items-center justify-center shrink-0">
@@ -351,13 +351,13 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
                 {/* Comment Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <span className="text-[13px] font-bold text-foreground">{comment.user?.name || "Usuário"}</span>
+                    <span className="text-[13.5px] font-bold text-foreground">{comment.user?.name || "Usuário"}</span>
                     <div className="flex items-center gap-3">
                       <span className="text-[11px] text-muted-foreground">{formatCommentDate(comment.createdAt)}</span>
                       {isOwner && (
                         <button
                           onClick={() => handleDeleteComment(comment.id)}
-                          className="text-muted-foreground hover:text-primary transition-colors p-1"
+                          className="text-muted-foreground hover:text-primary transition-colors p-1 cursor-pointer"
                           title="Excluir Comentário"
                         >
                           <Trash2 size={13} />
@@ -365,7 +365,7 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
                       )}
                     </div>
                   </div>
-                  <p className="text-[13.5px] text-[#BBBBBB] leading-relaxed break-words" style={BODY}>
+                  <p className="text-[14px] text-foreground leading-relaxed break-words" style={BODY}>
                     {comment.content}
                   </p>
                 </div>

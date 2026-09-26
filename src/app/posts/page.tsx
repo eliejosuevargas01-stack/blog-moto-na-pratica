@@ -1,7 +1,7 @@
 import { prisma } from "../../lib/db";
 import { POSTS, TAG_COLORS, TEKO, BODY, optimizeImageUrl, formatPostUrl } from "../data";
 import Link from "next/link";
-import SafeHtml from "./components/SafeHtml";
+import SafeHtml from "../components/SafeHtml";
 import { Clock, Search, ArrowRight, Tag } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import { cookies } from "next/headers";
@@ -72,7 +72,7 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
 
   return (
     <div style={BODY}>
-      <section className="bg-[#0A0A0A] border-b border-border py-14 px-6">
+      <section className="bg-card border-b border-border py-14 px-6">
         <div className="max-w-[1200px] mx-auto">
           <div className="flex items-center gap-2 mb-2">
             <span className="block w-1 h-6 bg-primary" />

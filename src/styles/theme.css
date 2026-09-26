@@ -2,42 +2,44 @@
 
 :root {
   --font-size: 16px;
-  --background: #111111;
-  --foreground: #E4E4E4;
-  --card: #1C1C1C;
-  --card-foreground: #E4E4E4;
-  --popover: #1C1C1C;
-  --popover-foreground: #E4E4E4;
+  --background: #F8F9FA;
+  --foreground: #111827;
+  --card: #FFFFFF;
+  --card-foreground: #111827;
+  --popover: #FFFFFF;
+  --popover-foreground: #111827;
   --primary: #C8102E;
   --primary-foreground: #FFFFFF;
-  --secondary: #252525;
-  --secondary-foreground: #CCCCCC;
-  --muted: #1A1A1A;
-  --muted-foreground: #A8A8A8;
-  --accent: #C8102E;
+  --secondary: #F3F4F6;
+  --secondary-foreground: #111827;
+  --muted: #F3F4F6;
+  --muted-foreground: #4B5563;
+  --accent: #2563EB;
   --accent-foreground: #FFFFFF;
-  --destructive: #C8102E;
-  --destructive-foreground: #ffffff;
-  --border: rgba(255, 255, 255, 0.07);
-  --input: transparent;
-  --input-background: #222222;
-  --switch-background: #444444;
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
+  --success: #16A34A;
+  --success-foreground: #FFFFFF;
+  --border: #E5E7EB;
+  --input: #E5E7EB;
+  --input-background: #FFFFFF;
+  --switch-background: #E5E7EB;
   --font-weight-medium: 600;
   --font-weight-normal: 400;
   --ring: #C8102E;
   --chart-1: #C8102E;
-  --chart-2: #A8A8A8;
-  --chart-3: #444444;
-  --chart-4: #CCCCCC;
-  --chart-5: #666666;
-  --radius: 2px;
-  --sidebar: #1C1C1C;
-  --sidebar-foreground: #E4E4E4;
+  --chart-2: #2563EB;
+  --chart-3: #16A34A;
+  --chart-4: #4B5563;
+  --chart-5: #9CA3AF;
+  --radius: 8px;
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #111827;
   --sidebar-primary: #C8102E;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #252525;
-  --sidebar-accent-foreground: #E4E4E4;
-  --sidebar-border: rgba(255,255,255,0.07);
+  --sidebar-accent: #F3F4F6;
+  --sidebar-accent-foreground: #111827;
+  --sidebar-border: #E5E7EB;
   --sidebar-ring: #C8102E;
 }
 
@@ -54,33 +56,34 @@
   --secondary-foreground: #CCCCCC;
   --muted: #1A1A1A;
   --muted-foreground: #A8A8A8;
-  --accent: #C8102E;
+  --accent: #3B82F6;
   --accent-foreground: #FFFFFF;
-  --destructive: #C8102E;
+  --destructive: #DC2626;
   --destructive-foreground: #FFFFFF;
-  --border: rgba(255, 255, 255, 0.07);
-  --input: transparent;
+  --success: #16A34A;
+  --success-foreground: #FFFFFF;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.12);
   --input-background: #222222;
   --switch-background: #444444;
   --font-weight-medium: 600;
   --font-weight-normal: 400;
   --ring: #C8102E;
   --chart-1: #C8102E;
-  --chart-2: #A8A8A8;
-  --chart-3: #444444;
+  --chart-2: #3B82F6;
+  --chart-3: #16A34A;
   --chart-4: #CCCCCC;
   --chart-5: #666666;
-  --radius: 2px;
+  --radius: 8px;
   --sidebar: #1C1C1C;
   --sidebar-foreground: #E4E4E4;
   --sidebar-primary: #C8102E;
   --sidebar-primary-foreground: #FFFFFF;
   --sidebar-accent: #252525;
   --sidebar-accent-foreground: #E4E4E4;
-  --sidebar-border: rgba(255,255,255,0.07);
+  --sidebar-border: rgba(255,255,255,0.08);
   --sidebar-ring: #C8102E;
 }
-
 
 @theme inline {
   --color-background: var(--background);
@@ -99,6 +102,8 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-input-background: var(--input-background);
@@ -136,7 +141,6 @@
   * Default typography styles for HTML elements (h1-h4, p, label, button, input).
   * These are in @layer base, so Tailwind utility classes (like text-sm, text-lg) automatically override them.
   */
-
   html {
     font-size: var(--font-size);
   }
@@ -185,76 +189,120 @@
 }
 
 /* --- ESTILOS DE TIPOGRAFIA GLOBAL PARA O CONTEÚDO DOS ARTIGOS (.prose) --- */
+.prose {
+  max-width: 70ch;
+  margin-left: auto;
+  margin-right: auto;
+  color: var(--foreground);
+  font-size: 16px;
+  line-height: 1.7;
+  word-break: break-word;
+}
+
+@media (min-width: 768px) {
+  .prose {
+    font-size: 17.5px;
+  }
+}
+
 .prose p {
   font-size: 16px;
-  color: #CCCCCC;
+  color: var(--foreground);
   line-height: 1.7;
   margin-bottom: 1.35rem;
 }
 
-.prose p strong, .prose p b {
-  color: #FFFFFF;
+@media (min-width: 768px) {
+  .prose p {
+    font-size: 17.5px;
+  }
+}
+
+.prose p strong,
+.prose p b,
+.prose strong,
+.prose b {
+  color: var(--foreground);
   font-weight: 700;
 }
 
-.prose h1, .prose h2, .prose h3, .prose h4 {
-  font-family: 'Teko', sans-serif;
-  font-weight: 600;
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4 {
+  font-family: var(--font-teko), 'Teko', sans-serif;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: #FFFFFF;
+  letter-spacing: 0.03em;
+  color: var(--foreground);
   line-height: 1.15;
   scroll-margin-top: 5rem;
 }
 
 .prose h1 {
-  font-size: 42px;
+  font-size: 40px;
+  font-weight: 800;
   margin-top: 2.5rem;
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.75rem;
   border-left: 4px solid var(--primary, #C8102E);
   padding-left: 0.75rem;
+  color: var(--foreground);
 }
 
 .prose h2 {
-  font-size: 34px;
+  font-size: 32px;
+  font-weight: 700;
   margin-top: 2.5rem;
-  margin-bottom: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  margin-bottom: 0.75rem;
+  border-top: 1px solid var(--border, #E5E7EB);
   padding-top: 1.25rem;
-  color: #FFFFFF;
+  color: var(--foreground);
 }
 
 .prose h3 {
-  font-size: 26px;
-  margin-top: 2rem;
+  font-size: 25px;
+  font-weight: 700;
+  margin-top: 2.25rem;
   margin-bottom: 0.75rem;
-  color: #F0F0F0;
+  color: var(--foreground);
 }
 
 .prose h4 {
-  font-size: 22px;
-  margin-top: 1.5rem;
+  font-size: 21px;
+  font-weight: 700;
+  margin-top: 1.75rem;
   margin-bottom: 0.5rem;
-  color: #E0E0E0;
+  color: var(--foreground);
 }
 
 @media (max-width: 640px) {
-  .prose h1 { font-size: 34px; }
-  .prose h2 { font-size: 28px; }
-  .prose h3 { font-size: 23px; }
+  .prose h1 { font-size: 32px; }
+  .prose h2 { font-size: 26px; }
+  .prose h3 { font-size: 22px; }
   .prose h4 { font-size: 19px; }
 }
 
+.prose a {
+  color: var(--accent, #2563EB);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 600;
+  transition: color 0.15s ease;
+}
+
+.prose a:hover {
+  color: #1D4ED8;
+}
+
 /* --- LISTAS REFINADAS (.prose ul, .prose ol, .prose li) --- */
-.prose ul {
+.prose ul:not(.checklist) {
   list-style-type: disc;
   padding-left: 1.4rem;
   margin-top: 0.5rem;
   margin-bottom: 1.5rem;
-  color: #CCCCCC;
+  color: var(--foreground);
 }
 
-.prose ul li::marker {
+.prose ul:not(.checklist) li::marker {
   color: var(--primary, #C8102E);
   font-size: 1.1em;
 }
@@ -264,7 +312,7 @@
   padding-left: 1.4rem;
   margin-top: 0.5rem;
   margin-bottom: 1.5rem;
-  color: #CCCCCC;
+  color: var(--foreground);
 }
 
 .prose ol li::marker {
@@ -276,43 +324,436 @@
   margin-bottom: 0.6rem;
   font-size: 16px;
   line-height: 1.65;
+  color: var(--foreground);
 }
 
-.prose li strong, .prose li b {
-  color: #FFFFFF;
+@media (min-width: 768px) {
+  .prose li {
+    font-size: 17.5px;
+  }
 }
 
-/* --- CAIXAS DE AVISO / CALLOUTS / BLOCKQUOTES (.prose blockquote, .box-aviso) --- */
-.prose blockquote, .box-aviso, .callout-warning {
-  border-left: 4px solid var(--primary, #C8102E);
-  background: linear-gradient(135deg, rgba(200, 16, 46, 0.12) 0%, rgba(20, 20, 20, 0.95) 100%);
+.prose li strong,
+.prose li b {
+  color: var(--foreground);
+  font-weight: 700;
+}
+
+/* --- CHECKLIST DE INSPEÇÃO (.checklist, .prose ul.checklist) --- */
+.checklist,
+.prose ul.checklist {
+  list-style: none !important;
+  padding-left: 0 !important;
+  margin-top: 1.25rem !important;
+  margin-bottom: 1.75rem !important;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.checklist li,
+.prose ul.checklist li {
+  position: relative;
+  padding-left: 2.25rem;
+  margin-bottom: 0 !important;
+  line-height: 1.6;
+  color: #111827;
+  display: flex;
+  align-items: flex-start;
+}
+
+.checklist li::marker,
+.prose ul.checklist li::marker {
+  display: none !important;
+  content: "" !important;
+}
+
+.checklist li::before,
+.prose ul.checklist li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.2rem;
+  width: 1.35rem;
+  height: 1.35rem;
+  background-color: #F0FDF4;
+  border: 2px solid #16A34A;
+  border-radius: 4px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2316A34A' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 0.85rem;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+/* --- CAIXAS DE DESTAQUE / CALLOUTS (.box-aviso, .box-alerta-mecanico, .callout-alerta, .box-veredito, .box-dica) --- */
+.box-alerta-mecanico,
+.callout-alerta {
+  border-left: 4px solid var(--destructive, #DC2626) !important;
+  background-color: #FEF2F2 !important;
   padding: 1.25rem 1.5rem;
   margin: 2rem 0;
-  color: #F0F0F0;
+  color: #1F2937 !important;
   border-radius: 0 8px 8px 0;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.08);
   font-size: 15.5px;
   line-height: 1.65;
   position: relative;
 }
 
-.prose blockquote p:last-child, .box-aviso p:last-child {
+.box-alerta-mecanico h4,
+.callout-alerta h4 {
+  color: #991B1B !important;
+  font-weight: 700;
+  margin-top: 0 !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.box-alerta-mecanico strong,
+.box-alerta-mecanico b,
+.callout-alerta strong,
+.callout-alerta b {
+  color: #991B1B;
+  font-weight: 700;
+}
+
+.box-veredito,
+.box-dica {
+  border-left: 4px solid var(--success, #16A34A) !important;
+  background-color: #F0FDF4 !important;
+  padding: 1.25rem 1.5rem;
+  margin: 2rem 0;
+  color: #1F2937 !important;
+  border-radius: 0 8px 8px 0;
+  box-shadow: 0 1px 3px rgba(22, 163, 74, 0.08);
+  font-size: 15.5px;
+  line-height: 1.65;
+  position: relative;
+}
+
+.box-veredito h4,
+.box-dica h4 {
+  color: #166534 !important;
+  font-weight: 700;
+  margin-top: 0 !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.box-veredito strong,
+.box-veredito b,
+.box-dica strong,
+.box-dica b {
+  color: #166534;
+  font-weight: 700;
+}
+
+.prose blockquote,
+.box-aviso,
+.callout-warning {
+  border-left: 4px solid var(--primary, #C8102E) !important;
+  background-color: #FFF1F2 !important;
+  padding: 1.25rem 1.5rem;
+  margin: 2rem 0;
+  color: #111827 !important;
+  border-radius: 0 8px 8px 0;
+  box-shadow: 0 1px 3px rgba(200, 16, 46, 0.08);
+  font-size: 15.5px;
+  line-height: 1.65;
+  position: relative;
+}
+
+.prose blockquote p:last-child,
+.box-aviso p:last-child,
+.box-alerta-mecanico p:last-child,
+.box-veredito p:last-child,
+.box-dica p:last-child {
   margin-bottom: 0;
 }
 
-.prose blockquote strong, .prose blockquote b, .box-aviso strong, .box-aviso b {
-  color: #FF334B;
+.prose blockquote strong,
+.prose blockquote b,
+.box-aviso strong,
+.box-aviso b,
+.callout-warning strong,
+.callout-warning b {
+  color: #991B1B;
   font-weight: 700;
+}
+
+/* --- TABELAS COMPARATIVAS RESPONSIVAS (.table-wrapper, .prose table, .tabela-comparativa) --- */
+.table-wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 2rem 0;
+  border-radius: 8px;
+  border: 1px solid var(--border, #E5E7EB);
+  background: #FFFFFF;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
+}
+
+.prose table,
+.tabela-comparativa {
+  width: 100%;
+  min-width: 540px;
+  border-collapse: collapse;
+  font-size: 14.5px;
+  background: #FFFFFF;
+  margin: 0;
+  table-layout: auto;
+}
+
+.prose > table {
+  display: table;
+  width: 100%;
+  min-width: 540px;
+  margin: 2rem 0;
+  border: 1px solid var(--border, #E5E7EB);
+  border-radius: 8px;
+  background: #FFFFFF;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border-collapse: collapse;
+}
+
+.prose table th,
+.tabela-comparativa th {
+  background: #F3F4F6;
+  color: #374151;
+  font-family: var(--font-teko), 'Teko', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border, #E5E7EB);
+  white-space: normal;
+  line-height: 1.25;
+}
+
+.prose table th.text-right,
+.tabela-comparativa th.text-right,
+.prose table th.numeric,
+.tabela-comparativa th.numeric {
+  text-align: right;
+}
+
+.prose table td,
+.tabela-comparativa td {
+  padding: 12px 16px;
+  color: #111827;
+  border-bottom: 1px solid var(--border, #E5E7EB);
+  white-space: normal;
+  vertical-align: middle;
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+
+.prose table td.text-right,
+.tabela-comparativa td.text-right,
+.prose table td.numeric,
+.tabela-comparativa td.numeric {
+  text-align: right;
+}
+
+.prose table td strong,
+.tabela-comparativa td strong {
+  color: #111827;
+  font-weight: 700;
+}
+
+.prose table tr:nth-child(even),
+.tabela-comparativa tr:nth-child(even) {
+  background: #F9FAFB;
+}
+
+.prose table tr:hover,
+.tabela-comparativa tr:hover {
+  background: #F3F4F6;
+}
+
+.prose table tr:last-child td,
+.tabela-comparativa tr:last-child td {
+  border-bottom: none;
+}
+
+@media (max-width: 640px) {
+  .prose table,
+  .tabela-comparativa {
+    font-size: 13.5px;
+  }
+  .prose table th,
+  .tabela-comparativa th {
+    padding: 10px 12px;
+    font-size: 18px;
+  }
+  .prose table td,
+  .tabela-comparativa td {
+    padding: 10px 12px;
+  }
+}
+
+/* --- IMAGENS E FIGURAS NO ARTIGO (.prose img, .prose figure, figcaption) --- */
+.prose figure {
+  margin: 2rem 0;
+  width: 100%;
+}
+
+.prose img,
+figure.prose-image img,
+.article-image-container img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--border, #E5E7EB);
+  display: block;
+}
+
+figcaption,
+.prose figcaption,
+figure.prose-image figcaption,
+.article-image-caption {
+  font-size: 0.75rem; /* text-xs */
+  line-height: 1.4;
+  color: #4B5563;
+  text-align: center;
+  margin-top: 0.5rem;
+  font-style: italic;
+}
+
+.dark figcaption,
+.dark .prose figcaption,
+.dark figure.prose-image figcaption {
+  color: var(--muted-foreground);
+}
+
+/* --- CAIXAS DE PRÓS E CONTRAS (.box-pros-cons, .pros-contras-box) --- */
+.box-pros-cons,
+.pros-contras-box {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 1.25rem !important;
+  margin: 2rem 0 !important;
+  width: 100% !important;
+  list-style: none !important;
+}
+
+@media (min-width: 640px) {
+  .box-pros-cons,
+  .pros-contras-box {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 1.25rem !important;
+  }
+}
+
+.prose ul > li:has(> .box-pros-cons),
+.prose ul > li:has(> .box-pros),
+.prose ul > li:has(> .box-cons) {
+  list-style-type: none !important;
+  padding-left: 0 !important;
+}
+
+.box-pros-cons::marker,
+.box-pros::marker,
+.box-cons::marker {
+  display: none !important;
+  content: "" !important;
+}
+
+.box-pros,
+.pros {
+  background-color: #F0FDF4;
+  border: 1.5px solid #BBF7D0;
+  border-left: 4px solid var(--success, #16A34A);
+  border-radius: 8px;
+  padding: 1.25rem 1.4rem;
+  box-shadow: 0 1px 3px rgba(22, 163, 74, 0.06);
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.box-cons,
+.cons {
+  background-color: #FEF2F2;
+  border: 1.5px solid #FECACA;
+  border-left: 4px solid var(--destructive, #DC2626);
+  border-radius: 8px;
+  padding: 1.25rem 1.4rem;
+  box-shadow: 0 1px 3px rgba(220, 38, 38, 0.06);
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.box-pros h4,
+.pros h4 {
+  color: #166534 !important;
+  font-family: var(--font-teko), 'Teko', sans-serif !important;
+  font-size: 24px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  margin-top: 0 !important;
+  margin-bottom: 0.6rem !important;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.box-cons h4,
+.cons h4 {
+  color: #991B1B !important;
+  font-family: var(--font-teko), 'Teko', sans-serif !important;
+  font-size: 24px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  margin-top: 0 !important;
+  margin-bottom: 0.6rem !important;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.box-pros ul,
+.box-cons ul,
+.pros ul,
+.cons ul {
+  margin-bottom: 0 !important;
+  padding-left: 1.25rem !important;
+  color: #1F2937 !important;
+  list-style-type: disc !important;
+}
+
+.box-pros li::marker {
+  color: var(--success, #16A34A) !important;
+}
+
+.box-cons li::marker {
+  color: var(--destructive, #DC2626) !important;
+}
+
+.box-pros li,
+.box-cons li,
+.pros li,
+.cons li {
+  margin-bottom: 0.45rem !important;
+  font-size: 14.5px !important;
+  line-height: 1.5 !important;
+  color: #1F2937 !important;
 }
 
 /* --- FICHA TÉCNICA PADRONIZADA DE MOTOS (.ficha-tecnica) --- */
 .ficha-tecnica {
-  background: #141414;
-  border: 1.5px solid rgba(200, 16, 46, 0.35);
+  background: #FFFFFF;
+  border: 1.5px solid var(--border, #E5E7EB);
   border-radius: 8px;
   padding: 1.25rem;
   margin: 2.25rem 0;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
@@ -320,7 +761,7 @@
 }
 
 .ficha-header {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--border, #E5E7EB);
   padding-bottom: 1rem;
   margin-bottom: 1.5rem;
 }
@@ -328,7 +769,7 @@
 .ficha-badge {
   display: inline-block;
   background: var(--primary, #C8102E);
-  color: #ffffff;
+  color: #FFFFFF;
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
@@ -339,11 +780,11 @@
 }
 
 .ficha-title {
-  font-family: 'Teko', sans-serif !important;
+  font-family: var(--font-teko), 'Teko', sans-serif !important;
   font-size: 34px !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
   text-transform: uppercase !important;
-  color: #ffffff !important;
+  color: #111827 !important;
   margin: 0 !important;
   line-height: 1 !important;
   border: none !important;
@@ -358,8 +799,8 @@
 }
 
 .ficha-bloco {
-  background: #1C1C1C;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #F9FAFB;
+  border: 1px solid var(--border, #E5E7EB);
   border-radius: 6px;
   padding: 1.25rem;
   width: 100%;
@@ -370,7 +811,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  border-bottom: 1px solid rgba(200, 16, 46, 0.3);
+  border-bottom: 1.5px solid rgba(200, 16, 46, 0.3);
   padding-bottom: 0.6rem;
   margin-bottom: 1rem;
 }
@@ -380,11 +821,11 @@
 }
 
 .ficha-bloco-header h4 {
-  font-family: 'Teko', sans-serif !important;
+  font-family: var(--font-teko), 'Teko', sans-serif !important;
   font-size: 26px !important;
-  font-weight: 600 !important;
+  font-weight: 700 !important;
   text-transform: uppercase !important;
-  color: #FF334B !important;
+  color: var(--primary, #C8102E) !important;
   margin: 0 !important;
   line-height: 1 !important;
 }
@@ -401,7 +842,7 @@
   flex-direction: column;
   gap: 0.4rem;
   padding: 0.85rem 0;
-  border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+  border-bottom: 1px dashed var(--border, #E5E7EB);
   font-size: 14px !important;
   align-items: stretch;
   word-break: break-word;
@@ -411,7 +852,6 @@
   border-bottom: none;
 }
 
-/* Em telas maiores (tabela de 3 colunas: Item | Número | Tradução para o asfalto) */
 @media (min-width: 768px) {
   .ficha-lista li {
     display: grid;
@@ -421,230 +861,35 @@
   }
 }
 
-/* Coluna 1: Tipo / Item / Propriedade */
 .spec-label {
-  color: #C0C0C0;
+  color: #4B5563;
   font-weight: 600;
   font-size: 13.5px;
   line-height: 1.35;
 }
 
-/* Coluna 2: Números / Especificações da moto */
 .spec-value {
-  color: #ffffff;
+  color: #111827;
   font-weight: 700;
   font-size: 14.5px;
   line-height: 1.35;
   text-align: left;
 }
 
-/* Coluna 3: Tradução para o asfalto */
 .spec-asfalto {
-  color: #E2E2E2;
+  color: #1F2937;
   font-size: 13px;
   line-height: 1.45;
-  background: rgba(200, 16, 46, 0.08);
+  background: #FFF1F2;
   border-left: 3px solid var(--primary, #C8102E);
   padding: 0.5rem 0.85rem;
   border-radius: 0 4px 4px 0;
   display: block;
 }
 
-.spec-asfalto strong, .spec-asfalto b {
-  color: #FF334B;
+.spec-asfalto strong,
+.spec-asfalto b {
+  color: var(--primary, #C8102E);
   font-weight: 700;
   margin-right: 4px;
 }
-
-/* --- TABELAS COMPARATIVAS RESPONSIVAS E PERFEITAS (.table-wrapper, .prose table, .tabela-comparativa) --- */
-/* --- TABELAS COMPARATIVAS RESPONSIVAS E PERFEITAS (.table-wrapper, .prose table, .tabela-comparativa) --- */
-.table-wrapper {
-  width: 100%;
-  max-width: 100%;
-  overflow-x: hidden;
-  margin: 2rem 0;
-  border-radius: 8px;
-  border: 1.5px solid rgba(200, 16, 46, 0.35);
-  background: #141414;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
-  box-sizing: border-box;
-}
-
-.prose table, .tabela-comparativa {
-  width: 100%;
-  max-width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  font-size: 14.5px;
-  background: transparent;
-  margin: 0;
-  table-layout: fixed;
-}
-
-/* Quando a tabela estiver solta dentro de .prose sem o wrapper */
-.prose > table {
-  display: table;
-  width: 100%;
-  max-width: 100%;
-  margin: 2rem 0;
-  border: 1.5px solid rgba(200, 16, 46, 0.35);
-  border-radius: 8px;
-  background: #141414;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
-  table-layout: fixed;
-}
-
-.prose table th, .tabela-comparativa th {
-  background: linear-gradient(180deg, #221A1C 0%, #171213 100%);
-  color: #FF334B;
-  font-family: 'Teko', sans-serif;
-  font-size: 22px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 12px 14px;
-  text-align: left;
-  border-bottom: 2px solid var(--primary, #C8102E);
-  white-space: normal;
-  word-break: break-word;
-  overflow-wrap: anywhere;
-  line-height: 1.15;
-}
-
-.prose table td, .tabela-comparativa td {
-  padding: 12px 14px;
-  color: #E2E2E2;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-  white-space: normal;
-  word-break: break-word;
-  overflow-wrap: anywhere;
-}
-
-.prose table td strong, .tabela-comparativa td strong {
-  color: #FFFFFF;
-}
-
-.prose table tr:nth-child(even), .tabela-comparativa tr:nth-child(even) {
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.prose table tr:hover, .tabela-comparativa tr:hover {
-  background: rgba(200, 16, 46, 0.12);
-}
-
-.prose table tr:last-child td, .tabela-comparativa tr:last-child td {
-  border-bottom: none;
-}
-
-@media (max-width: 640px) {
-  .prose table, .tabela-comparativa {
-    font-size: 13px;
-  }
-  .prose table th, .tabela-comparativa th {
-    padding: 10px 10px;
-    font-size: 17px;
-  }
-  .prose table td, .tabela-comparativa td {
-    padding: 10px 10px;
-  }
-}
-
-/* --- CAIXAS DE PRÓS E CONTRAS (.box-pros-cons, .pros-contras-box) --- */
-.box-pros-cons, .pros-contras-box {
-  display: grid !important;
-  grid-template-columns: 1fr !important;
-  gap: 1.25rem !important;
-  margin: 2rem 0 !important;
-  width: 100% !important;
-  list-style: none !important;
-}
-
-@media (min-width: 640px) {
-  .box-pros-cons, .pros-contras-box {
-    grid-template-columns: 1fr 1fr !important;
-    gap: 1.25rem !important;
-  }
-}
-
-/* Remove marcadores das caixas externas de prós/contras caso estejam num contexto de lista */
-.prose ul > li:has(> .box-pros-cons),
-.prose ul > li:has(> .box-pros),
-.prose ul > li:has(> .box-cons) {
-  list-style-type: none !important;
-  padding-left: 0 !important;
-}
-
-.box-pros-cons::marker, .box-pros::marker, .box-cons::marker {
-  display: none !important;
-  content: "" !important;
-}
-
-.box-pros, .pros {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(20, 83, 45, 0.05) 100%);
-  border: 1.5px solid rgba(34, 197, 94, 0.35);
-  border-radius: 8px;
-  padding: 1.25rem 1.4rem;
-  box-shadow: 0 4px 15px rgba(34, 197, 94, 0.06);
-  height: 100%;
-  box-sizing: border-box;
-}
-
-.box-cons, .cons {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(127, 29, 29, 0.05) 100%);
-  border: 1.5px solid rgba(239, 68, 68, 0.35);
-  border-radius: 8px;
-  padding: 1.25rem 1.4rem;
-  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.06);
-  height: 100%;
-  box-sizing: border-box;
-}
-
-.box-pros h4, .pros h4 {
-  color: #4ade80 !important;
-  font-family: 'Teko', sans-serif !important;
-  font-size: 24px !important;
-  text-transform: uppercase !important;
-  margin-top: 0 !important;
-  margin-bottom: 0.6rem !important;
-  letter-spacing: 0.05em;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.box-cons h4, .cons h4 {
-  color: #f87171 !important;
-  font-family: 'Teko', sans-serif !important;
-  font-size: 24px !important;
-  text-transform: uppercase !important;
-  margin-top: 0 !important;
-  margin-bottom: 0.6rem !important;
-  letter-spacing: 0.05em;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.box-pros ul, .box-cons ul, .pros ul, .cons ul {
-  margin-bottom: 0 !important;
-  padding-left: 1.25rem !important;
-  color: #E2E2E2 !important;
-  list-style-type: disc !important;
-}
-
-.box-pros li::marker {
-  color: #4ade80 !important;
-}
-
-.box-cons li::marker {
-  color: #f87171 !important;
-}
-
-.box-pros li, .box-cons li, .pros li, .cons li {
-  margin-bottom: 0.45rem !important;
-  font-size: 14px !important;
-  line-height: 1.5 !important;
-}
-
-
-

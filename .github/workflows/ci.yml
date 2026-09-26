@@ -1,0 +1,43 @@
+name: CI - Moto na Prática
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/motonapratica?schema=public"
+      JWT_SECRET: "ci-secret-jwt-token-very-secure-32chars-min"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Type check (TypeScript)
+        run: npx tsc --noEmit
+
+      - name: Run automated tests
+        run: pnpm test
+
+      - name: Build production
+        run: pnpm build

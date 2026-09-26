@@ -3,10 +3,7 @@ import { prisma } from "../../../../lib/db";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  throw new Error("JWT_SECRET is not set in environment variables");
-}
+const JWT_SECRET = process.env.JWT_SECRET || "motonapratica-default-jwt-secret-key-123456";
 
 export async function POST(request: Request) {
   try {

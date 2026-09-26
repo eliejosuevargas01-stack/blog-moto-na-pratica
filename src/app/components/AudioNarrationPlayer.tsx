@@ -154,7 +154,7 @@ export default function AudioNarrationPlayer({ audioUrl, title, lang = "pt" }: A
             togglePlay();
           }
         }}
-        className="w-full my-6 bg-[#161616] border border-primary/30 rounded-lg p-4 md:p-5 shadow-xl relative overflow-hidden group outline-none focus:border-primary/60"
+        className="w-full my-6 bg-card border border-border rounded-lg p-4 md:p-5 shadow-xs relative overflow-hidden group outline-none focus:border-primary/60"
       >
         {/* Background Subtle Accent Glow */}
         <div className="absolute -right-10 -top-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
@@ -197,8 +197,9 @@ export default function AudioNarrationPlayer({ audioUrl, title, lang = "pt" }: A
               <button
                 type="button"
                 onClick={() => skipTime(-10)}
+                aria-label="Recuar áudio 10 segundos"
                 title="Recuar 10 segundos (Seta esquerda)"
-                className="w-9 h-9 rounded-full bg-[#222222] border border-border hover:border-primary/50 text-muted-foreground hover:text-white flex items-center justify-center transition-all"
+                className="w-9 h-9 rounded-full bg-secondary border border-border hover:border-primary/50 text-foreground hover:text-primary flex items-center justify-center transition-all cursor-pointer"
               >
                 <Rewind size={16} />
               </button>
@@ -207,7 +208,7 @@ export default function AudioNarrationPlayer({ audioUrl, title, lang = "pt" }: A
                 type="button"
                 onClick={togglePlay}
                 aria-label={isPlaying ? "Pausar áudio" : "Reproduzir áudio"}
-                className="w-12 h-12 rounded-full bg-primary hover:bg-[#E05300] text-white flex items-center justify-center transition-all transform hover:scale-105 shadow-md shadow-primary/20 shrink-0"
+                className="w-12 h-12 rounded-full bg-primary hover:bg-[#A00D24] text-white flex items-center justify-center transition-all transform hover:scale-105 shadow-md shadow-primary/20 shrink-0 cursor-pointer"
               >
                 {isPlaying ? <Pause size={22} className="fill-white" /> : <Play size={22} className="fill-white ml-0.5" />}
               </button>
@@ -215,8 +216,9 @@ export default function AudioNarrationPlayer({ audioUrl, title, lang = "pt" }: A
               <button
                 type="button"
                 onClick={() => skipTime(10)}
+                aria-label="Avançar áudio 10 segundos"
                 title="Avançar 10 segundos (Seta direita)"
-                className="w-9 h-9 rounded-full bg-[#222222] border border-border hover:border-primary/50 text-muted-foreground hover:text-white flex items-center justify-center transition-all"
+                className="w-9 h-9 rounded-full bg-secondary border border-border hover:border-primary/50 text-foreground hover:text-primary flex items-center justify-center transition-all cursor-pointer"
               >
                 <FastForward size={16} />
               </button>
@@ -234,14 +236,14 @@ export default function AudioNarrationPlayer({ audioUrl, title, lang = "pt" }: A
                   onChange={handleSeek}
                   aria-label="Arrastar posição do áudio"
                   title={`Posição atual: ${formatTime(currentTime)}`}
-                  className="w-full h-2.5 bg-[#2A2A2A] rounded-lg appearance-none cursor-pointer accent-primary focus:outline-none"
+                  className="w-full h-2.5 bg-muted rounded-lg appearance-none cursor-pointer accent-primary focus:outline-none"
                   style={{
-                    background: `linear-gradient(to right, #E05300 ${progressPercent}%, #2A2A2A ${progressPercent}%)`,
+                    background: `linear-gradient(to right, var(--primary) ${progressPercent}%, #E5E7EB ${progressPercent}%)`,
                   }}
                 />
               </div>
               <div className="flex justify-between text-[11px] font-mono text-muted-foreground">
-                <span className="text-white font-semibold">{formatTime(currentTime)}</span>
+                <span className="text-foreground font-semibold">{formatTime(currentTime)}</span>
                 <span>{formatTime(duration)}</span>
               </div>
             </div>
@@ -252,7 +254,8 @@ export default function AudioNarrationPlayer({ audioUrl, title, lang = "pt" }: A
               <button
                 type="button"
                 onClick={changePlaybackRate}
-                className="text-[11px] font-mono font-bold text-muted-foreground hover:text-white bg-[#222222] border border-border px-2 py-1 rounded transition-colors"
+                aria-label={`Alterar velocidade de reprodução, velocidade atual: ${playbackRate}x`}
+                className="text-[11px] font-mono font-bold text-muted-foreground hover:text-foreground bg-secondary border border-border px-2 py-1 rounded transition-colors cursor-pointer"
                 title="Clique para alterar velocidade (0.75x, 1x, 1.25x, 1.5x, 1.75x, 2x)"
               >
                 {playbackRate}x
@@ -260,7 +263,12 @@ export default function AudioNarrationPlayer({ audioUrl, title, lang = "pt" }: A
 
               {/* Volume Control */}
               <div className="flex items-center gap-1.5">
-                <button type="button" onClick={toggleMute} className="text-muted-foreground hover:text-white transition-colors">
+                <button
+                  type="button"
+                  onClick={toggleMute}
+                  aria-label={isMuted || volume === 0 ? "Ativar som" : "Desativar som (mudo)"}
+                  className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                >
                   {isMuted || volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />}
                 </button>
                 <input
@@ -270,7 +278,8 @@ export default function AudioNarrationPlayer({ audioUrl, title, lang = "pt" }: A
                   step={0.05}
                   value={isMuted ? 0 : volume}
                   onChange={handleVolumeChange}
-                  className="w-16 h-1.5 bg-[#2A2A2A] rounded-lg appearance-none cursor-pointer accent-primary hidden md:block"
+                  aria-label="Controle de volume da narração"
+                  className="w-16 h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-primary hidden md:block"
                 />
               </div>
             </div>
@@ -284,26 +293,28 @@ export default function AudioNarrationPlayer({ audioUrl, title, lang = "pt" }: A
           <button
             type="button"
             onClick={() => setIsCollapsed(false)}
+            aria-label="Expandir player de narração flutuante"
             title="Expandir player de narração"
-            className="fixed bottom-6 right-0 z-50 flex items-center gap-2 bg-[#141414]/95 backdrop-blur-md border-l-2 border-y border-l-primary border-primary/40 pl-3 pr-2 py-2.5 rounded-l-full shadow-2xl shadow-black/90 text-primary hover:text-white transition-all duration-300 hover:bg-primary/20 group"
+            className="fixed bottom-6 right-0 z-50 flex items-center gap-2 bg-card/95 backdrop-blur-md border-l-2 border-y border-l-primary border-border pl-3 pr-2 py-2.5 rounded-l-full shadow-lg text-primary hover:text-primary transition-all duration-300 hover:bg-muted group cursor-pointer"
           >
             <ChevronLeft size={18} className="animate-pulse group-hover:-translate-x-0.5 transition-transform" />
             <Headphones size={16} className={isPlaying ? "animate-bounce text-primary" : ""} />
             {isPlaying && (
-              <span className="text-[10px] font-mono text-white font-bold pr-1">
+              <span className="text-[10px] font-mono text-foreground font-bold pr-1">
                 {formatTime(currentTime)}
               </span>
             )}
           </button>
         ) : (
-          <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2 bg-[#141414]/95 backdrop-blur-md border border-primary/40 px-4 py-3 rounded-2xl shadow-2xl shadow-black/90 transition-all duration-300 animate-in fade-in slide-in-from-bottom-5 max-w-sm">
+          <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2 bg-card/95 backdrop-blur-md border border-border px-4 py-3 rounded-2xl shadow-xl transition-all duration-300 animate-in fade-in slide-in-from-bottom-5 max-w-sm">
             <div className="flex items-center gap-3">
               {/* Skip Back 10s */}
               <button
                 type="button"
                 onClick={() => skipTime(-10)}
+                aria-label="Recuar áudio 10 segundos"
                 title="Recuar 10s"
-                className="text-muted-foreground hover:text-white"
+                className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
               >
                 <Rewind size={15} />
               </button>
@@ -313,7 +324,7 @@ export default function AudioNarrationPlayer({ audioUrl, title, lang = "pt" }: A
                 type="button"
                 onClick={togglePlay}
                 aria-label={isPlaying ? "Pausar narração" : "Reproduzir narração"}
-                className="w-9 h-9 rounded-full bg-primary hover:bg-[#E05300] text-white flex items-center justify-center transition-all transform hover:scale-105 shadow-md shadow-primary/30 shrink-0"
+                className="w-9 h-9 rounded-full bg-primary hover:bg-[#A00D24] text-white flex items-center justify-center transition-all transform hover:scale-105 shadow-md shadow-primary/30 shrink-0 cursor-pointer"
               >
                 {isPlaying ? <Pause size={16} className="fill-white" /> : <Play size={16} className="fill-white ml-0.5" />}
               </button>
@@ -322,8 +333,9 @@ export default function AudioNarrationPlayer({ audioUrl, title, lang = "pt" }: A
               <button
                 type="button"
                 onClick={() => skipTime(10)}
+                aria-label="Avançar áudio 10 segundos"
                 title="Avançar 10s"
-                className="text-muted-foreground hover:text-white"
+                className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
               >
                 <FastForward size={15} />
               </button>
@@ -331,7 +343,7 @@ export default function AudioNarrationPlayer({ audioUrl, title, lang = "pt" }: A
               {/* Track Info */}
               <div className="flex flex-col cursor-pointer select-none flex-1 min-w-0" onClick={togglePlay}>
                 <div className="flex items-center gap-1.5 truncate">
-                  <span className="text-[11px] font-bold text-white tracking-wide uppercase truncate">
+                  <span className="text-[11px] font-bold text-foreground tracking-wide uppercase truncate">
                     {isPlaying ? "Narração" : "Pausado"}
                   </span>
                   {isPlaying && (
@@ -351,7 +363,8 @@ export default function AudioNarrationPlayer({ audioUrl, title, lang = "pt" }: A
               <button
                 type="button"
                 onClick={changePlaybackRate}
-                className="text-[10px] font-mono font-bold text-muted-foreground hover:text-white bg-[#222222] border border-border/80 px-1.5 py-0.5 rounded transition-colors"
+                aria-label={`Alterar velocidade de reprodução, velocidade atual: ${playbackRate}x`}
+                className="text-[10px] font-mono font-bold text-muted-foreground hover:text-foreground bg-secondary border border-border px-1.5 py-0.5 rounded transition-colors cursor-pointer"
               >
                 {playbackRate}x
               </button>
@@ -360,7 +373,8 @@ export default function AudioNarrationPlayer({ audioUrl, title, lang = "pt" }: A
               <button
                 type="button"
                 onClick={() => setIsCollapsed(true)}
-                className="p-1 text-muted-foreground hover:text-white hover:bg-secondary rounded-full transition-colors"
+                aria-label="Fechar player de narração flutuante"
+                className="p-1 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors cursor-pointer"
                 title="Esconder para a lateral"
               >
                 <ChevronRight size={16} />
@@ -375,9 +389,10 @@ export default function AudioNarrationPlayer({ audioUrl, title, lang = "pt" }: A
               step={0.1}
               value={currentTime}
               onChange={handleSeek}
-              className="w-full h-1.5 bg-[#2A2A2A] rounded-lg appearance-none cursor-pointer accent-primary"
+              aria-label="Arrastar posição do áudio no player flutuante"
+              className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
               style={{
-                background: `linear-gradient(to right, #E05300 ${progressPercent}%, #2A2A2A ${progressPercent}%)`,
+                background: `linear-gradient(to right, var(--primary) ${progressPercent}%, #E5E7EB ${progressPercent}%)`,
               }}
             />
           </div>

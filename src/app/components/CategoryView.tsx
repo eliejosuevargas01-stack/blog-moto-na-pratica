@@ -2,7 +2,7 @@ import { prisma } from "../../lib/db";
 import { POSTS, TAG_COLORS, TEKO, BODY, optimizeUnsplashUrl, formatPostUrl } from "../data";
 import Sidebar from "./Sidebar";
 import Link from "next/link";
-import SafeHtml from "./components/SafeHtml";
+import SafeHtml from "./SafeHtml";
 import { Clock, ArrowRight, ChevronRight, Star, Wrench, Navigation, ShieldCheck } from "lucide-react";
 import { cookies } from "next/headers";
 import { getTranslation } from "../i18n/translations";
@@ -95,7 +95,7 @@ export default async function CategoryView({ tag, title, description, heroImg, i
       </div>
 
       {/* BREADCRUMB */}
-      <div className="border-b border-border bg-[#0D0D0D]">
+      <div className="bg-card border-b border-border">
         <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-3 flex items-center gap-2 text-[12px] text-muted-foreground">
           <Link href="/" className="hover:text-primary transition-colors uppercase tracking-wide">{t.nav.home}</Link>
           <span>/</span>

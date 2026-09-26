@@ -1,6 +1,27 @@
-"use client";
+import React from "react";
+import DOMPurify from "isomorphic-dompurify";
 
-import React, { useEffect, useState } from "react";
+export const ALLOWED_SAFE_TAGS = [
+  "b", "i", "strong", "em", "span", "a", "h1", "h2", "h3", "h4", "h5", "h6",
+  "p", "div", "ul", "ol", "li", "table", "thead", "tbody", "tfoot", "tr", "th", "td",
+  "img", "figure", "figcaption", "blockquote", "code", "pre", "br", "hr",
+  "sub", "sup", "mark", "del", "ins", "small", "s", "time"
+];
+
+export const ALLOWED_SAFE_ATTR = [
+  "class", "className", "id", "href", "target", "rel", "src", "alt", "style",
+  "title", "width", "height", "loading", "colspan", "rowspan", "align"
+];
+
+export const SAFE_DOMPURIFY_CONFIG = {
+  ALLOWED_TAGS: ALLOWED_SAFE_TAGS,
+  ALLOWED_ATTR: ALLOWED_SAFE_ATTR,
+};
+
+export function sanitizeSafeHtml(html: string): string {
+  if (!html) return "";
+  return DOMPurify.sanitize(html, SAFE_DOMPURIFY_CONFIG);
+}
 
 interface SafeHtmlProps {
   html: string;
@@ -9,31 +30,12 @@ interface SafeHtmlProps {
   tag?: keyof JSX.IntrinsicElements;
 }
 
-function stripHtml(html: string) {
-  if (!html) return "";
-  return html.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "").replace(/<[^>]*>/g, "");
-}
-
 export default function SafeHtml({ html, className, style, tag = "div" }: SafeHtmlProps) {
-  const Tag = tag as any;
-  // Initial render (SSR): use a safe stripped version to avoid importing jsdom on server
-  const [sanitized, setSanitized] = useState<string>(() => stripHtml(html || ""));
+  const clean = sanitizeSafeHtml(html);
 
-  useEffect(() => {
-    let mounted = true;
-    // Dynamically import DOMPurify on the client only
-    (async () => {
-      try {
-        const DOMPurifyMod = await import("isomorphic-dompurify");
-        const DOMPurify = (DOMPurifyMod && (DOMPurifyMod.default || DOMPurifyMod)) as any;
-        const clean = DOMPurify.sanitize(html || "");
-        if (mounted) setSanitized(clean);
-      } catch (e) {
-        if (mounted) setSanitized(stripHtml(html || ""));
-      }
-    })();
-    return () => { mounted = false; };
-  }, [html]);
-
-  return <Tag className={className} style={style} dangerouslySetInnerHTML={{ __html: sanitized }} />;
+  return React.createElement(tag, {
+    className,
+    style,
+    dangerouslySetInnerHTML: { __html: clean }
+  });
 }
