@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
-import { prisma } from "../../../lib/db";
 import { cookies } from "next/headers";
+import { prisma } from "@/lib/db";
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "motonapratica-default-jwt-secret-key-123456";
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error("JWT_SECRET is not set in environment variables");
+}
 
 // GET: List comments for a post (by post ID or slug)
 export async function GET(request: Request) {
@@ -12,7 +15,7 @@ export async function GET(request: Request) {
     const postId = searchParams.get("postId");
 
     if (!postId) {
-      return NextResponse.json({ error: "O parâmetro postId é obrigatório." }, { status: 400 });
+      return NextResponse.json({ error: "O parametro postId e obrigatorio." }, { status: 400 });
     }
 
     // Buscar post pelo id ou slug
@@ -36,45 +39,46 @@ export async function GET(request: Request) {
         user: {
           select: {
             id: true,
-            name: true
+            name: true,
           }
         }
       },
-      orderBy: { createdAt: "asc" }
+      orderBy: { createdAt: "desc" }
     });
 
     return NextResponse.json({ comments });
-  } catch (error: any) {
-    console.error("Erro ao buscar comentários:", error);
-    return NextResponse.json({ error: "Erro interno do servidor ao buscar comentários." }, { status: 500 });
+  } catch (error) {
+    console.error("Erro ao buscar comentarios:", error);
+    return NextResponse.json({ error: "Erro interno ao carregar comentarios." }, { status: 500 });
   }
 }
 
-// POST: Add a comment (authenticated)
+// POST: Add a new comment
 export async function POST(request: Request) {
   try {
     const cookieStore = cookies();
     const token = cookieStore.get("auth_token")?.value;
 
     if (!token) {
-      return NextResponse.json({ error: "Você precisa estar logado para comentar." }, { status: 401 });
+      return NextResponse.json({ error: "Voce precisa estar logado para comentar." }, { status: 401 });
     }
 
-    let decoded: { userId: string; name: string; email: string };
+    let decoded: any;
     try {
       decoded = jwt.verify(token, JWT_SECRET) as any;
-    } catch (err) {
-      return NextResponse.json({ error: "Sessão expirada. Faça login novamente." }, { status: 401 });
+    } catch (e) {
+      return NextResponse.json({ error: "Sessao expirada ou invalida." }, { status: 401 });
     }
 
-    const { content, postId } = await request.json();
+    const body = await request.json();
+    const { content, postId } = body;
 
     if (!content || !content.trim()) {
-      return NextResponse.json({ error: "O comentário não pode ser vazio." }, { status: 400 });
+      return NextResponse.json({ error: "O comentario nao pode estar vazio." }, { status: 400 });
     }
 
     if (!postId) {
-      return NextResponse.json({ error: "O postId é obrigatório." }, { status: 400 });
+      return NextResponse.json({ error: "O postId e obrigatorio." }, { status: 400 });
     }
 
     // Buscar post pelo ID ou Slug
@@ -89,10 +93,9 @@ export async function POST(request: Request) {
     });
 
     if (!post) {
-      return NextResponse.json({ error: "Post não encontrado." }, { status: 404 });
+      return NextResponse.json({ error: "Post nao encontrado." }, { status: 404 });
     }
 
-    // Create comment
     const comment = await prisma.comment.create({
       data: {
         content: content.trim(),
@@ -103,15 +106,15 @@ export async function POST(request: Request) {
         user: {
           select: {
             id: true,
-            name: true
+            name: true,
           }
         }
       }
     });
 
     return NextResponse.json({ success: true, comment });
-  } catch (error: any) {
-    console.error("Erro ao salvar comentário:", error);
-    return NextResponse.json({ error: "Erro interno do servidor ao postar comentário." }, { status: 500 });
+  } catch (error) {
+    console.error("Erro ao criar comentario:", error);
+    return NextResponse.json({ error: "Erro ao publicar comentario." }, { status: 500 });
   }
 }

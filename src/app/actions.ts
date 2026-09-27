@@ -1,27 +1,32 @@
 "use server";
 
 import { prisma } from "../lib/db";
-import { signToken, checkCredentials, verifyToken } from "../lib/auth";
+import { signToken, checkCredentials, verifyAdminToken, verifyToken } from "../lib/auth";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { notifyGoogleIndexing } from "../lib/google-indexing";
 import { calculateReadTime } from "../lib/image-utils";
 import { toNumericGroupId } from "./data";
+import { N8nClient } from "../lib/n8n/client";
 
-
-async function requireAdmin(actionName: string) {
-  const token = cookies().get("admin_token")?.value || cookies().get("auth_token")?.value;
+async function requireAdmin(actionName?: string) {
+  const token = cookies().get("admin_token")?.value;
   if (!token) {
-    console.log(JSON.stringify({ timestamp: new Date().toISOString(), user_id: 'anonymous', action: actionName, status: 'unauthorized' }));
+    console.log(JSON.stringify({ timestamp: new Date().toISOString(), user_id: 'anonymous', action: actionName || 'requireAdmin', status: 'unauthorized' }));
     throw new Error("Unauthorized");
   }
-  const user = await verifyToken(token);
+  const verifyFn = verifyAdminToken || (async (tok: string) => {
+    const u = await verifyToken(tok);
+    if (u && (u.role === "admin" || u.username === (process.env.ADMIN_USERNAME || "admin"))) return u;
+    return null;
+  });
+  const user = await verifyFn(token);
   if (!user) {
-    console.log(JSON.stringify({ timestamp: new Date().toISOString(), user_id: 'anonymous', action: actionName, status: 'unauthorized' }));
+    console.log(JSON.stringify({ timestamp: new Date().toISOString(), user_id: 'anonymous', action: actionName || 'requireAdmin', status: 'unauthorized' }));
     throw new Error("Unauthorized");
   }
-  console.log(JSON.stringify({ timestamp: new Date().toISOString(), user_id: user.username, action: actionName, status: 'success' }));
+  console.log(JSON.stringify({ timestamp: new Date().toISOString(), user_id: user.username, action: actionName || 'requireAdmin', status: 'success' }));
   return user;
 }
 
@@ -41,9 +46,9 @@ export async function loginAction(prevState: any, formData: FormData) {
     return { error: "Usuário ou senha incorretos." };
   }
 
-  // Criar token de sessão e setar cookie
-  const token = await signToken(username);
-  
+  // Criar token de sessão e setar cookie administrativo
+  const token = await signToken(username, "admin");
+
   cookies().set("admin_token", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -70,9 +75,9 @@ export async function savePostAction(data: {
   category: string;
   title: string;
   excerpt: string;
-  readTime: string;
+  readTime?: string;
   img: string;
-  imgFocalPoint: string;
+  imgFocalPoint?: string;
   audioUrl?: string | null;
   audioUrlsByLang?: Record<string, string | null>;
   status?: string;
@@ -81,9 +86,10 @@ export async function savePostAction(data: {
   seoKeywords?: string;
   lang?: string;
   blocks?: any[];
+  translationGroupId?: number | string | null;
 }) {
-    await requireAdmin("savePostAction");
-try {
+  await requireAdmin("savePostAction");
+  try {
     const targetPostId = data.id ? String(data.id).trim() : undefined;
 
     // Buscar se o post já existe por ID ou por Slug
@@ -116,69 +122,29 @@ try {
           excerpt: data.excerpt,
           readTime: finalReadTime,
           img: data.img,
-          imgFocalPoint: data.imgFocalPoint,
-          audioUrl: targetAudio || null,
-          status: data.status || "publicado",
+          imgFocalPoint: data.imgFocalPoint || "50% 50%",
+          status: data.status || currentPost.status || "publicado",
           blocks: data.blocks as any,
           seoTitle: data.seoTitle || data.title,
           seoDescription: data.seoDescription || data.excerpt,
           seoKeywords: data.seoKeywords || "",
-          lang,
-          date: new Date() // Atualizar data ao editar
+          audioUrl: targetAudio,
+          lang: lang
         }
       });
 
-      // Sincronizar imagens (e áudios específicos de idioma) com todos os posts do mesmo grupo de tradução
+      // Sincronizar imagens entre versões irmãs (se houver translationGroupId)
       if (translationGroupId) {
-        const sisterPosts = await prisma.post.findMany({
+        await prisma.post.updateMany({
           where: {
             translationGroupId,
-            id: { not: targetPostId }
+            id: { not: currentPost.id }
+          },
+          data: {
+            img: data.img,
+            imgFocalPoint: data.imgFocalPoint || "50% 50%"
           }
         });
-
-        for (const sister of sisterPosts) {
-          let sisterBlocks: any[] = [];
-          if (Array.isArray(sister.blocks)) {
-            sisterBlocks = sister.blocks;
-          } else if (typeof sister.blocks === "string") {
-            try {
-              sisterBlocks = JSON.parse(sister.blocks);
-            } catch (e) {
-              sisterBlocks = [];
-            }
-          }
-
-          const updatedSisterBlocks = sisterBlocks.map((b: any, idx: number) => {
-            const sourceBlock = data.blocks[idx];
-            if (sourceBlock) {
-              return {
-                ...b,
-                image: sourceBlock.image || "",
-                focalPoint: sourceBlock.focalPoint || "center"
-              };
-            }
-            return b;
-          });
-
-          const sisterAudio = data.audioUrlsByLang && data.audioUrlsByLang[sister.lang] !== undefined
-            ? data.audioUrlsByLang[sister.lang]
-            : sister.audioUrl;
-
-          const sisterComputedReadTime = calculateReadTime({ title: sister.title, excerpt: sister.excerpt, blocks: updatedSisterBlocks });
-
-          await prisma.post.update({
-            where: { id: sister.id },
-            data: {
-              img: data.img,
-              imgFocalPoint: data.imgFocalPoint,
-              readTime: sisterComputedReadTime,
-              audioUrl: sisterAudio || null,
-              status: data.status || "publicado",
-              blocks: updatedSisterBlocks as any
-            }
-          });
-        }
       }
     } else {
       // Criação de novo post
@@ -186,6 +152,8 @@ try {
       if (existingSlug) {
         return { error: "Já existe um post com esta URL (slug). Escolha outro." };
       }
+
+      const numericGroupId = data.translationGroupId ? toNumericGroupId(data.translationGroupId) : null;
 
       await prisma.post.create({
         data: {
@@ -196,25 +164,28 @@ try {
           excerpt: data.excerpt,
           readTime: finalReadTime,
           img: data.img,
-          imgFocalPoint: data.imgFocalPoint,
+          imgFocalPoint: data.imgFocalPoint || "50% 50%",
           audioUrl: data.audioUrl || null,
           status: data.status || "publicado",
           blocks: data.blocks as any,
           seoTitle: data.seoTitle || data.title,
           seoDescription: data.seoDescription || data.excerpt,
           seoKeywords: data.seoKeywords || "",
-          lang
+          lang: lang,
+          translationGroupId: numericGroupId,
+          date: new Date()
         }
       });
     }
 
     // Revalidar caches públicos
     revalidatePath("/");
+    revalidatePath("/posts");
     revalidatePath("/reviews");
     revalidatePath("/manutencao");
     revalidatePath("/rotas");
     revalidatePath("/equipamentos");
-    revalidatePath(`/post/${data.slug}`);
+    revalidatePath(`/post/${currentPost?.slug || data.slug}`);
     revalidatePath("/sitemap.xml");
 
     // Indexação automática via Google Indexing API
@@ -228,7 +199,7 @@ try {
         activePlugins = contentObj.activePlugins || {};
       }
       if (activePlugins["googleIndexing"]) {
-        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || "https://motonapratica.online";
+        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://motonapratica.online";
         const postUrl = `${baseUrl}/post/${data.slug}`;
         notifyGoogleIndexing(postUrl).then((res) => {
           if (res.success) {
@@ -242,9 +213,9 @@ try {
       console.error("Erro ao rodar plugin de indexação do Google:", e);
     }
 
-    // Disparar Webhook do n8n (caso haja leitores inscritos e webhook ativo)
+    // Disparar Webhook do n8n
     try {
-      const savedPost = await prisma.post.findUnique({ where: { slug: data.slug } });
+      const savedPost = await prisma.post.findUnique({ where: { slug: currentPost?.slug || data.slug } });
       if (savedPost) {
         await triggerN8nWebhook(savedPost);
       }
@@ -260,8 +231,8 @@ try {
 }
 
 export async function deletePostAction(id: number | string) {
-    await requireAdmin("deletePostAction");
-try {
+  await requireAdmin("deletePostAction");
+  try {
     const targetIdStr = String(id).trim();
     const post = await prisma.post.findUnique({ where: { id: targetIdStr } });
     if (!post) {
@@ -295,11 +266,10 @@ try {
 
 // --- INTEGRAÇÃO COM N8N & NOTIFICAÇÕES ---
 
-// --- AUXILIAR DE RATE LIMIT DE WEBHOOK (1 REQUISIÇÃO POR HORA POR AÇÃO) ---
-async function checkWebhookRateLimit(actionType: string): Promise<{ allowed: boolean; remainingMinutes?: number; error?: string }> {
+async function checkWebhookRateLimit(actionType: string): Promise<{ allowed: boolean; error?: string }> {
   try {
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-    const recentNotif = await prisma.notification.findFirst({
+    const recentNotification = await prisma.notification.findFirst({
       where: {
         type: `AI_ACTION_${actionType.toUpperCase()}`,
         createdAt: { gte: oneHourAgo }
@@ -307,24 +277,23 @@ async function checkWebhookRateLimit(actionType: string): Promise<{ allowed: boo
       orderBy: { createdAt: "desc" }
     });
 
-    if (recentNotif) {
-      const elapsedMs = Date.now() - new Date(recentNotif.createdAt).getTime();
-      const remainingMinutes = Math.max(1, Math.ceil((3600000 - elapsedMs) / 60000));
+    if (recentNotification) {
+      const elapsedMinutes = Math.floor((Date.now() - new Date(recentNotification.createdAt).getTime()) / 60000);
+      const remainingMinutes = 60 - elapsedMinutes;
       return {
         allowed: false,
-        remainingMinutes,
-        error: `Limite de frequência ativado: Você só pode disparar o Webhook de IA (${actionType}) 1 vez por hora para economizar tokens. Por favor, aguarde ${remainingMinutes} minuto(s) para disparar novamente.`
+        error: `Webhook já disparado recentemente (${elapsedMinutes} min atrás). Para evitar custos e sobrecarga, aguarde ${remainingMinutes} minutos antes de disparar novamente.`
       };
     }
-  } catch (err) {
-    console.warn("Erro ao verificar limite de frequência de webhook:", err);
+  } catch (e) {
+    console.warn("Falha ao verificar rate limit do webhook:", e);
   }
   return { allowed: true };
 }
 
 export async function setPostStatusAction(idOrGroupId: string | number, status: string) {
-    await requireAdmin("setPostStatusAction");
-try {
+  await requireAdmin("setPostStatusAction");
+  try {
     const groupId = toNumericGroupId(idOrGroupId);
     const targetStr = String(idOrGroupId).trim();
 
@@ -358,8 +327,8 @@ export async function triggerImprovePostWithAIAction(data: {
   category?: string;
   force?: boolean;
 }) {
-    await requireAdmin("triggerImprovePostWithAIAction");
-try {
+  await requireAdmin("triggerImprovePostWithAIAction");
+  try {
     if (!data.force) {
       const rateCheck = await checkWebhookRateLimit("update");
       if (!rateCheck.allowed) {
@@ -367,21 +336,6 @@ try {
       }
     }
 
-    const configPage = await prisma.page.findUnique({ where: { slug: "config" } });
-    let webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || process.env.N8N_WEBHOOK_URL || "";
-    
-    if (configPage && configPage.content) {
-      const content = typeof configPage.content === "string" ? JSON.parse(configPage.content) : configPage.content;
-      if (content.n8nWebhookUrl) {
-        webhookUrl = content.n8nWebhookUrl;
-      }
-    }
-
-    if (!webhookUrl) {
-      return { error: "Webhook URL não configurado nas variáveis de ambiente (NEXT_PUBLIC_N8N_WEBHOOK_URL)." };
-    }
-
-    const apiKey = process.env.API_SECRET_KEY || process.env.NEXT_PUBLIC_API_SECRET_KEY || "motonapratica-secret-key-2026";
     const groupId = toNumericGroupId(data.translationGroupId || data.id);
 
     // ATUALIZAR STATUS NO BANCO DE DADOS PARA 'em_edicao'
@@ -396,40 +350,29 @@ try {
       data: { status: "em_edicao" }
     });
 
-    const urlObj = new URL(webhookUrl);
-    urlObj.searchParams.set("action", "update");
-    urlObj.searchParams.set("api_key", apiKey);
-
-    const payload = {
-      translationGroupId: groupId,
-      translation_group_id: groupId,
-      groupId: groupId,
-      id: data.id || groupId,
-      status: "em_edicao",
-      title: data.title,
-      titulo: data.title,
-      excerpt: data.excerpt,
-      summary: data.excerpt,
-      resumo: data.excerpt,
-      slug: data.slug || "",
-      lang: data.lang || "pt",
-      tag: data.tag || "",
-      category: data.category || "",
-    };
-
-    console.log(`[AI Webhook: Melhorar com IA] Disparando (action=update, status=em_edicao) -> ${urlObj.toString()}`);
-
-    const res = await fetch(urlObj.toString(), {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-      },
-      body: JSON.stringify(payload),
+    const result = await N8nClient.send({
+      action: "update",
+      postId: groupId,
+      data: {
+        translationGroupId: groupId,
+        translation_group_id: groupId,
+        groupId: groupId,
+        id: data.id || groupId,
+        status: "em_edicao",
+        title: data.title,
+        titulo: data.title,
+        excerpt: data.excerpt,
+        summary: data.excerpt,
+        resumo: data.excerpt,
+        slug: data.slug || "",
+        lang: data.lang || "pt",
+        tag: data.tag || "",
+        category: data.category || "",
+      }
     });
 
-    if (!res.ok) {
-      return { error: `Webhook respondeu com erro HTTP ${res.status}` };
+    if (!result.success) {
+      return { error: "Falha ao enviar requisição para o Webhook de IA." };
     }
 
     // Registrar Notificação no Banco de Dados
@@ -468,28 +411,13 @@ export async function triggerGenerateImagesAction(data: {
   seoKeywords?: string;
   blocks: Array<{ text: string; image?: string; focalPoint?: string; alt?: string }>;
 }) {
-    await requireAdmin("triggerGenerateImagesAction");
-try {
+  await requireAdmin("triggerGenerateImagesAction");
+  try {
     const rateCheck = await checkWebhookRateLimit("img");
     if (!rateCheck.allowed) {
       return { error: rateCheck.error };
     }
 
-    const configPage = await prisma.page.findUnique({ where: { slug: "config" } });
-    let webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || process.env.N8N_WEBHOOK_URL || "";
-    
-    if (configPage && configPage.content) {
-      const content = typeof configPage.content === "string" ? JSON.parse(configPage.content) : configPage.content;
-      if (content.n8nWebhookUrl) {
-        webhookUrl = content.n8nWebhookUrl;
-      }
-    }
-
-    if (!webhookUrl) {
-      return { error: "Webhook URL não configurado nas variáveis de ambiente (NEXT_PUBLIC_N8N_WEBHOOK_URL)." };
-    }
-
-    const apiKey = process.env.API_SECRET_KEY || process.env.NEXT_PUBLIC_API_SECRET_KEY || "motonapratica-secret-key-2026";
     const groupId = toNumericGroupId(data.translationGroupId || data.id);
 
     const stripHtmlTags = (html: string): string => {
@@ -505,10 +433,6 @@ try {
         .replace(/\s+/g, " ")
         .trim();
     };
-
-    const urlObj = new URL(webhookUrl);
-    urlObj.searchParams.set("action", "img");
-    urlObj.searchParams.set("api_key", apiKey);
 
     const parsedBlocks = (data.blocks || []).map((b, idx) => ({
       index: idx + 1,
@@ -539,35 +463,28 @@ try {
       formattedLangObject[`img-${imgNum}`] = b.image || `AGUARDANDO_GERACAO_B${blockNum}`;
     });
 
-    const payload = {
-      payload_para_api: {
-        output: {
-          [langKey]: formattedLangObject,
-          pt: formattedLangObject
-        }
-      },
-      translationGroupId: groupId,
-      translation_group_id: groupId,
-      id: groupId,
-      title: data.title || "",
-      summary: data.excerpt || "",
-      excerpt: data.excerpt || "",
-      blocks: parsedBlocks
-    };
-
-    console.log(`[AI Webhook: Gerar Imagens] Disparando (action=img) -> ${urlObj.toString()}`);
-
-    const res = await fetch(urlObj.toString(), {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-      },
-      body: JSON.stringify(payload),
+    const result = await N8nClient.send({
+      action: "img",
+      postId: groupId,
+      data: {
+        payload_para_api: {
+          output: {
+            [langKey]: formattedLangObject,
+            pt: formattedLangObject
+          }
+        },
+        translationGroupId: groupId,
+        translation_group_id: groupId,
+        id: groupId,
+        title: data.title || "",
+        summary: data.excerpt || "",
+        excerpt: data.excerpt || "",
+        blocks: parsedBlocks
+      }
     });
 
-    if (!res.ok) {
-      return { error: `Webhook respondeu com erro HTTP ${res.status}` };
+    if (!result.success) {
+      return { error: "Falha ao enviar requisição para o Webhook de Imagens." };
     }
 
     // Registrar Notificação no Banco de Dados
@@ -604,34 +521,15 @@ export async function triggerCreateAudioAction(data: {
   seoKeywords?: string;
   blocks: Array<{ text: string; image?: string; focalPoint?: string; alt?: string }>;
 }) {
-    await requireAdmin("triggerCreateAudioAction");
-try {
+  await requireAdmin("triggerCreateAudioAction");
+  try {
     const rateCheck = await checkWebhookRateLimit("audio");
     if (!rateCheck.allowed) {
       return { error: rateCheck.error };
     }
 
-    const configPage = await prisma.page.findUnique({ where: { slug: "config" } });
-    let webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || process.env.N8N_WEBHOOK_URL || "";
-    
-    if (configPage && configPage.content) {
-      const content = typeof configPage.content === "string" ? JSON.parse(configPage.content) : configPage.content;
-      if (content.n8nWebhookUrl) {
-        webhookUrl = content.n8nWebhookUrl;
-      }
-    }
-
-    if (!webhookUrl) {
-      return { error: "Webhook URL não configurado nas variáveis de ambiente (NEXT_PUBLIC_N8N_WEBHOOK_URL)." };
-    }
-
-    const apiKey = process.env.API_SECRET_KEY || process.env.NEXT_PUBLIC_API_SECRET_KEY || "motonapratica-secret-key-2026";
     const groupId = toNumericGroupId(data.translationGroupId || data.id);
     const langKey = (data.lang || "pt").toLowerCase();
-
-    const urlObj = new URL(webhookUrl);
-    urlObj.searchParams.set("action", "audio");
-    urlObj.searchParams.set("api_key", apiKey);
 
     const formattedLangObject: Record<string, any> = {
       id: groupId,
@@ -640,7 +538,7 @@ try {
       "meta-title": data.seoTitle || data.title || "",
       "meta-description": data.seoDescription || data.excerpt || "",
       "meta-tags": data.seoKeywords || "",
-      "img-1": data.img || "AGUARDANDO_GERACAO_CAPA",
+      "img-1": data.img || "AGUARDANDO_GERACAO_CAPA"
     };
 
     (data.blocks || []).forEach((b, idx) => {
@@ -650,42 +548,28 @@ try {
       formattedLangObject[`img-${imgNum}`] = b.image || `AGUARDANDO_GERACAO_B${blockNum}`;
     });
 
-    const blocosOriginais = (data.blocks || []).map((b) => ({
-      html_do_bloco: b.text || ""
-    }));
-
-    const payload = [
-      {
+    const result = await N8nClient.send({
+      action: "audio",
+      postId: groupId,
+      data: {
         payload_para_api: {
           output: {
             [langKey]: formattedLangObject,
             pt: formattedLangObject
           }
         },
-        dados_de_auditoria: {
-          gancho_escolhido: data.excerpt || data.title,
-          motivo_gancho: data.excerpt || data.title,
-          analise_fatos: data.excerpt || data.title,
-          decisao_seo_e_blocos: data.excerpt || data.title,
-          total_de_blocos_gerados: (data.blocks || []).length
-        },
-        blocos_originais: blocosOriginais
+        translationGroupId: groupId,
+        translation_group_id: groupId,
+        id: groupId,
+        title: data.title || "",
+        summary: data.excerpt || "",
+        excerpt: data.excerpt || "",
+        blocks: data.blocks
       }
-    ];
-
-    console.log(`[AI Webhook: Criar Narração] Disparando (action=audio) -> ${urlObj.toString()}`);
-
-    const res = await fetch(urlObj.toString(), {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-      },
-      body: JSON.stringify(payload),
     });
 
-    if (!res.ok) {
-      return { error: `Webhook respondeu com erro HTTP ${res.status}` };
+    if (!result.success) {
+      return { error: "Falha ao enviar requisição para o Webhook de Narração de Áudio." };
     }
 
     // Registrar Notificação no Banco de Dados
@@ -708,48 +592,43 @@ try {
 export async function triggerImprovePostAction(data: {
   id: number | string;
   title: string;
-  slug: string;
+  slug?: string;
   category?: string;
   excerpt?: string;
   content?: string;
   lang?: string;
 }) {
-    await requireAdmin("triggerImprovePostAction");
-try {
-    const webhookUrl = process.env.N8N_WEBHOOK_URL || process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || "";
-
+  await requireAdmin("triggerImprovePostAction");
+  try {
     const targetStr = String(data.id).trim();
     await prisma.post.updateMany({
       where: {
         OR: [
           { id: targetStr },
-          { slug: data.slug }
+          ...(data.slug ? [{ slug: data.slug }] : [])
         ]
       },
       data: { status: "em_edicao" }
     });
 
-    console.log(`[Server Action] Disparando webhook de IA Redatora (status=em_edicao) para "${data.title}" -> ${webhookUrl}`);
-
-    const res = await fetch(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "improve_post",
+    const result = await N8nClient.send({
+      action: "improve_post",
+      postId: targetStr,
+      data: {
         id: data.id,
         post_id: data.id,
         status: "em_edicao",
         title: data.title,
-        slug: data.slug,
+        slug: data.slug || "",
         category: data.category || "",
         excerpt: data.excerpt || "",
         content: data.content || "",
         lang: data.lang || "pt",
-      }),
+      }
     });
 
-    if (!res.ok) {
-      return { error: `Webhook respondeu com status HTTP ${res.status}` };
+    if (!result.success) {
+      return { error: "Falha ao enviar requisição para o n8n." };
     }
 
     revalidatePath("/admin");
@@ -762,24 +641,12 @@ try {
 
 export async function triggerN8nWebhook(post: any) {
   try {
-    const configPage = await prisma.page.findUnique({ where: { slug: "config" } });
-    let webhookUrl = process.env.N8N_WEBHOOK_URL || process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || "";
-    
-    if (configPage && configPage.content) {
-      const content = typeof configPage.content === "string" ? JSON.parse(configPage.content) : configPage.content;
-      if (content.n8nWebhookUrl) {
-        webhookUrl = content.n8nWebhookUrl;
-      }
-    }
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://motonapratica.online";
 
-    if (!webhookUrl) return;
-
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://motonapratica.online";
-    
-    await fetch(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    await N8nClient.send({
+      action: "new_post_published",
+      postId: post.id,
+      data: {
         event: "new_post_published",
         post: {
           id: post.id,
@@ -792,7 +659,7 @@ export async function triggerN8nWebhook(post: any) {
           url: `${baseUrl}/post/${post.slug}`,
           createdAt: post.createdAt || post.date,
         },
-      }),
+      }
     });
   } catch (e) {
     console.warn("Erro no disparo do webhook para n8n:", e);
@@ -800,8 +667,8 @@ export async function triggerN8nWebhook(post: any) {
 }
 
 export async function getNotificationsAction() {
-    await requireAdmin("getNotificationsAction");
-try {
+  await requireAdmin("getNotificationsAction");
+  try {
     const notifications = await prisma.notification.findMany({
       orderBy: { createdAt: "desc" },
       take: 50,
@@ -813,8 +680,8 @@ try {
 }
 
 export async function getSubscribersAction() {
-    await requireAdmin("getSubscribersAction");
-try {
+  await requireAdmin("getSubscribersAction");
+  try {
     const subscribers = await prisma.subscriber.findMany({
       orderBy: { createdAt: "desc" },
     });
@@ -825,8 +692,8 @@ try {
 }
 
 export async function markNotificationAsReadAction(id: string) {
-    await requireAdmin("markNotificationAsReadAction");
-try {
+  await requireAdmin("markNotificationAsReadAction");
+  try {
     await prisma.notification.update({
       where: { id },
       data: { read: true },
@@ -838,8 +705,8 @@ try {
 }
 
 export async function markAllNotificationsAsReadAction() {
-    await requireAdmin("markAllNotificationsAsReadAction");
-try {
+  await requireAdmin("markAllNotificationsAsReadAction");
+  try {
     await prisma.notification.updateMany({
       where: { read: false },
       data: { read: true },
@@ -856,13 +723,13 @@ export async function savePageAction(data: {
   id?: string;
   slug: string;
   title: string;
-  isStatic: boolean;
+  isStatic?: boolean;
   content: any;
   seoTitle?: string;
   seoDescription?: string;
 }) {
-    await requireAdmin("savePageAction");
-try {
+  await requireAdmin("savePageAction");
+  try {
     // Validar slug
     const existing = await prisma.page.findFirst({
       where: {
@@ -883,7 +750,7 @@ try {
         data: {
           slug: data.slug,
           title: data.title,
-          isStatic: data.isStatic,
+          isStatic: data.isStatic || false,
           content: data.content,
           seoTitle: data.seoTitle,
           seoDescription: data.seoDescription
@@ -894,7 +761,7 @@ try {
         data: {
           slug: data.slug,
           title: data.title,
-          isStatic: data.isStatic,
+          isStatic: data.isStatic || false,
           content: data.content,
           seoTitle: data.seoTitle,
           seoDescription: data.seoDescription
@@ -902,7 +769,6 @@ try {
       });
     }
 
-    // Revalidar rotas
     revalidatePath("/");
     revalidatePath("/sobre");
     revalidatePath(`/${data.slug}`);
@@ -916,13 +782,13 @@ try {
 }
 
 export async function deletePageAction(id: string) {
-    await requireAdmin("deletePageAction");
-try {
+  await requireAdmin("deletePageAction");
+  try {
     const page = await prisma.page.findUnique({ where: { id } });
     if (page?.isStatic) {
       return { error: "Páginas fixas do sistema (Home e Sobre) não podem ser deletadas." };
     }
-    
+
     await prisma.page.delete({ where: { id } });
 
     revalidatePath("/sitemap.xml");
