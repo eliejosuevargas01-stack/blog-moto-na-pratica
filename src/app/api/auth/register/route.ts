@@ -2,12 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  throw new Error("JWT_SECRET is not set in environment variables");
-}
+import { signUserToken } from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
@@ -16,7 +11,7 @@ export async function POST(request: Request) {
 
     if (!name || !email || !password) {
       return NextResponse.json(
-        { error: "Todos os campos sao obrigatorios." },
+        { error: "Todos os campos são obrigatórios." },
         { status: 400 }
       );
     }
@@ -24,14 +19,14 @@ export async function POST(request: Request) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return NextResponse.json(
-        { error: "Formato de email invalido." },
+        { error: "Formato de email inválido." },
         { status: 400 }
       );
     }
 
     if (password.length < 6) {
       return NextResponse.json(
-        { error: "A senha deve ter no minimo 6 caracteres." },
+        { error: "A senha deve ter no mínimo 6 caracteres." },
         { status: 400 }
       );
     }
@@ -42,7 +37,7 @@ export async function POST(request: Request) {
 
     if (existingUser) {
       return NextResponse.json(
-        { error: "Ja existe uma conta com este email." },
+        { error: "Já existe uma conta com este email." },
         { status: 400 }
       );
     }
@@ -53,15 +48,15 @@ export async function POST(request: Request) {
       data: {
         name: name.trim(),
         email: email.toLowerCase().trim(),
-        password: hashedPassword
+        passwordHash: hashedPassword
       }
     });
 
-    const token = jwt.sign(
-      { userId: user.id, name: user.name, email: user.email },
-      JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+    const token = await signUserToken({
+      userId: user.id,
+      name: user.name,
+      email: user.email
+    });
 
     const cookieStore = cookies();
     cookieStore.set("auth_token", token, {

@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "../lib/db";
-import { signToken, checkCredentials, verifyAdminToken, verifyToken } from "../lib/auth";
+import { signAdminToken, checkCredentials, verifyAdminToken, verifyToken } from "../lib/auth";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -22,7 +22,7 @@ async function requireAdmin(actionName?: string) {
     return null;
   });
   const user = await verifyFn(token);
-  if (!user) {
+  if (!user || user.role !== "admin") {
     console.log(JSON.stringify({ timestamp: new Date().toISOString(), user_id: 'anonymous', action: actionName || 'requireAdmin', status: 'unauthorized' }));
     throw new Error("Unauthorized");
   }
@@ -30,7 +30,7 @@ async function requireAdmin(actionName?: string) {
   return user;
 }
 
-// --- AUTENTICAÇÃO ---
+// --- AUTENTICAÇÃO ADMINISTRATIVA ---
 
 export async function loginAction(prevState: any, formData: FormData) {
   const username = formData.get("username") as string;
@@ -46,8 +46,8 @@ export async function loginAction(prevState: any, formData: FormData) {
     return { error: "Usuário ou senha incorretos." };
   }
 
-  // Criar token de sessão e setar cookie administrativo
-  const token = await signToken(username, "admin");
+  // Criar token exclusivo de administrador
+  const token = await signAdminToken(username);
 
   cookies().set("admin_token", token, {
     httpOnly: true,
@@ -62,6 +62,7 @@ export async function loginAction(prevState: any, formData: FormData) {
 }
 
 export async function logoutAction() {
+  await requireAdmin("logoutAction").catch(() => null);
   cookies().delete("admin_token");
   redirect("/admin/login");
 }
@@ -133,18 +134,57 @@ export async function savePostAction(data: {
         }
       });
 
-      // Sincronizar imagens entre versões irmãs (se houver translationGroupId)
+      // Sincronizar imagens (e áudios específicos de idioma) com todos os posts do mesmo grupo de tradução
       if (translationGroupId) {
-        await prisma.post.updateMany({
+        const sisterPosts = await prisma.post.findMany({
           where: {
             translationGroupId,
             id: { not: currentPost.id }
-          },
-          data: {
-            img: data.img,
-            imgFocalPoint: data.imgFocalPoint || "50% 50%"
           }
         });
+
+        for (const sister of sisterPosts) {
+          let sisterBlocks: any[] = [];
+          if (Array.isArray(sister.blocks)) {
+            sisterBlocks = sister.blocks;
+          } else if (typeof sister.blocks === "string") {
+            try {
+              sisterBlocks = JSON.parse(sister.blocks);
+            } catch (e) {
+              sisterBlocks = [];
+            }
+          }
+
+          const updatedSisterBlocks = sisterBlocks.map((b: any, idx: number) => {
+            const sourceBlock = data.blocks?.[idx];
+            if (sourceBlock) {
+              return {
+                ...b,
+                image: sourceBlock.image || "",
+                focalPoint: sourceBlock.focalPoint || "center"
+              };
+            }
+            return b;
+          });
+
+          const sisterAudio = data.audioUrlsByLang && data.audioUrlsByLang[sister.lang] !== undefined
+            ? data.audioUrlsByLang[sister.lang]
+            : sister.audioUrl;
+
+          const sisterComputedReadTime = calculateReadTime({ title: sister.title, excerpt: sister.excerpt, blocks: updatedSisterBlocks });
+
+          await prisma.post.update({
+            where: { id: sister.id },
+            data: {
+              img: data.img,
+              imgFocalPoint: data.imgFocalPoint || "50% 50%",
+              readTime: sisterComputedReadTime,
+              audioUrl: sisterAudio || null,
+              status: data.status || sister.status || "publicado",
+              blocks: updatedSisterBlocks as any
+            }
+          });
+        }
       }
     } else {
       // Criação de novo post
@@ -350,26 +390,25 @@ export async function triggerImprovePostWithAIAction(data: {
       data: { status: "em_edicao" }
     });
 
-    const result = await N8nClient.send({
-      action: "update",
-      postId: groupId,
-      data: {
-        translationGroupId: groupId,
-        translation_group_id: groupId,
-        groupId: groupId,
-        id: data.id || groupId,
-        status: "em_edicao",
-        title: data.title,
-        titulo: data.title,
-        excerpt: data.excerpt,
-        summary: data.excerpt,
-        resumo: data.excerpt,
-        slug: data.slug || "",
-        lang: data.lang || "pt",
-        tag: data.tag || "",
-        category: data.category || "",
-      }
-    });
+    const payload = {
+      translationGroupId: groupId,
+      translation_group_id: groupId,
+      groupId: groupId,
+      id: data.id || groupId,
+      status: "em_edicao",
+      title: data.title,
+      titulo: data.title,
+      excerpt: data.excerpt,
+      summary: data.excerpt,
+      resumo: data.excerpt,
+      slug: data.slug || "",
+      lang: data.lang || "pt",
+      tag: data.tag || "",
+      category: data.category || "",
+      action: "update"
+    };
+
+    const result = await N8nClient.send(payload);
 
     if (!result.success) {
       return { error: "Falha ao enviar requisição para o Webhook de IA." };
@@ -463,25 +502,24 @@ export async function triggerGenerateImagesAction(data: {
       formattedLangObject[`img-${imgNum}`] = b.image || `AGUARDANDO_GERACAO_B${blockNum}`;
     });
 
-    const result = await N8nClient.send({
-      action: "img",
-      postId: groupId,
-      data: {
-        payload_para_api: {
-          output: {
-            [langKey]: formattedLangObject,
-            pt: formattedLangObject
-          }
-        },
-        translationGroupId: groupId,
-        translation_group_id: groupId,
-        id: groupId,
-        title: data.title || "",
-        summary: data.excerpt || "",
-        excerpt: data.excerpt || "",
-        blocks: parsedBlocks
-      }
-    });
+    const payload = {
+      payload_para_api: {
+        output: {
+          [langKey]: formattedLangObject,
+          pt: formattedLangObject
+        }
+      },
+      translationGroupId: groupId,
+      translation_group_id: groupId,
+      id: groupId,
+      title: data.title || "",
+      summary: data.excerpt || "",
+      excerpt: data.excerpt || "",
+      blocks: parsedBlocks,
+      action: "img"
+    };
+
+    const result = await N8nClient.send(payload);
 
     if (!result.success) {
       return { error: "Falha ao enviar requisição para o Webhook de Imagens." };
@@ -548,25 +586,38 @@ export async function triggerCreateAudioAction(data: {
       formattedLangObject[`img-${imgNum}`] = b.image || `AGUARDANDO_GERACAO_B${blockNum}`;
     });
 
-    const result = await N8nClient.send({
-      action: "audio",
-      postId: groupId,
-      data: {
+    const blocosOriginais = (data.blocks || []).map((b) => ({
+      html_do_bloco: b.text || ""
+    }));
+
+    const payload = [
+      {
         payload_para_api: {
           output: {
             [langKey]: formattedLangObject,
             pt: formattedLangObject
           }
         },
+        dados_de_auditoria: {
+          gancho_escolhido: data.excerpt || data.title,
+          motivo_gancho: data.excerpt || data.title,
+          analise_fatos: data.excerpt || data.title,
+          decisao_seo_e_blocos: data.excerpt || data.title,
+          total_de_blocos_gerados: (data.blocks || []).length
+        },
+        blocos_originais: blocosOriginais,
         translationGroupId: groupId,
         translation_group_id: groupId,
         id: groupId,
         title: data.title || "",
         summary: data.excerpt || "",
         excerpt: data.excerpt || "",
-        blocks: data.blocks
+        blocks: data.blocks,
+        action: "audio"
       }
-    });
+    ];
+
+    const result = await N8nClient.send(payload);
 
     if (!result.success) {
       return { error: "Falha ao enviar requisição para o Webhook de Narração de Áudio." };
@@ -611,21 +662,20 @@ export async function triggerImprovePostAction(data: {
       data: { status: "em_edicao" }
     });
 
-    const result = await N8nClient.send({
+    const payload = {
       action: "improve_post",
-      postId: targetStr,
-      data: {
-        id: data.id,
-        post_id: data.id,
-        status: "em_edicao",
-        title: data.title,
-        slug: data.slug || "",
-        category: data.category || "",
-        excerpt: data.excerpt || "",
-        content: data.content || "",
-        lang: data.lang || "pt",
-      }
-    });
+      id: data.id,
+      post_id: data.id,
+      status: "em_edicao",
+      title: data.title,
+      slug: data.slug || "",
+      category: data.category || "",
+      excerpt: data.excerpt || "",
+      content: data.content || "",
+      lang: data.lang || "pt",
+    };
+
+    const result = await N8nClient.send(payload);
 
     if (!result.success) {
       return { error: "Falha ao enviar requisição para o n8n." };
@@ -640,26 +690,24 @@ export async function triggerImprovePostAction(data: {
 }
 
 export async function triggerN8nWebhook(post: any) {
+  await requireAdmin("triggerN8nWebhook");
   try {
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://motonapratica.online";
 
     await N8nClient.send({
       action: "new_post_published",
-      postId: post.id,
-      data: {
-        event: "new_post_published",
-        post: {
-          id: post.id,
-          title: post.title,
-          excerpt: post.excerpt,
-          slug: post.slug,
-          tag: post.tag,
-          category: post.category,
-          img: post.img,
-          url: `${baseUrl}/post/${post.slug}`,
-          createdAt: post.createdAt || post.date,
-        },
-      }
+      event: "new_post_published",
+      post: {
+        id: post.id,
+        title: post.title,
+        excerpt: post.excerpt,
+        slug: post.slug,
+        tag: post.tag,
+        category: post.category,
+        img: post.img,
+        url: `${baseUrl}/post/${post.slug}`,
+        createdAt: post.createdAt || post.date,
+      },
     });
   } catch (e) {
     console.warn("Erro no disparo do webhook para n8n:", e);

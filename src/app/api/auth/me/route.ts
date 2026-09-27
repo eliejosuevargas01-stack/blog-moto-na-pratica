@@ -1,12 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
-import jwt from "jsonwebtoken";
-
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  throw new Error("JWT_SECRET is not set in environment variables");
-}
+import { verifyUserToken } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +15,11 @@ export async function GET() {
     }
 
     try {
-      const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; name: string; email: string };
+      const decoded = await verifyUserToken(token);
+      if (!decoded) {
+        return NextResponse.json({ user: null });
+      }
+
       const user = await prisma.user.findUnique({
         where: { id: decoded.userId },
         select: { id: true, name: true, email: true }
@@ -31,7 +30,7 @@ export async function GET() {
       return NextResponse.json({ user: null });
     }
   } catch (error) {
-    console.error("Erro ao checar sessao:", error);
+    console.error("Erro ao checar sessão:", error);
     return NextResponse.json({ user: null }, { status: 500 });
   }
 }

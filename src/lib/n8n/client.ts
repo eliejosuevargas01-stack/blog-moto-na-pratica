@@ -1,11 +1,5 @@
 import "server-only";
 
-export interface N8nPayload {
-  action: "update" | "img" | "audio" | "improve_post" | "new_post_published";
-  postId?: string | number;
-  data?: Record<string, unknown>;
-}
-
 export class N8nClient {
   private static getWebhookUrl(): string {
     const url = process.env.N8N_WEBHOOK_URL;
@@ -33,7 +27,11 @@ export class N8nClient {
     return key;
   }
 
-  static async send(payload: N8nPayload, timeoutMs = 10000): Promise<{ success: boolean; data?: unknown }> {
+  /**
+   * Envia o payload exato para o Webhook do n8n via POST HTTPS com autenticação exclusivamente por headers.
+   * Não altera o formato nem envelopa os dados (suporta objetos e arrays no root).
+   */
+  static async send(payload: unknown, timeoutMs = 10000): Promise<{ success: boolean; data?: unknown }> {
     let controller: AbortController | null = null;
     let timer: NodeJS.Timeout | null = null;
 
@@ -51,17 +49,14 @@ export class N8nClient {
           "x-api-key": apiKey,
           "Authorization": `Bearer ${apiKey}`,
         },
-        body: JSON.stringify({
-          ...payload,
-          timestamp: new Date().toISOString(),
-        }),
+        body: JSON.stringify(payload),
         signal: controller.signal,
       });
 
       if (timer) clearTimeout(timer);
 
       if (!response.ok) {
-        console.error(`[n8n-client] Request failed. Action: ${payload.action}, HTTP Status: ${response.status}`);
+        console.error(`[n8n-client] Request failed with HTTP Status: ${response.status}`);
         return { success: false };
       }
 
@@ -70,7 +65,7 @@ export class N8nClient {
     } catch (error: unknown) {
       if (timer) clearTimeout(timer);
       const isAbort = error instanceof Error && error.name === "AbortError";
-      console.error(`[n8n-client] Error executing action "${payload.action}": ${isAbort ? "Timeout" : (error instanceof Error ? error.message : "Network error")}`);
+      console.error(`[n8n-client] Error executing webhook: ${isAbort ? "Timeout" : (error instanceof Error ? error.message : "Network error")}`);
       return { success: false };
     }
   }

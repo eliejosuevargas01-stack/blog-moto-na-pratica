@@ -1,12 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
-import jwt from "jsonwebtoken";
-
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  throw new Error("JWT_SECRET is not set in environment variables");
-}
+import { verifyUserToken } from "@/lib/auth";
 
 export async function DELETE(
   request: Request,
@@ -18,14 +13,12 @@ export async function DELETE(
     const token = cookieStore.get("auth_token")?.value;
 
     if (!token) {
-      return NextResponse.json({ error: "Nao autorizado." }, { status: 401 });
+      return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
     }
 
-    let decoded: any;
-    try {
-      decoded = jwt.verify(token, JWT_SECRET) as any;
-    } catch (e) {
-      return NextResponse.json({ error: "Sessao invalida." }, { status: 401 });
+    const decoded = await verifyUserToken(token);
+    if (!decoded) {
+      return NextResponse.json({ error: "Sessão inválida." }, { status: 401 });
     }
 
     const comment = await prisma.comment.findUnique({
@@ -33,11 +26,11 @@ export async function DELETE(
     });
 
     if (!comment) {
-      return NextResponse.json({ error: "Comentario nao encontrado." }, { status: 404 });
+      return NextResponse.json({ error: "Comentário não encontrado." }, { status: 404 });
     }
 
     if (comment.userId !== decoded.userId) {
-      return NextResponse.json({ error: "Permissao negada." }, { status: 403 });
+      return NextResponse.json({ error: "Permissão negada." }, { status: 403 });
     }
 
     await prisma.comment.delete({
@@ -46,7 +39,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Erro ao deletar comentario:", error);
-    return NextResponse.json({ error: "Erro ao deletar comentario." }, { status: 500 });
+    console.error("Erro ao deletar comentário:", error);
+    return NextResponse.json({ error: "Erro ao deletar comentário." }, { status: 500 });
   }
 }

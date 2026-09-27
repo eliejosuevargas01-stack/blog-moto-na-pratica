@@ -3,6 +3,7 @@ import { prisma } from "../../../lib/db";
 import { revalidatePath } from "next/cache";
 import { processImageBase64, saveAudioBuffer, calculateReadTime } from "@/lib/image-utils";
 import { toNumericGroupId } from "../../data";
+import { verifyM2MAuth } from "@/lib/m2m";
 
 function generateSlug(title: string): string {
   if (!title) return "";
@@ -31,7 +32,7 @@ async function generateUniqueSlug(title: string, existingId?: number | string, l
     return slug;
   }
 
-  // Se colidir com outro post (ex: versão PT), usar sufixo semântico de idioma (-en, -es) em vez de número (-2)
+  // Se colidir com outro post (ex: versão PT), usar sufixo semântico de idioma (-en, -es)
   if (lang && lang !== "pt") {
     const langSlug = `${baseSlug}-${lang.toLowerCase()}`;
     const existingLang = await prisma.post.findUnique({
@@ -82,23 +83,17 @@ async function extractImageUrl(imgField: any): Promise<string> {
     url = String(imgField.url).trim();
   }
   if (!url) return "";
-
   if (url.includes("/uploads/")) {
     const filename = url.split("/uploads/").pop()?.split("?")[0];
     if (filename) return `/uploads/${filename}`;
   }
-
-  // Se a string não começar com protocolo http://, https:// ou caminho /uploads/, é uma string Base64!
-  if (!url.startsWith("http://") && !url.startsWith("https://") && !url.startsWith("/uploads/")) {
+  if (url.startsWith("data:image/") || (!url.startsWith("http") && url.length > 200)) {
     try {
-      const savedUrl = await processImageBase64(url);
-      return savedUrl;
-    } catch (e) {
-      console.error("Erro ao converter Base64 em extractImageUrl:", e);
+      return await processImageBase64(url);
+    } catch {
       return "";
     }
   }
-
   return url;
 }
 
@@ -113,7 +108,6 @@ function normalizePostTag(rawTag?: string, title?: string): string {
   if (lowerTag.includes("event") || lowerTag.includes("encontro") || lowerTag.includes("salão")) return "Eventos";
   if (lowerTag.includes("motogp") || lowerTag.includes("márquez") || lowerTag.includes("marquez") || lowerTag.includes("ducati") || lowerTag.includes("paddock") || lowerTag.includes("corrida")) return "MotoGP";
 
-  // Inferência automática pelo título se tag não foi informada ou for genérica
   if (lowerTitle.includes("review") || lowerTitle.includes("avaliação") || lowerTitle.includes("análise") || lowerTitle.includes("custos") || lowerTitle.includes("twister") || lowerTitle.includes("mt-") || lowerTitle.includes("fz25") || lowerTitle.includes("cb 300") || lowerTitle.includes("morreram") || lowerTitle.includes("died")) return "Reviews";
   if (lowerTitle.includes("manutenção") || lowerTitle.includes("óleo") || lowerTitle.includes("corrente") || lowerTitle.includes("freio") || lowerTitle.includes("pneu") || lowerTitle.includes("oficina")) return "Manutenção";
   if (lowerTitle.includes("rota") || lowerTitle.includes("viagem") || lowerTitle.includes("serra") || lowerTitle.includes("estrada") || lowerTitle.includes("roteiro")) return "Rotas";
@@ -129,11 +123,9 @@ function extractMentionedSlugsFromHtml(html: string, selfSlug?: string): string[
   const slugs: string[] = [];
   let match;
   while ((match = regex.exec(html)) !== null) {
-    if (match[1]) {
-      const clean = match[1].trim();
-      if (clean && clean !== selfSlug) {
-        slugs.push(clean);
-      }
+    const slug = match[1]?.trim();
+    if (slug && slug !== selfSlug) {
+      slugs.push(slug);
     }
   }
   return Array.from(new Set(slugs));
@@ -275,7 +267,7 @@ function cleanBlockHtml(html: string): string {
     .replace(/<p>\s*(?:Image|Imagem)\s*URL\s*:?\s*https?:\/\/[^\s<]+\s*<\/p>/gi, "")
     .replace(/(?:Image|Imagem)\s*URL\s*:?\s*https?:\/\/[^\s<]+/gi, "")
     .replace(/\{[^}]*\}=\d+\{[^}]*\}/gi, "")
-    .replace(/href=(["'])\/?pt\/posts?\//gi, 'href=$1/post/')
+    .replace(/href=(["'])\/?pt\/posts\//gi, 'href=$1/post/')
     .replace(/href=(["'])\/?posts\//gi, 'href=$1/post/')
     .replace(/href=(["'])\/?en\/posts\//gi, 'href=$1/en/post/')
     .replace(/href=(["'])\/?es\/posts\//gi, 'href=$1/es/post/')
@@ -291,28 +283,34 @@ function cleanBlockHtml(html: string): string {
 async function processImagePlaceholdersInHtml(htmlText: string, langData: any): Promise<string> {
   if (!htmlText) return "";
 
-  const matches = Array.from(htmlText.matchAll(/[\{\[]\s*(?:id|img|image)\s*=\s*(\d+)\s*[\}\]]/gi));
-  let processed = htmlText;
+  const regex = /\{[^}]*?order=(\d+)[^}]*?\}|\[[^\]]*?order=(\d+)[^\]]*?\]|\[(?:Image|Imagem|img|Img|IMG)\s*(\d+)\]|\{(?:Image|Imagem|img|Img|IMG)\s*(\d+)\}|\{id=(\d+)\}|\[id=(\d+)\]|\{img=(\d+)\}|\[img=(\d+)\]|\{([a-zA-Z0-9_-]+)=(\d+)\{([^}]*)\}\}/gi;
+
+  let result = htmlText;
+  const matches = Array.from(htmlText.matchAll(regex));
 
   for (const match of matches) {
-    const orderNum = parseInt(match[1], 10);
-    const imgKey = `img-${orderNum}`;
-    const imgUrl = await extractImageUrl(langData[imgKey]);
-    if (imgUrl) {
-      const altText = langData[`alt-${orderNum}`] || langData[`alt_${orderNum}`] || langData[`img-${orderNum}-alt`] || `Imagem ${orderNum}`;
-      const captionText = langData[`caption-${orderNum}`] || langData[`caption_${orderNum}`] || langData[`legenda-${orderNum}`] || "";
+    const rawTag = match[0];
+    const orderNum = parseInt(
+      match[1] || match[2] || match[3] || match[4] || match[5] || match[6] || match[7] || match[8] || match[10] || "0",
+      10
+    );
+    const altText = match[11] || "Imagem ilustrativa do artigo";
 
-      const figureHtml = captionText
-        ? `<figure class="my-6 text-center"><img src="${imgUrl}" alt="${altText}" class="w-full h-auto object-cover border border-border rounded-sm mx-auto" loading="lazy" /><figcaption class="text-xs text-muted-foreground mt-2 italic">${captionText}</figcaption></figure>`
-        : `<img src="${imgUrl}" alt="${altText}" class="w-full h-auto object-cover border border-border rounded-sm my-4" loading="lazy" />`;
+    if (orderNum > 0) {
+      const imgKey = `img-${orderNum}`;
+      const imgUrl = await extractImageUrl(langData[imgKey]);
 
-      processed = processed.replace(match[0], figureHtml);
-    } else {
-      processed = processed.replace(match[0], "");
+      if (imgUrl) {
+        const cleanAlt = altText.trim();
+        const imgTag = `<img src="${imgUrl}" alt="${cleanAlt}" class="w-full h-auto object-cover border border-border rounded-sm my-4" loading="lazy" />`;
+        result = result.replace(rawTag, imgTag);
+      } else {
+        result = result.replace(rawTag, "");
+      }
     }
   }
 
-  return cleanBlockHtml(processed);
+  return cleanBlockHtml(result);
 }
 
 export async function GET(req: Request) {
@@ -357,17 +355,16 @@ export async function GET(req: Request) {
         mentions: true,
         views: true,
         likes: true,
+        translationGroupId: true,
         createdAt: true,
+        date: true,
       }
     });
 
-    return NextResponse.json({
-      success: true,
-      count: posts.length,
-      posts
-    });
+    return NextResponse.json({ posts });
   } catch (error: any) {
-    return NextResponse.json({ error: "Erro ao buscar posts", details: error.message }, { status: 500 });
+    console.error("Erro na API GET /api/posts:", error);
+    return NextResponse.json({ error: "Erro interno no servidor ao listar posts." }, { status: 500 });
   }
 }
 
@@ -375,26 +372,17 @@ export async function POST(req: Request) {
   try {
     console.log(JSON.stringify({ timestamp: new Date().toISOString(), user_id: 'API', action: 'api/posts POST', status: 'success' }));
 
-    const apiKeyHeader = req.headers.get("x-api-key") || req.headers.get("authorization")?.replace("Bearer ", "");
-    const url = new URL(req.url);
-    const apiKeyQuery = url.searchParams.get("api_key");
-
-    const expectedKey = process.env.API_SECRET_KEY;
-    if (!expectedKey) throw new Error("API_SECRET_KEY not configured");
-    const providedKey = apiKeyHeader || apiKeyQuery;
-
-    if (!providedKey || providedKey !== expectedKey) {
-      return NextResponse.json({ error: "Não autorizado. Chave de API inválida (x-api-key)." }, { status: 401 });
+    if (!verifyM2MAuth(req)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const rawBody = await req.json();
-    let body = Array.isArray(rawBody) ? rawBody[0] : rawBody;
+    let body = await req.json();
 
-    if (body && typeof body === "object" && "json" in body && body.json) {
+    if (body?.json && typeof body.json === "object") {
       body = body.json;
     }
 
-    let output = body?.output || (body?.pt || body?.en || body?.es ? body : null);
+    let output = body?.output || (body?.en && body?.pt ? body : null);
 
     if (typeof output === "string") {
       try {
@@ -406,7 +394,7 @@ export async function POST(req: Request) {
 
     const explicitMentionedSlugs: string[] = Array.isArray(body?.mentioned_slugs || body?.mentionedSlugs) ? (body?.mentioned_slugs || body?.mentionedSlugs) : [];
 
-    // SUPORTE A POST MULTI-IDIOMA (OUTPUT DE AUTOMACÃO N8N)
+    // SUPORTE A POST MULTI-IDIOMA (OUTPUT DE AUTOMAÇÃO N8N)
     if (output && typeof output === "object") {
       const rawGroupId = output.translationGroupId || output.group_id || output.groupId || output.id || output.pt?.id || output.en?.id || output.es?.id || body.translationGroupId || body.group_id || body.groupId || body.id || body.post_id;
       const translationGroupId = toNumericGroupId(rawGroupId);
@@ -417,9 +405,7 @@ export async function POST(req: Request) {
 
       // Buscar posts existentes do mesmo translationGroupId para aproveitar imagens reais já cadastradas
       const existingGroupPosts = translationGroupId ? await prisma.post.findMany({
-        where: {
-          translationGroupId
-        },
+        where: { translationGroupId },
         select: { img: true, blocks: true }
       }) : [];
 
@@ -442,20 +428,17 @@ export async function POST(req: Request) {
         const langData = output[lang];
         if (!langData || !langData.title) continue;
 
-        // O 'id' fornecido representa o ID do Grupo de Tradução (translationGroupId), ID do post ou Slug do post
         const targetLangId = langData.id ? String(langData.id).trim() : (body.id || body.post_id || body.postId) ? String(body.id || body.post_id || body.postId).trim() : undefined;
         const targetLangSlug = langData.slug ? cleanSlug(langData.slug) : body.slug ? cleanSlug(body.slug) : undefined;
 
         let existingPostForLang = null;
 
-        // 1. Buscar por translationGroupId + lang
         if (translationGroupId) {
           existingPostForLang = await prisma.post.findFirst({
             where: { translationGroupId, lang }
           });
         }
 
-        // 2. Buscar por ID do post
         if (!existingPostForLang && targetLangId) {
           const byId = await prisma.post.findUnique({ where: { id: targetLangId } });
           if (byId && (byId.lang === lang || !byId.lang)) {
@@ -463,7 +446,6 @@ export async function POST(req: Request) {
           }
         }
 
-        // 3. Buscar por Slug do post
         if (!existingPostForLang && targetLangSlug) {
           const bySlug = await prisma.post.findUnique({ where: { slug: targetLangSlug } });
           if (bySlug && (bySlug.lang === lang || !bySlug.lang)) {
@@ -471,8 +453,6 @@ export async function POST(req: Request) {
           }
         }
 
-        // SE O POST JÁ EXISTIR NO BANCO DE DADOS, PRESERVA O SLUG ORIGINAL!
-        // NUNCA GERAR NOVO SLUG NEM ALTERAR O SLUG/URL DE UM POST QUE JÁ EXISTE NO GOOGLE.
         const finalSlug = existingPostForLang
           ? existingPostForLang.slug
           : (targetLangSlug || await generateUniqueSlug(langData.title, existingPostForLang?.id, lang));
@@ -499,25 +479,22 @@ export async function POST(req: Request) {
             (await extractImageUrl(output.pt?.[`img-${i + 1}`])) ||
             (await extractImageUrl(output.en?.[`img-${i + 1}`])) ||
             (await extractImageUrl(output.es?.[`img-${i + 1}`])) ||
-            dbRealBlockImgs[i - 1] || "";
+            dbRealBlockImgs[i - 1];
 
           const hasImgTagInText = processedBlockText.includes("<img");
 
           blocks.push({
             text: processedBlockText,
-            image: hasImgTagInText ? "" : rawBlockImg,
-            focalPoint: "center",
+            image: hasImgTagInText ? "" : (rawBlockImg || ""),
+            focalPoint: langData[`focalPoint-${i + 1}`] || "center",
           });
         }
-
-        const postUrlPath = lang === "en" ? `/en/post/${finalSlug}` : lang === "es" ? `/es/post/${finalSlug}` : `/post/${finalSlug}`;
 
         const rawPostTag = langData.tag || langData.type || langData.category || body.tag || body.type || body.category || output.tag || output.type || output.category;
         const postTag = normalizePostTag(rawPostTag, langData.title);
         const finalAudioUrl = langData.audioUrl || langData.audio_url || langData.audio || output.audioUrl || output.audio_url || output.audio || null;
 
         const calculatedReadTime = calculateReadTime({ title: langData.title, excerpt: langData.summary, blocks });
-
         const postStatus = langData.status || output.status || body.status || "publicado";
 
         let post;
@@ -540,27 +517,12 @@ export async function POST(req: Request) {
               seoKeywords: langData["meta-tags"] || `${postTag}, Moto na Prática`,
               translationGroupId,
               lang,
+              updatedAt: new Date(),
             }
           });
         } else {
-          post = await prisma.post.upsert({
-            where: { slug: finalSlug },
-            update: {
-              tag: postTag,
-              title: langData.title,
-              excerpt: langData.summary || langData.title,
-              readTime: calculatedReadTime,
-              img: featuredImg,
-              audioUrl: finalAudioUrl,
-              status: postStatus,
-              blocks,
-              seoTitle: langData["meta-title"] || langData.title,
-              seoDescription: langData["meta-description"] || langData.summary,
-              seoKeywords: langData["meta-tags"] || `${postTag}, Moto na Prática`,
-              translationGroupId,
-              lang,
-            },
-            create: {
+          post = await prisma.post.create({
+            data: {
               slug: finalSlug,
               tag: postTag,
               category: postTag,
@@ -578,7 +540,7 @@ export async function POST(req: Request) {
               translationGroupId,
               lang,
               date: new Date(),
-            },
+            }
           });
         }
 
@@ -586,30 +548,26 @@ export async function POST(req: Request) {
           id: post.id,
           lang: post.lang,
           slug: post.slug,
-          title: post.title,
-          url: `https://motonapratica.online${postUrlPath}`
+          translationGroupId: post.translationGroupId,
+          url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://motonapratica.online"}/post/${post.slug}`,
         });
       }
 
-      // INCREMENTAR COLUNA 'mentions' NOS POSTS MENCIONADOS
+      // Atualizar contagem de menções
       if (extractedMentionedSlugs.size > 0) {
+        const slugsArray = Array.from(extractedMentionedSlugs);
         await prisma.post.updateMany({
-          where: {
-            slug: {
-              in: Array.from(extractedMentionedSlugs)
-            }
-          },
-          data: {
-            mentions: {
-              increment: 1
-            }
-          }
+          where: { slug: { in: slugsArray } },
+          data: { mentions: { increment: 1 } }
         });
       }
 
       revalidatePath("/");
       revalidatePath("/posts");
-      revalidatePath("/eventos");
+      revalidatePath("/reviews");
+      revalidatePath("/manutencao");
+      revalidatePath("/rotas");
+      revalidatePath("/equipamentos");
 
       return NextResponse.json({
         success: true,
@@ -620,21 +578,21 @@ export async function POST(req: Request) {
       });
     }
 
-    // SUPORTE A POST ÚNICO MANUAL
+    // SUPORTE A POST ÚNICO (MANUAL / TRADICIONAL)
     const {
       title,
       slug: customSlug,
-      tag = "Eventos",
-      category = "Notícias",
-      excerpt = "",
-      readTime = "5 min",
-      img = "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=1200",
-      imgFocalPoint = "center",
-      blocks = [],
+      tag,
+      category,
+      excerpt,
+      readTime,
+      img,
+      imgFocalPoint,
+      blocks,
       seoTitle,
       seoDescription,
       seoKeywords,
-      lang = "pt",
+      lang,
       translationGroupId,
     } = body;
 
@@ -642,24 +600,11 @@ export async function POST(req: Request) {
     const rawLang = body.lang || body.language || body.idioma;
     let targetLang = rawLang ? String(rawLang).toLowerCase().trim() : "";
 
-    // Se o idioma não for informado explicitamente, inferir pelo slug/título para evitar salvar posts em inglês como 'pt'
     if (!targetLang) {
       const textToTest = `${customSlug || ""} ${title || ""}`.toLowerCase();
-      if (
-        textToTest.includes("is the") || textToTest.includes("is-the") ||
-        textToTest.includes("the future") || textToTest.includes("the-future") ||
-        textToTest.includes("work motorcycle") || textToTest.includes("work-motorcycle") ||
-        textToTest.includes("why your") || textToTest.includes("why-your") ||
-        textToTest.includes("is it worth") || textToTest.includes("is-it-worth") ||
-        textToTest.includes("financing a") || textToTest.includes("financing-a")
-      ) {
+      if (textToTest.includes("is the") || textToTest.includes("the future") || textToTest.includes("why your")) {
         targetLang = "en";
-      } else if (
-        textToTest.includes("el futuro") || textToTest.includes("el-futuro") ||
-        textToTest.includes("por que") || textToTest.includes("por-que") ||
-        textToTest.includes("para trabajar") || textToTest.includes("para-trabajar") ||
-        textToTest.includes("vale la pena") || textToTest.includes("vale-la-pena")
-      ) {
+      } else if (textToTest.includes("el futuro") || textToTest.includes("por que") || textToTest.includes("para trabajar")) {
         targetLang = "es";
       } else {
         targetLang = "pt";
@@ -670,13 +615,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "O título do post é obrigatório." }, { status: 400 });
     }
 
-    // REGRA DE MATCHING E PRESERVAÇÃO DE SLUG/UUID NO ENDPOINT:
     const targetIdStr = (body.id || body.post_id || body.postId) ? String(body.id || body.post_id || body.postId).trim() : undefined;
     const targetSlugStr = customSlug ? cleanSlug(customSlug) : body.slug ? cleanSlug(body.slug) : undefined;
 
     let existingSinglePost = null;
 
-    // 1. Tentar por translationGroupId + lang
     if (finalTranslationGroupId) {
       existingSinglePost = await prisma.post.findFirst({
         where: {
@@ -686,7 +629,6 @@ export async function POST(req: Request) {
       });
     }
 
-    // 2. Tentar por ID do post
     if (!existingSinglePost && targetIdStr) {
       const byId = await prisma.post.findUnique({ where: { id: targetIdStr } });
       if (byId) {
@@ -694,7 +636,6 @@ export async function POST(req: Request) {
       }
     }
 
-    // 3. Tentar por SLUG do post (garante que atualizações enviadas por slug encontrem o post original)
     if (!existingSinglePost && targetSlugStr) {
       const bySlug = await prisma.post.findUnique({ where: { slug: targetSlugStr } });
       if (bySlug) {
@@ -702,8 +643,6 @@ export async function POST(req: Request) {
       }
     }
 
-    // SE O POST JÁ EXISTE NO BANCO DE DADOS, PRESERVA ABSOLUTAMENTE O SLUG ORIGINAL!
-    // NUNCA MUDAR O SLUG NEM CRIAR UM NOVO UUID/POST PARA POSTS JÁ EXISTENTES.
     const finalSlug = existingSinglePost
       ? existingSinglePost.slug
       : (targetSlugStr || await generateUniqueSlug(title, existingSinglePost?.id, targetLang));
@@ -714,12 +653,9 @@ export async function POST(req: Request) {
       if (b && typeof b.text === "string") {
         const found = extractMentionedSlugsFromHtml(b.text, finalSlug);
         found.forEach(s => extractedMentionedSlugs.add(s));
-        const cleanedText = cleanBlockHtml(b.text);
-        const hasImgTagInText = cleanedText.includes("<img");
         return {
           ...b,
-          text: cleanedText,
-          image: hasImgTagInText ? "" : (b.image || "")
+          text: cleanBlockHtml(b.text)
         };
       }
       return b;
@@ -736,10 +672,10 @@ export async function POST(req: Request) {
 
     let post;
     if (existingSinglePost) {
-      // UPDATE: Se o post do mesmo translationGroupId e idioma existe, ATUALIZA ele!
       post = await prisma.post.update({
         where: { id: existingSinglePost.id },
         data: {
+          slug: finalSlug,
           tag: finalTag,
           category: finalTag,
           title,
@@ -757,7 +693,6 @@ export async function POST(req: Request) {
         }
       });
     } else {
-      // CREATE: Se não existe post para este translationGroupId + idioma, CRIA para este idioma!
       post = await prisma.post.create({
         data: {
           slug: finalSlug,
@@ -782,51 +717,38 @@ export async function POST(req: Request) {
     }
 
     if (extractedMentionedSlugs.size > 0) {
+      const slugsArray = Array.from(extractedMentionedSlugs);
       await prisma.post.updateMany({
-        where: {
-          slug: {
-            in: Array.from(extractedMentionedSlugs)
-          }
-        },
-        data: {
-          mentions: {
-            increment: 1
-          }
-        }
+        where: { slug: { in: slugsArray } },
+        data: { mentions: { increment: 1 } }
       });
-    }
-
-    try {
-      await prisma.notification.create({
-        data: {
-          type: "POST_UPDATE",
-          message: `📝 Post "${post.title}" (${(post.lang || "pt").toUpperCase()}) ${existingSinglePost ? "atualizado" : "criado"} via API`,
-          postId: post.id,
-          postTitle: post.title,
-        }
-      });
-    } catch (notifErr) {
-      console.warn("Erro ao criar notificação no POST /api/posts:", notifErr);
     }
 
     revalidatePath("/");
     revalidatePath("/posts");
-
-    const postUrlPath = lang === "en" ? `/en/post/${post.slug}` : lang === "es" ? `/es/post/${post.slug}` : `/post/${post.slug}`;
+    revalidatePath("/reviews");
+    revalidatePath("/manutencao");
+    revalidatePath("/rotas");
+    revalidatePath("/equipamentos");
+    revalidatePath(`/post/${finalSlug}`);
 
     return NextResponse.json({
       success: true,
       message: "Post salvo com sucesso!",
       post: {
         id: post.id,
-        lang: post.lang,
-        slug: post.slug,
         title: post.title,
-        url: `https://motonapratica.online${postUrlPath}`
-      }
+        slug: post.slug,
+        lang: post.lang,
+        url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://motonapratica.online"}/post/${post.slug}`,
+      },
     });
   } catch (error: any) {
-    return NextResponse.json({ error: "Erro ao salvar post", details: error.message }, { status: 500 });
+    console.error("Erro na API POST /api/posts:", error);
+    return NextResponse.json(
+      { error: "Erro interno no servidor ao processar o post." },
+      { status: 500 }
+    );
   }
 }
 
@@ -834,140 +756,70 @@ export async function PATCH(req: Request) {
   try {
     console.log(JSON.stringify({ timestamp: new Date().toISOString(), user_id: 'API', action: 'api/posts PATCH', status: 'success' }));
 
-    const apiKeyHeader = req.headers.get("x-api-key") || req.headers.get("authorization")?.replace("Bearer ", "");
-    const reqUrl = new URL(req.url);
-    const apiKeyQuery = reqUrl.searchParams.get("api_key");
-
-    const expectedKey = process.env.API_SECRET_KEY;
-    if (!expectedKey) throw new Error("API_SECRET_KEY not configured");
-    const providedKey = apiKeyHeader || apiKeyQuery;
-
-    if (!providedKey || providedKey !== expectedKey) {
-      return NextResponse.json({ error: "Não autorizado. Chave de API inválida (x-api-key)." }, { status: 401 });
+    if (!verifyM2MAuth(req)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const contentType = req.headers.get("content-type") || "";
     let body: any = {};
-    let fileFromFormData: File | null = null;
-    const contentType = (req.headers.get("content-type") || "").toLowerCase();
 
     if (contentType.includes("multipart/form-data")) {
-      try {
-        const formData = await req.formData();
-        formData.forEach((value, key) => {
-          if (value instanceof File) {
-            if (key === "audio" || key === "file" || key === "narration" || key === "audio_file") fileFromFormData = value;
-            else if (key === "image" || key === "img") body[key] = value;
-          } else {
-            body[key] = value;
-          }
-        });
-      } catch (formDataErr: any) {
-        console.warn("[PATCH /api/posts] req.formData() falhou, tentando fallback para JSON/Text:", formDataErr?.message || formDataErr);
-        try {
-          body = await req.json();
-        } catch (jsonErr) {
-          try {
-            const rawText = await req.text();
-            body = JSON.parse(rawText);
-          } catch (textErr) {
-            body = {};
-          }
-        }
+      const formData = await req.formData();
+      body.id = formData.get("id") || formData.get("post_id") || formData.get("postId") || formData.get("translationGroupId");
+      body.position = formData.get("position") || formData.get("blockNumber");
+      body.caption = formData.get("caption") || formData.get("alt");
+      body.focalPoint = formData.get("focalPoint") || "center";
+
+      const file = formData.get("image") as File;
+      if (file && typeof file.arrayBuffer === "function") {
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+        const { saveOptimizedImageBuffer } = await import("@/lib/image-utils");
+        body.image = await saveOptimizedImageBuffer(buffer);
       }
     } else {
-      try {
-        body = await req.json();
-      } catch (e) {
-        try {
-          const rawText = await req.text();
-          body = JSON.parse(rawText);
-        } catch (textErr) {
-          body = {};
-        }
-      }
+      body = await req.json();
     }
 
-    const {
-      id, post_id, postId, translationGroupId, group_id, groupId, slug,
-      position, pos, imgKey,
-      image, img,
-      audioUrl, audio_url, audio, narrationUrl, narration_url, audio_path, audioPath, url, file,
-      lang,
-      alt, altText, alt_text, caption, legenda, focalPoint, focal_point
-    } = body;
+    const targetIdentifier =
+      body.id ||
+      body.post_id ||
+      body.postId ||
+      body.translationGroupId ||
+      body.translation_group_id ||
+      body.groupId ||
+      body.group_id ||
+      body.slug;
 
-    const targetIdentifier = id || post_id || postId || translationGroupId || group_id || groupId || slug;
     if (!targetIdentifier) {
-      return NextResponse.json({ error: "É necessário fornecer o id, translationGroupId ou slug do post." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Identificador do post obrigatório (use 'id', 'post_id', 'translationGroupId' ou 'slug')." },
+        { status: 400 }
+      );
     }
 
-    const rawAudioInput = fileFromFormData || audio || audioUrl || audio_url || narrationUrl || narration_url || audio_path || audioPath || url || file;
-    let finalAudioUrl: string | null = null;
+    const rawImage = body.image || body.img || body.imagem || body.imageUrl || body.url || body.file;
+    const rawAudio = body.audio || body.audioUrl || body.audio_url || body.narrationUrl || body.voiceUrl;
 
-    if (rawAudioInput) {
-      if (typeof rawAudioInput === "string") {
-        const trimmedAudioStr = rawAudioInput.trim();
-        if (trimmedAudioStr.startsWith("http://") || trimmedAudioStr.startsWith("https://")) {
-          finalAudioUrl = trimmedAudioStr;
-        } else {
-          // Processar string Base64 de áudio
-          const matches = trimmedAudioStr.match(/^data:audio\/([a-z0-9\+\-]+);base64,/i);
-          const ext = matches ? (matches[1] === "mpeg" ? "mp3" : matches[1]) : "mp3";
-          const cleanBase64 = trimmedAudioStr.replace(/^data:[^;]+;base64,/i, "").trim();
-          const buffer = Buffer.from(cleanBase64, "base64");
-          finalAudioUrl = await saveAudioBuffer(buffer, ext);
-        }
-      } else if (typeof rawAudioInput === "object" && rawAudioInput && "arrayBuffer" in rawAudioInput) {
-        const fileObj = rawAudioInput as File;
-        const bytes = await fileObj.arrayBuffer();
-        const buffer = Buffer.from(bytes);
-        const ext = fileObj.name ? (fileObj.name.split(".").pop() || "mp3") : "mp3";
-        finalAudioUrl = await saveAudioBuffer(buffer, ext);
+    let finalImageUrl = "";
+    if (rawImage) {
+      finalImageUrl = await extractImageUrl(rawImage);
+    }
+
+    let finalAudioUrl = "";
+    if (rawAudio) {
+      if (typeof rawAudio === "string" && (rawAudio.startsWith("http") || rawAudio.startsWith("/uploads/"))) {
+        finalAudioUrl = rawAudio.trim();
+      } else if (typeof rawAudio === "string" && rawAudio.length > 50) {
+        const cleanBase64 = rawAudio.replace(/^data:audio\/[a-z0-9\+\-]+;base64,/i, "").trim();
+        const inputBuffer = Buffer.from(cleanBase64, "base64");
+        finalAudioUrl = await saveAudioBuffer(inputBuffer, "mp3");
       }
-    }
-
-    const rawImageInput = body.image || body.img;
-    let finalImageUrl: string | null = null;
-
-    if (rawImageInput) {
-      if (typeof rawImageInput === "string") {
-        if (rawImageInput.startsWith("data:image") || (rawImageInput.length > 200 && !rawImageInput.startsWith("http"))) {
-          try {
-            finalImageUrl = await processImageBase64(rawImageInput);
-          } catch (err: any) {
-            console.error("Erro ao processar Base64 na rota PATCH:", err);
-            return NextResponse.json({ error: "Falha ao processar imagem Base64.", details: err.message }, { status: 400 });
-          }
-        } else {
-          finalImageUrl = rawImageInput;
-        }
-      } else if (typeof rawImageInput === "object" && rawImageInput && "arrayBuffer" in rawImageInput) {
-        try {
-          const fileObj = rawImageInput as File;
-          const bytes = await fileObj.arrayBuffer();
-          const buffer = Buffer.from(bytes);
-          const { saveOptimizedImageBuffer } = await import("@/lib/image-utils");
-          finalImageUrl = await saveOptimizedImageBuffer(buffer);
-        } catch (err: any) {
-          console.error("Erro ao processar arquivo de imagem na rota PATCH:", err);
-          return NextResponse.json({ error: "Falha ao processar arquivo de imagem.", details: err.message }, { status: 400 });
-        }
-      }
-    }
-
-    if (!finalImageUrl && !finalAudioUrl) {
-      return NextResponse.json({ error: "É necessário fornecer uma imagem ('image') ou um áudio ('audio')." }, { status: 400 });
-    }
-
-    if (typeof finalImageUrl === "string" && finalImageUrl.includes("/uploads/")) {
-      const fname = finalImageUrl.split("/uploads/").pop()?.split("?")[0];
-      if (fname) finalImageUrl = `/uploads/${fname}`;
     }
 
     const targetIdentifierStr = String(targetIdentifier).trim();
     const numericTargetId = /^\d+$/.test(targetIdentifierStr) ? parseInt(targetIdentifierStr, 10) : undefined;
 
-    // O 'id' fornecido representa o ID do Grupo de Tradução (translationGroupId), ID do post ou slug do post
     const initialPosts = await prisma.post.findMany({
       where: {
         OR: [
@@ -978,7 +830,7 @@ export async function PATCH(req: Request) {
       }
     });
 
-    if (initialPosts.length === 0) {
+    if (!initialPosts || initialPosts.length === 0) {
       return NextResponse.json({ error: "Nenhum post encontrado com o id, slug ou translationGroupId fornecido." }, { status: 404 });
     }
 
@@ -992,139 +844,148 @@ export async function PATCH(req: Request) {
       }
     });
 
-    // Se o parâmetro 'lang' for informado (ex: 'pt', 'en', 'es'), filtrar posts para aplicar a essa língua específica
-    const targetLang = lang ? String(lang).trim().toLowerCase() : null;
-    if (targetLang && finalAudioUrl && !finalImageUrl) {
-      const langFiltered = postsToUpdate.filter(p => p.lang === targetLang);
-      if (langFiltered.length > 0) {
-        postsToUpdate = langFiltered;
-      }
-    }
+    const position = body.position || body.block || body.bloco || body.index || body.blockNumber || 0;
+    const focalPoint = body.focalPoint || body.focal_point || "center";
+    const altText = body.alt || body.caption || body.legenda || "";
 
-    const rawPos = position !== undefined ? position : (pos !== undefined ? pos : imgKey);
-    let posNum = 1;
-    if (typeof rawPos === "number") {
-      posNum = rawPos;
-    } else if (typeof rawPos === "string") {
-      const match = rawPos.match(/\d+/);
-      if (match) posNum = parseInt(match[0], 10);
-    }
-
-    const updatedPostsInfo: any[] = [];
-    const metaAlt = alt || altText || alt_text;
-    const metaCaption = caption || legenda;
-    const metaFocal = focalPoint || focal_point;
+    const updatedPosts = [];
 
     for (const post of postsToUpdate) {
-      const updateData: any = {};
-      if (finalAudioUrl) updateData.audioUrl = finalAudioUrl;
+      let blocks: any[] = [];
+      if (Array.isArray(post.blocks)) {
+        blocks = [...(post.blocks as any[])];
+      } else if (typeof post.blocks === "string") {
+        try {
+          blocks = JSON.parse(post.blocks);
+        } catch (e) {
+          blocks = [];
+        }
+      }
 
-      if (!finalImageUrl && finalAudioUrl) {
-        const updated = await prisma.post.update({
-          where: { id: post.id },
-          data: updateData
-        });
-        revalidatePath("/");
-        revalidatePath(`/post/${updated.slug}`);
-        updatedPostsInfo.push({ id: post.id, lang: post.lang, slug: post.slug, audioUrl: finalAudioUrl });
-      } else if (posNum === 1) {
-        if (finalImageUrl) updateData.img = finalImageUrl;
-        if (metaFocal) updateData.imgFocalPoint = metaFocal;
+      let newImg = post.img;
+      let newImgFocalPoint = post.imgFocalPoint;
+      let newAudioUrl = post.audioUrl;
 
-        const updated = await prisma.post.update({
-          where: { id: post.id },
-          data: updateData
-        });
-        revalidatePath("/");
-        revalidatePath(`/post/${updated.slug}`);
-        updatedPostsInfo.push({ id: post.id, lang: post.lang, slug: post.slug });
-      } else {
-        const blockIndex = posNum - 2;
-        const rawBlocks = Array.isArray(post.blocks) ? (post.blocks as any[]) : [];
+      if (finalAudioUrl) {
+        newAudioUrl = finalAudioUrl;
+      }
 
-        if (blockIndex >= 0 && blockIndex < rawBlocks.length) {
-          const updatedBlocks = [...rawBlocks];
-          const targetBlock = { ...updatedBlocks[blockIndex] };
-          if (finalImageUrl) targetBlock.image = finalImageUrl;
-          if (metaAlt) targetBlock.alt = metaAlt;
-          if (metaCaption) targetBlock.caption = metaCaption;
-          if (metaFocal) targetBlock.focalPoint = metaFocal;
-
-          const blockAltText = metaAlt || `Imagem ${posNum}`;
-
-          if (targetBlock.text && finalImageUrl) {
-            const placeholderRegex = new RegExp(`[\\{\\[]\\s*(?:id|img|image)\\s*=\\s*${posNum}\\s*[\\}\\]]`, "gi");
-            if (metaCaption) {
-              targetBlock.text = targetBlock.text.replace(
-                placeholderRegex,
-                `<figure class="my-6 text-center"><img src="${finalImageUrl}" alt="${blockAltText}" class="w-full h-auto object-cover border border-border rounded-sm mx-auto" loading="lazy" /><figcaption class="text-xs text-muted-foreground mt-2 italic">${metaCaption}</figcaption></figure>`
-              );
-            } else {
-              targetBlock.text = targetBlock.text.replace(
-                placeholderRegex,
-                `<img src="${finalImageUrl}" alt="${blockAltText}" class="w-full h-auto object-cover border border-border rounded-sm my-4" loading="lazy" />`
-              );
-            }
+      if (finalImageUrl) {
+        if (position === 0 || position === "0" || position === "hero" || position === "capa") {
+          newImg = finalImageUrl;
+          newImgFocalPoint = focalPoint;
+        } else {
+          const blockIdx = parseInt(String(position), 10) - 1;
+          if (blockIdx >= 0 && blockIdx < blocks.length) {
+            blocks[blockIdx] = {
+              ...blocks[blockIdx],
+              image: finalImageUrl,
+              focalPoint: focalPoint || blocks[blockIdx].focalPoint || "center",
+              alt: altText || blocks[blockIdx].alt || "",
+            };
+          } else if (blockIdx >= blocks.length) {
+            blocks.push({
+              text: "",
+              image: finalImageUrl,
+              focalPoint: focalPoint,
+              alt: altText,
+            });
           }
-
-          updatedBlocks[blockIndex] = targetBlock;
-
-          const updated = await prisma.post.update({
-            where: { id: post.id },
-            data: {
-              ...updateData,
-              blocks: updatedBlocks
-            }
-          });
-
-          revalidatePath("/");
-          revalidatePath(`/post/${updated.slug}`);
-          updatedPostsInfo.push({ id: post.id, lang: post.lang, slug: post.slug });
         }
       }
 
-      try {
-        if (finalAudioUrl && !finalImageUrl) {
-          await prisma.notification.create({
-            data: {
-              type: "AUDIO",
-              message: `🎵 Narração em áudio anexada com sucesso ao post "${post.title}" (${(post.lang || "pt").toUpperCase()})`,
-              postId: post.id,
-              postTitle: post.title,
-            }
-          });
-        } else if (finalImageUrl) {
-          await prisma.notification.create({
-            data: {
-              type: "IMAGE",
-              message: `🖼️ Nova imagem inserida no post "${post.title}" (${(post.lang || "pt").toUpperCase()})`,
-              postId: post.id,
-              postTitle: post.title,
-            }
-          });
+      const updated = await prisma.post.update({
+        where: { id: post.id },
+        data: {
+          img: newImg,
+          imgFocalPoint: newImgFocalPoint,
+          audioUrl: newAudioUrl,
+          blocks: blocks as any,
+          updatedAt: new Date(),
         }
-      } catch (notifErr) {
-        console.warn("Erro ao criar notificação no PATCH /api/posts:", notifErr);
-      }
+      });
+
+      updatedPosts.push({
+        id: updated.id,
+        slug: updated.slug,
+        lang: updated.lang,
+        img: updated.img,
+        audioUrl: updated.audioUrl,
+      });
     }
 
-    if (updatedPostsInfo.length === 0) {
-      return NextResponse.json({
-        error: `Nenhum post pôde ser atualizado para os critérios informados.`
-      }, { status: 400 });
+    revalidatePath("/");
+    revalidatePath("/posts");
+    revalidatePath("/reviews");
+    revalidatePath("/manutencao");
+    revalidatePath("/rotas");
+    revalidatePath("/equipamentos");
+    for (const p of postsToUpdate) {
+      if (p.slug) revalidatePath(`/post/${p.slug}`);
     }
 
     return NextResponse.json({
       success: true,
-      message: finalAudioUrl && !finalImageUrl
-        ? `Áudio de narração anexado com sucesso a ${updatedPostsInfo.length} post(s)!`
-        : `Conteúdo anexado com sucesso a ${updatedPostsInfo.length} post(s)!`,
-      audioUrl: finalAudioUrl,
-      imageUrl: finalImageUrl,
-      updatedPosts: updatedPostsInfo
+      message: `Mídia atualizada com sucesso em ${updatedPosts.length} versões do post.`,
+      posts: updatedPosts,
+    });
+  } catch (error: any) {
+    console.error("Erro na API PATCH /api/posts:", error);
+    return NextResponse.json(
+      { error: "Erro interno no servidor ao processar a atualização." },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    console.log(JSON.stringify({ timestamp: new Date().toISOString(), user_id: 'API', action: 'api/posts DELETE', status: 'success' }));
+
+    if (!verifyM2MAuth(req)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+    const slug = searchParams.get("slug");
+
+    if (!id && !slug) {
+      return NextResponse.json({ error: "Parâmetro 'id' ou 'slug' é obrigatório." }, { status: 400 });
+    }
+
+    const post = await prisma.post.findFirst({
+      where: {
+        OR: [
+          ...(id ? [{ id }] : []),
+          ...(slug ? [{ slug }] : [])
+        ]
+      }
     });
 
+    if (!post) {
+      return NextResponse.json({ error: "Post não encontrado." }, { status: 404 });
+    }
+
+    if (post.translationGroupId) {
+      await prisma.post.deleteMany({
+        where: { translationGroupId: post.translationGroupId }
+      });
+    } else {
+      await prisma.post.delete({ where: { id: post.id } });
+    }
+
+    revalidatePath("/");
+    revalidatePath("/posts");
+    revalidatePath("/reviews");
+    revalidatePath("/manutencao");
+    revalidatePath("/rotas");
+    revalidatePath("/equipamentos");
+    if (post.slug) revalidatePath(`/post/${post.slug}`);
+
+    return NextResponse.json({ success: true, message: "Post deletado com sucesso." });
   } catch (error: any) {
-    return NextResponse.json({ error: "Erro ao anexar arquivo ao post", details: error.message }, { status: 500 });
+    console.error("Erro na API DELETE /api/posts:", error);
+    return NextResponse.json({ error: "Erro interno no servidor ao deletar post." }, { status: 500 });
   }
 }

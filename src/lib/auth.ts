@@ -8,49 +8,121 @@ function getSecret(): string {
   return SECRET;
 }
 
-export async function signToken(username: string, role = "admin"): Promise<string> {
-  return jwt.sign({ username, role }, getSecret(), { expiresIn: "7d" });
-}
-
-export interface VerifiedUser {
+export interface AdminPayload {
   username: string;
-  role?: string;
-  userId?: string | number;
+  role: "admin";
+  tokenType: "admin";
 }
 
-export async function verifyToken(token: string): Promise<VerifiedUser | null> {
+export interface UserPayload {
+  userId: string;
+  email: string;
+  name: string;
+  role: "user";
+  tokenType: "user";
+}
+
+export async function signAdminToken(username: string): Promise<string> {
+  const payload: AdminPayload = {
+    username,
+    role: "admin",
+    tokenType: "admin"
+  };
+  return jwt.sign(payload, getSecret(), { expiresIn: "7d" });
+}
+
+export async function signUserToken(user: { userId: string; email: string; name: string }): Promise<string> {
+  const payload: UserPayload = {
+    userId: user.userId,
+    email: user.email,
+    name: user.name,
+    role: "user",
+    tokenType: "user"
+  };
+  return jwt.sign(payload, getSecret(), { expiresIn: "7d" });
+}
+
+// Backward compatibility: role is required to be "admin" to issue admin token. Default is "user".
+export async function signToken(username: string, role: "admin" | "user" = "user"): Promise<string> {
+  if (role === "admin") {
+    return signAdminToken(username);
+  }
+  return signUserToken({ userId: username, email: username, name: username });
+}
+
+export interface VerifiedAdminUser {
+  username: string;
+  role: "admin";
+  tokenType: "admin";
+}
+
+export interface VerifiedNormalUser {
+  userId: string;
+  email: string;
+  name: string;
+  role: "user";
+  tokenType: "user";
+}
+
+export type VerifiedUser = VerifiedAdminUser | VerifiedNormalUser;
+
+export async function verifyAdminToken(token: string): Promise<VerifiedAdminUser | null> {
   try {
     if (!token) return null;
     const decoded = jwt.verify(token, getSecret()) as any;
-    if (decoded && decoded.username) {
-      const adminUser = process.env.ADMIN_USERNAME || "admin";
-      const isRoleAdmin = decoded.role === "admin" || decoded.username === adminUser;
-      return { 
+    if (decoded && decoded.role === "admin" && decoded.tokenType === "admin" && decoded.username) {
+      return {
         username: decoded.username,
-        role: isRoleAdmin ? "admin" : (decoded.role || "user")
-      };
-    }
-    // Suporte ao token do login normal de usuário que tem userId e email
-    if (decoded && decoded.userId) {
-      return { 
-        username: decoded.email || decoded.name || "user",
-        userId: decoded.userId,
-        role: "user" 
+        role: "admin",
+        tokenType: "admin"
       };
     }
     return null;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
 
-export async function verifyAdminToken(token: string): Promise<VerifiedUser | null> {
-  const user = await verifyToken(token);
-  if (!user) return null;
-  if (user.role === "admin") {
-    return user;
+export async function verifyUserToken(token: string): Promise<VerifiedNormalUser | null> {
+  try {
+    if (!token) return null;
+    const decoded = jwt.verify(token, getSecret()) as any;
+    if (decoded && (decoded.userId || decoded.email)) {
+      return {
+        userId: String(decoded.userId || ""),
+        email: String(decoded.email || ""),
+        name: String(decoded.name || ""),
+        role: "user",
+        tokenType: "user"
+      };
+    }
+    return null;
+  } catch {
+    return null;
   }
-  return null;
+}
+
+export async function verifyToken(token: string): Promise<{ username: string; role?: string; userId?: string } | null> {
+  try {
+    if (!token) return null;
+    const decoded = jwt.verify(token, getSecret()) as any;
+    if (decoded && decoded.role === "admin" && decoded.tokenType === "admin") {
+      return { username: decoded.username, role: "admin" };
+    }
+    if (decoded && (decoded.userId || decoded.email)) {
+      return {
+        username: decoded.email || decoded.name || decoded.username || "user",
+        userId: decoded.userId,
+        role: "user"
+      };
+    }
+    if (decoded && decoded.username) {
+      return { username: decoded.username, role: decoded.role || "user" };
+    }
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 export function checkCredentials(user: string, pass: string): boolean {
