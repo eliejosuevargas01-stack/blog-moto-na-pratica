@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import jwt from 'jsonwebtoken';
-import { signToken, verifyToken, verifyAdminToken, checkCredentials } from '../../src/lib/auth';
-import { N8nClient } from '../../src/lib/n8n/client';
+import { signToken, verifyToken, verifyAdminToken, checkCredentials } from '../lib/auth';
+import { N8nClient } from '../lib/n8n/client';
 
 describe('Security Hardening & RBAC Tests', () => {
   const originalEnv = process.env;

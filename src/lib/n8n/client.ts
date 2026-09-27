@@ -19,7 +19,8 @@ export class N8nClient {
         throw new Error("N8N_WEBHOOK_URL must use HTTPS protocol");
       }
       return url;
-    } catch {
+    } catch (e: any) {
+      if (e?.message?.includes("HTTPS")) throw e;
       throw new Error("Invalid N8N_WEBHOOK_URL format");
     }
   }
@@ -33,13 +34,16 @@ export class N8nClient {
   }
 
   static async send(payload: N8nPayload, timeoutMs = 10000): Promise<{ success: boolean; data?: unknown }> {
-    const webhookUrl = this.getWebhookUrl();
-    const apiKey = this.getApiKey();
-
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    let controller: AbortController | null = null;
+    let timer: NodeJS.Timeout | null = null;
 
     try {
+      const webhookUrl = this.getWebhookUrl();
+      const apiKey = this.getApiKey();
+
+      controller = new AbortController();
+      timer = setTimeout(() => controller?.abort(), timeoutMs);
+
       const response = await fetch(webhookUrl, {
         method: "POST",
         headers: {
@@ -54,7 +58,7 @@ export class N8nClient {
         signal: controller.signal,
       });
 
-      clearTimeout(timer);
+      if (timer) clearTimeout(timer);
 
       if (!response.ok) {
         console.error(`[n8n-client] Request failed. Action: ${payload.action}, HTTP Status: ${response.status}`);
@@ -64,9 +68,9 @@ export class N8nClient {
       const data = await response.json().catch(() => null);
       return { success: true, data };
     } catch (error: unknown) {
-      clearTimeout(timer);
+      if (timer) clearTimeout(timer);
       const isAbort = error instanceof Error && error.name === "AbortError";
-      console.error(`[n8n-client] Error executing action "${payload.action}": ${isAbort ? "Timeout" : "Network error"}`);
+      console.error(`[n8n-client] Error executing action "${payload.action}": ${isAbort ? "Timeout" : (error instanceof Error ? error.message : "Network error")}`);
       return { success: false };
     }
   }
