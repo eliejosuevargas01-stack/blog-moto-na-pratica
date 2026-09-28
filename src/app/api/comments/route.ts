@@ -13,7 +13,6 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "O parâmetro postId é obrigatório." }, { status: 400 });
     }
 
-    // Buscar post pelo id ou slug
     const post = await prisma.post.findFirst({
       where: {
         OR: [
@@ -51,7 +50,7 @@ export async function GET(request: Request) {
 // POST: Add a new comment
 export async function POST(request: Request) {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const token = cookieStore.get("auth_token")?.value;
 
     if (!token) {
@@ -74,7 +73,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "O postId é obrigatório." }, { status: 400 });
     }
 
-    // Buscar post pelo ID ou Slug
     const post = await prisma.post.findFirst({
       where: {
         OR: [

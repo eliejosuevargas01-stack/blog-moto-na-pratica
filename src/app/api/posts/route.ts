@@ -4,6 +4,21 @@ import { revalidatePath } from "next/cache";
 import { processImageBase64, saveAudioBuffer, calculateReadTime } from "@/lib/image-utils";
 import { toNumericGroupId } from "../../data";
 import { verifyM2MAuth } from "@/lib/m2m";
+import { verifyAdminToken } from "@/lib/auth";
+
+async function isAuthorizedAdminOrM2M(request: Request): Promise<boolean> {
+  const cookieHeader = request.headers.get("cookie") || "";
+  const match = cookieHeader.match(/admin_token=([^;]+)/);
+  const adminToken = match ? match[1] : null;
+  if (adminToken) {
+    const admin = await verifyAdminToken(adminToken);
+    if (admin) return true;
+  }
+  if (verifyM2MAuth(request)) {
+    return true;
+  }
+  return false;
+}
 
 function generateSlug(title: string): string {
   if (!title) return "";
@@ -32,7 +47,6 @@ async function generateUniqueSlug(title: string, existingId?: number | string, l
     return slug;
   }
 
-  // Se colidir com outro post (ex: versão PT), usar sufixo semântico de idioma (-en, -es)
   if (lang && lang !== "pt") {
     const langSlug = `${baseSlug}-${lang.toLowerCase()}`;
     const existingLang = await prisma.post.findUnique({
@@ -327,12 +341,25 @@ export async function GET(req: Request) {
     const validOrderByFields = ["createdAt", "mentions", "views", "likes", "title"];
     const orderByField = validOrderByFields.includes(orderByParam) ? orderByParam : "createdAt";
 
-    const statusParam = url.searchParams.get("status");
+    // Proteção contra vazamento de drafts: endpoints públicos retornam EXCLUSIVAMENTE posts publicados
+    const isAuth = await isAuthorizedAdminOrM2M(req);
+    let statusFilter: any = { status: "publicado" };
+
+    if (isAuth) {
+      const statusParam = url.searchParams.get("status");
+      if (statusParam && statusParam !== "all") {
+        statusFilter = { status: statusParam };
+      } else if (statusParam === "all") {
+        statusFilter = {};
+      } else {
+        statusFilter = {};
+      }
+    }
 
     const posts = await prisma.post.findMany({
       where: {
         AND: [
-          statusParam ? { status: statusParam } : {},
+          statusFilter,
           {
             OR: [
               { lang },
@@ -394,7 +421,6 @@ export async function POST(req: Request) {
 
     const explicitMentionedSlugs: string[] = Array.isArray(body?.mentioned_slugs || body?.mentionedSlugs) ? (body?.mentioned_slugs || body?.mentionedSlugs) : [];
 
-    // SUPORTE A POST MULTI-IDIOMA (OUTPUT DE AUTOMAÇÃO N8N)
     if (output && typeof output === "object") {
       const rawGroupId = output.translationGroupId || output.group_id || output.groupId || output.id || output.pt?.id || output.en?.id || output.es?.id || body.translationGroupId || body.group_id || body.groupId || body.id || body.post_id;
       const translationGroupId = toNumericGroupId(rawGroupId);
@@ -403,7 +429,6 @@ export async function POST(req: Request) {
 
       const langs = ["pt", "en", "es"];
 
-      // Buscar posts existentes do mesmo translationGroupId para aproveitar imagens reais já cadastradas
       const existingGroupPosts = translationGroupId ? await prisma.post.findMany({
         where: { translationGroupId },
         select: { img: true, blocks: true }
@@ -553,7 +578,6 @@ export async function POST(req: Request) {
         });
       }
 
-      // Atualizar contagem de menções
       if (extractedMentionedSlugs.size > 0) {
         const slugsArray = Array.from(extractedMentionedSlugs);
         await prisma.post.updateMany({
@@ -578,7 +602,6 @@ export async function POST(req: Request) {
       });
     }
 
-    // SUPORTE A POST ÚNICO (MANUAL / TRADICIONAL)
     const {
       title,
       slug: customSlug,
