@@ -5,11 +5,11 @@ import { verifyUserToken } from "@/lib/auth";
 
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ id: string }> | { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await Promise.resolve(params);
-    const cookieStore = await cookies();
+    const { id } = params;
+    const cookieStore = cookies();
     const token = cookieStore.get("auth_token")?.value;
 
     if (!token) {

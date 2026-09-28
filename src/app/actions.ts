@@ -11,8 +11,7 @@ import { toNumericGroupId } from "./data";
 import { N8nClient } from "../lib/n8n/client";
 
 async function requireAdmin(actionName?: string) {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("admin_token")?.value;
+  const token = cookies().get("admin_token")?.value;
   if (!token) {
     console.log(JSON.stringify({ timestamp: new Date().toISOString(), user_id: 'anonymous', action: actionName || 'requireAdmin', status: 'unauthorized' }));
     throw new Error("Unauthorized");
@@ -50,8 +49,7 @@ export async function loginAction(prevState: any, formData: FormData) {
   // Criar token exclusivo de administrador
   const token = await signAdminToken(username);
 
-  const cookieStore = await cookies();
-  cookieStore.set("admin_token", token, {
+  cookies().set("admin_token", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
@@ -65,8 +63,7 @@ export async function loginAction(prevState: any, formData: FormData) {
 
 export async function logoutAction() {
   await requireAdmin("logoutAction").catch(() => null);
-  const cookieStore = await cookies();
-  cookieStore.delete("admin_token");
+  cookies().delete("admin_token");
   redirect("/admin/login");
 }
 

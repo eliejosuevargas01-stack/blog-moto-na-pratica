@@ -50,7 +50,7 @@ export async function GET(request: Request) {
 // POST: Add a new comment
 export async function POST(request: Request) {
   try {
-    const cookieStore = await cookies();
+    const cookieStore = cookies();
     const token = cookieStore.get("auth_token")?.value;
 
     if (!token) {

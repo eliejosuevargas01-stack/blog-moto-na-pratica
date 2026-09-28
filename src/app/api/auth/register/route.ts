@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { signUserToken } from "@/lib/auth";
@@ -58,8 +57,14 @@ export async function POST(request: Request) {
       email: user.email
     });
 
-    const cookieStore = await cookies();
-    cookieStore.set("auth_token", token, {
+    const response = NextResponse.json({
+      success: true,
+      user: { id: user.id, name: user.name, email: user.email }
+    });
+
+    response.cookies.set({
+      name: "auth_token",
+      value: token,
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
@@ -67,10 +72,7 @@ export async function POST(request: Request) {
       path: "/"
     });
 
-    return NextResponse.json({
-      success: true,
-      user: { id: user.id, name: user.name, email: user.email }
-    });
+    return response;
   } catch (error: any) {
     console.error("Erro no cadastro:", error);
     return NextResponse.json(
