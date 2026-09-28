@@ -50,8 +50,6 @@ export default function AdvertiseContactForm() {
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
 
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
@@ -92,57 +90,14 @@ export default function AdvertiseContactForm() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) return;
-
-    setIsSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setIsSubmitting(false);
-    setSubmitted(true);
   };
 
-  const handleReset = () => {
-    setFormData({
-      contactName: "",
-      companyName: "",
-      corporateEmail: "",
-      phone: "",
-      adFormat: "",
-      budgetRange: "",
-      message: "",
-    });
-    setErrors({});
-    setSubmitted(false);
-  };
 
-  if (submitted) {
     return (
-      <div className="bg-card border border-border p-8 text-center rounded-none shadow-sm">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-emerald-100 text-emerald-700 mb-4">
-          <CheckCircle2 size={32} />
-        </div>
-        <h3 style={TEKO} className="text-[32px] font-semibold uppercase text-foreground leading-tight mb-2">
-          Proposta Comercial Recebida!
-        </h3>
-        <p className="text-[14px] text-muted-foreground max-w-lg mx-auto mb-6" style={BODY}>
-          Agradecemos pelo interesse em anunciar no <strong>Moto na Prática</strong>, {formData.contactName}!
-          Nosso departamento comercial analisará os objetivos da marca <strong>{formData.companyName}</strong> e
-          enviará a tabela de preços detalhada e disponibilidade de inventário em até 24 horas úteis no e-mail{" "}
-          <span className="text-foreground font-semibold">{formData.corporateEmail}</span>.
-        </p>
-        <button
-          type="button"
-          onClick={handleReset}
-          className="inline-flex items-center gap-2 px-6 py-2.5 bg-foreground text-background text-[13px] font-semibold uppercase tracking-wider hover:bg-primary hover:text-white transition-colors cursor-pointer"
-        >
-          <RefreshCw size={14} /> Enviar Nova Solicitação Comercial
-        </button>
-      </div>
-    );
-  }
-
-  return (
     <form onSubmit={handleSubmit} noValidate className="bg-card border border-border p-6 md:p-8 space-y-5">
       <div className="border-b border-border pb-4 mb-2">
         <div className="flex items-center gap-2 text-primary font-semibold text-[12px] uppercase tracking-wider mb-1" style={BODY}>
@@ -347,27 +302,16 @@ export default function AdvertiseContactForm() {
       </div>
 
       {/* Botão de Envio */}
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="w-full inline-flex items-center justify-center gap-2.5 px-6 py-3.5 bg-primary text-primary-foreground text-[14px] font-semibold uppercase tracking-wider hover:bg-primary/90 disabled:opacity-50 transition-all cursor-pointer shadow-sm"
-        style={TEKO}
-      >
-        {isSubmitting ? (
-          <>
-            <RefreshCw size={18} className="animate-spin" /> Enviando Solicitação Comercial...
-          </>
-        ) : (
-          <>
-            <Send size={18} /> Solicitar Mídia Kit & Proposta
-          </>
-        )}
-      </button>
+
+      <div className="w-full text-center px-6 py-3.5 bg-muted text-muted-foreground text-[14px] font-semibold uppercase tracking-wider border border-border" style={TEKO}>
+        Envio comercial temporariamente indisponível. Use a página de contato quando o canal estiver habilitado.
+      </div>
+
 
       <p className="text-[12px] text-muted-foreground text-center" style={BODY}>
         Atendimento direto também por e-mail:{" "}
-        <a href="mailto:comercial@motonapratica.com.br" className="text-primary font-semibold hover:underline">
-          comercial@motonapratica.com.br
+        <a href="/contato" className="text-primary font-semibold hover:underline">
+          Fale conosco via Página de Contato
         </a>
       </p>
     </form>

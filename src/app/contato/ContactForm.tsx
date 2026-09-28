@@ -20,9 +20,11 @@ interface FormErrors {
 
 const SUBJECT_OPTIONS = [
   "Sugestão de Pauta / Notícia",
-  "Dúvida Técnica / Mecânica",
   "Correção de Matéria",
+  "Imprensa / Press Release",
+  "Dúvida Técnica / Mecânica",
   "Parceria Comercial / Publicidade",
+  "Questões Gerais",
   "Outro",
 ];
 
@@ -35,8 +37,6 @@ export default function ContactForm() {
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
 
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
@@ -77,54 +77,14 @@ export default function ContactForm() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) return;
-
-    setIsSubmitting(true);
-    // Simula o processamento seguro de envio institucional
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setIsSubmitting(false);
-    setSubmitted(true);
   };
 
-  const handleReset = () => {
-    setFormData({
-      fullName: "",
-      email: "",
-      subject: "",
-      message: "",
-    });
-    setErrors({});
-    setSubmitted(false);
-  };
 
-  if (submitted) {
     return (
-      <div className="bg-card border border-border p-8 text-center rounded-sm">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-emerald-100 text-emerald-700 mb-4">
-          <CheckCircle2 size={32} />
-        </div>
-        <h3 style={TEKO} className="text-[32px] font-semibold uppercase text-foreground leading-tight mb-2">
-          Mensagem Enviada com Sucesso!
-        </h3>
-        <p className="text-[14px] text-muted-foreground max-w-md mx-auto mb-6" style={BODY}>
-          Obrigado pelo contato, <strong className="text-foreground font-semibold">{formData.fullName}</strong>.
-          Nossa equipe editorial ou comercial analisará sua solicitação e responderá no e-mail informado
-          (<span className="text-foreground">{formData.email}</span>) em até 48 horas úteis.
-        </p>
-        <button
-          type="button"
-          onClick={handleReset}
-          className="inline-flex items-center gap-2 px-6 py-2.5 bg-foreground text-background text-[13px] font-semibold uppercase tracking-wider hover:bg-primary hover:text-white transition-colors cursor-pointer"
-        >
-          <RefreshCw size={14} /> Enviar Nova Mensagem
-        </button>
-      </div>
-    );
-  }
-
-  return (
     <form onSubmit={handleSubmit} noValidate className="bg-card border border-border p-6 md:p-8 space-y-6">
       <div className="border-b border-border pb-4 mb-2">
         <h2 style={TEKO} className="text-[28px] font-semibold uppercase tracking-wide text-foreground">
@@ -253,22 +213,11 @@ export default function ContactForm() {
       </div>
 
       {/* Botão de Envio */}
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="w-full inline-flex items-center justify-center gap-2.5 px-6 py-3.5 bg-primary text-primary-foreground text-[14px] font-semibold uppercase tracking-wider hover:bg-primary/90 disabled:opacity-50 transition-all cursor-pointer shadow-sm"
-        style={TEKO}
-      >
-        {isSubmitting ? (
-          <>
-            <RefreshCw size={18} className="animate-spin" /> Enviando Mensagem...
-          </>
-        ) : (
-          <>
-            <Send size={18} /> Enviar Mensagem para a Redação
-          </>
-        )}
-      </button>
+
+      <div className="w-full text-center px-6 py-3.5 bg-muted text-muted-foreground text-[14px] font-semibold uppercase tracking-wider border border-border" style={TEKO}>
+        Envio pelo site indisponível. Utilize nosso e-mail.
+      </div>
+
 
       <p className="text-[11.5px] text-muted-foreground text-center" style={BODY}>
         Seus dados são tratados estritamente de acordo com a nossa{" "}

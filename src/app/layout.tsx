@@ -2,6 +2,7 @@ import "./globals.css";
 import { prisma } from "../lib/db";
 import { TEKO, BODY } from "./data";
 import Header from "./components/Header";
+import EditorialTrustLinks from "./components/EditorialTrustLinks";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { Teko as TekoFont, Barlow as BarlowFont } from "next/font/google";
@@ -62,33 +63,34 @@ export default async function RootLayout({
     console.warn("Database connection failed during SSR, using static fallbacks.", error);
   }
 
+
+
+
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://motonapratica.online";
   const newsMediaSchema = {
     "@context": "https://schema.org",
     "@type": "NewsMediaOrganization",
     "name": "Moto na Prática",
     "alternateName": "Portal Moto na Prática",
-    "url": "https://motonapratica.com.br",
+    "url": siteUrl,
     "logo": {
       "@type": "ImageObject",
-      "url": "https://motonapratica.com.br/favicon.png",
+      "url": `${siteUrl}/favicon.png`,
       "width": 512,
       "height": 512
     },
-    "description": "Portal informativo e jornalismo independente de motociclismo. Testes reais sem patrocínio velado, medição real de consumo na bomba, oficina prática e cobertura esportiva com compromisso E-E-A-T.",
+    "description": "Portal informativo e jornalismo independente de motociclismo. Pesquisa aprofundada, manuais, guias e cobertura do mercado de duas rodas focada na utilidade para o leitor.",
     "foundingDate": "2026-01-01",
     "founder": {
       "@type": "Person",
       "name": "Eliezer"
     },
-    "ethicsPolicy": "https://motonapratica.com.br/politica-editorial",
-    "publishingPrinciples": "https://motonapratica.com.br/politica-editorial",
-    "correctionsPolicy": "https://motonapratica.com.br/politica-editorial#correcoes",
-    "diversityPolicy": "https://motonapratica.com.br/politica-editorial#diversidade",
-    "verificationFactCheckingPolicy": "https://motonapratica.com.br/politica-editorial#checagem",
-    "sameAs": [
-      "https://instagram.com/motonapratica",
-      "https://youtube.com/@motonapratica"
-    ]
+    "ethicsPolicy": `${siteUrl}/politica-editorial`,
+    "publishingPrinciples": `${siteUrl}/politica-editorial`,
+    "correctionsPolicy": `${siteUrl}/politica-editorial#correcoes`,
+    "diversityPolicy": `${siteUrl}/politica-editorial#diversidade`,
+    "verificationFactCheckingPolicy": `${siteUrl}/politica-editorial#checagem`
   };
 
   return (
@@ -133,7 +135,7 @@ export default async function RootLayout({
                 </span>
               </div>
               <p className="text-[13px] text-muted-foreground leading-relaxed mb-5">
-                Portal de jornalismo independente especializado no universo das duas rodas. Análises técnicas rigorosas, testes reais sem patrocínio velado, manutenção na oficina e cobertura esportiva com credibilidade, transparência e respeito inegociável ao motociclista.
+                Portal de jornalismo independente especializado no universo das duas rodas. Pesquisa técnica rigorosa, cobertura esportiva e análises de mercado com credibilidade, transparência e utilidade para o motociclista.
               </p>
               <div className="mt-auto">
                 <SocialLinks iconSize={16} />
@@ -187,7 +189,7 @@ export default async function RootLayout({
               <ul className="space-y-2.5">
                 <li>
                   <Link href="/sobre" className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors">
-                    <ChevronRight size={11} className="text-primary shrink-0" /> Quem Somos
+                    <ChevronRight size={11} className="text-primary shrink-0" /> Sobre o Portal
                   </Link>
                 </li>
                 <li>
@@ -196,18 +198,38 @@ export default async function RootLayout({
                   </Link>
                 </li>
                 <li>
+                  <Link href="/como-pesquisamos" className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors">
+                    <ChevronRight size={11} className="text-primary shrink-0" /> Como Pesquisamos
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/uso-de-inteligencia-artificial" className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors">
+                    <ChevronRight size={11} className="text-primary shrink-0" /> Uso de IA
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/politica-de-correcoes" className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors">
+                    <ChevronRight size={11} className="text-primary shrink-0" /> Correções
+                  </Link>
+                </li>
+                <li>
                   <Link href="/equipe" className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors">
-                    <ChevronRight size={11} className="text-primary shrink-0" /> Equipe Editorial
+                    <ChevronRight size={11} className="text-primary shrink-0" /> Quem faz o portal
                   </Link>
                 </li>
                 <li>
                   <Link href="/contato" className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors">
-                    <ChevronRight size={11} className="text-primary shrink-0" /> Fale com a Redação
+                    <ChevronRight size={11} className="text-primary shrink-0" /> Contato
                   </Link>
                 </li>
                 <li>
                   <Link href="/anuncie" className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors">
                     <ChevronRight size={11} className="text-primary shrink-0" /> Mídia Kit / Anuncie
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/publicidade-e-afiliados" className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors">
+                    <ChevronRight size={11} className="text-primary shrink-0" /> Publicidade & Afiliados
                   </Link>
                 </li>
               </ul>
@@ -243,6 +265,9 @@ export default async function RootLayout({
             </div>
           </div>
 
+          <div className="max-w-[1200px] mx-auto px-4 md:px-6 mb-8 mt-2">
+            <EditorialTrustLinks />
+          </div>
           <div className="border-t border-border py-5 px-4 text-center text-[11.5px] text-muted-foreground tracking-wider uppercase">
             © 2026 Moto na Prática · Portal Informativo e Jornalismo Independente de Motociclismo · {t.footer.rights}
           </div>

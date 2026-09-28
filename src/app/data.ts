@@ -348,9 +348,9 @@ export const STATIC_INSTITUTIONAL_PAGES: Record<string, InstitutionalPage> = {
       <p>O <strong>Moto na Prática</strong> é um portal jornalístico independente dedicado à cobertura técnica, informativa e cultural do motociclismo. Nossa missão prioritária é fornecer ao leitor informações autênticas, rigorosas e livres de conflitos de interesse.</p>
       <p>Não aceitamos acordos comerciais que condicionem análises, imponham censura prévia, exijam aprovação de pauta ou obriguem vereditos positivos. Se um produto ou motocicleta apresentar falhas mecânicas, fragilidade construtiva ou consumo incompatível com as especificações declaradas pela montadora, isso será registrado de forma explícita e fundamentada.</p>
 
-      <h2>2. Metodologia de Testes e Medições</h2>
-      <p>Todos os testes de consumo de combustível são realizados com abastecimento no bocal sob metodologia tanque-a-tanque na mesma bomba e com a mesma inclinação da moto. Não nos pautamos unicamente por computadores de bordo eletrônicos.</p>
-      <p>Nossos testes de rodagem combinam trajetos urbanos pesados, rodovias de serra e vias de trânsito rápido com passageiro e carga para simular o uso real do proprietário brasileiro.</p>
+      <h2>2. Nossa Metodologia de Pesquisa</h2>
+
+
 
       <h2>3. Política de Transparência e Financiamento</h2>
       <p>O portal é sustentado por publicidade programática, parcerias de mídia claramente identificadas e programas de afiliados. Todo conteúdo patrocinado ou comercial é ostensivamente rotulado com as etiquetas <em>"Publicidade"</em>, <em>"Informe Publicitário"</em> ou <em>"Conteúdo de Parceiro"</em>.</p>
@@ -361,27 +361,27 @@ export const STATIC_INSTITUTIONAL_PAGES: Record<string, InstitutionalPage> = {
   },
   "equipe": {
     slug: "equipe",
-    title: "Equipe Editorial & Redação",
-    seoTitle: "Equipe da Redação & Especialistas · Moto na Prática",
-    seoDescription: "Conheça os jornalistas, pilotos de teste e técnicos que compõem a redação do Moto na Prática.",
+    title: "A Identidade Editorial",
+    seoTitle: "Quem Faz o Portal · Moto na Prática",
+    seoDescription: "Conheça o responsável pelo projeto, a identidade editorial e os princípios de transparência do Moto na Prática.",
     bodyHtml: `
       <h2>Quem Faz o Moto na Prática</h2>
-      <p>Nossa equipe reúne profissionais apaixonados por duas rodas, unindo a prática diária de pilotagem urbana e rodoviária ao rigor da apuração jornalística e do conhecimento mecânico.</p>
+
       
       <div class="my-6 p-6 bg-card border border-border">
         <h3 class="text-xl font-bold mb-1 text-foreground">Eliezer</h3>
-        <p class="text-sm text-primary font-semibold mb-3">Fundador & Editor-Chefe de Testes</p>
+        <p class="text-sm text-primary font-semibold mb-3">Fundador & Responsável pelo Projeto</p>
         <p class="text-muted-foreground text-sm">Piloto e entusiasta com base de operações em Gaspar - SC. Responsável pela coordenação do teste de longa duração da Fazer 250 (FZ25) e pelas avaliações de consumo real na bomba, ergonomia diária e manutenção preventiva.</p>
       </div>
 
       <div class="my-6 p-6 bg-card border border-border">
-        <h3 class="text-xl font-bold mb-1 text-foreground">Redação Técnica & Colaboradores</h3>
-        <p class="text-sm text-primary font-semibold mb-3">Mecânica, Motorsport & Viagens</p>
-        <p class="text-muted-foreground text-sm">Nossos repórteres técnicos e consultores mecânicos cobrem os lançamentos de mercado, regulamentos esportivos de MotoGP e Superbike, além de rotas de mototurismo pelo Brasil e América do Sul.</p>
+        <h3 class="text-xl font-bold mb-1 text-foreground">Redação Moto na Prática</h3>
+        <p class="text-sm text-primary font-semibold mb-3">Pesquisa & Documentação</p>
+
       </div>
 
       <h2>Canal Direto com a Redação</h2>
-      <p>Sugestões de pauta, correções técnicas ou dúvidas mecânicas podem ser enviadas diretamente para a equipe através da nossa página de contato.</p>
+      <p>Sugestões de pauta, correções técnicas ou dúvidas mecânicas podem ser enviadas ao Moto na Prática pela página de contato.</p>
     `
   },
   "contato": {
@@ -397,22 +397,22 @@ export const STATIC_INSTITUTIONAL_PAGES: Record<string, InstitutionalPage> = {
         <div class="p-6 bg-card border border-border">
           <h3 class="font-bold text-lg mb-2">Pautas & Sugestões de Teste</h3>
           <p class="text-sm text-muted-foreground mb-3">Envie novidades, motos para avaliação ou flagras do setor.</p>
-          <p class="text-sm font-semibold text-primary">redacao@motonapratica.com.br</p>
+          <p class="text-sm font-semibold text-primary">Fale conosco via Página de Contato</p>
         </div>
         <div class="p-6 bg-card border border-border">
           <h3 class="font-bold text-lg mb-2">Correções & Erratas</h3>
           <p class="text-sm text-muted-foreground mb-3">Identificou um dado impreciso? Notifique nossa equipe imediatamente.</p>
-          <p class="text-sm font-semibold text-primary">correcoes@motonapratica.com.br</p>
+          <p class="text-sm font-semibold text-primary">Fale conosco via Página de Contato</p>
         </div>
         <div class="p-6 bg-card border border-border">
           <h3 class="font-bold text-lg mb-2">Publicidade & Parcerias</h3>
           <p class="text-sm text-muted-foreground mb-3">Propostas de mídia kit, patrocínio de rotas e anúncios institucionais.</p>
-          <p class="text-sm font-semibold text-primary">comercial@motonapratica.com.br</p>
+          <p class="text-sm font-semibold text-primary">Fale conosco via Página de Contato</p>
         </div>
         <div class="p-6 bg-card border border-border">
           <h3 class="font-bold text-lg mb-2">Privacidade & LGPD</h3>
           <p class="text-sm text-muted-foreground mb-3">Dúvidas sobre tratamento de dados e exercício de direitos legais.</p>
-          <p class="text-sm font-semibold text-primary">privacidade@motonapratica.com.br</p>
+          <p class="text-sm font-semibold text-primary">Fale conosco via Página de Contato</p>
         </div>
       </div>
     `
@@ -433,7 +433,7 @@ export const STATIC_INSTITUTIONAL_PAGES: Record<string, InstitutionalPage> = {
         <li><strong>Newsletter Exclusiva:</strong> Comunicação direta com leitores inscritos e segmentados por interesse.</li>
       </ul>
 
-      <p class="mt-6">Para solicitar nosso <strong>Mídia Kit completo</strong> com métricas de audiência, dados demográficos e tabela de formatos, envie um e-mail para <strong class="text-primary">comercial@motonapratica.com.br</strong>.</p>
+      <p class="mt-6">Para consultar nossos formatos e propostas comerciais, escreva para <strong class="text-primary">Fale conosco via Página de Contato</strong>.</p>
     `
   },
   "termos-de-uso": {
@@ -449,7 +449,7 @@ export const STATIC_INSTITUTIONAL_PAGES: Record<string, InstitutionalPage> = {
       <p>Todo o conteúdo publicado — incluindo textos, fotografias originais, dados de testes e elementos gráficos — é protegido pelas leis brasileiras de direitos autorais. A reprodução parcial é permitida exclusivamente com citação expressa da fonte com link ativo do portal.</p>
 
       <h2>3. Responsabilidade Técnica</h2>
-      <p>Os relatos de manutenção preventiva e mecânica refletem a experiência prática da redação. Cada motociclista deve consultar o manual oficial do proprietário e executar reparos com ferramentas e proteções adequadas, não se responsabilizando o portal por procedimentos executados incorretamente por terceiros.</p>
+      <p>Os relatos de manutenção preventiva e mecânica refletem a pesquisa documental. Cada motociclista deve consultar o manual oficial do proprietário e executar reparos com ferramentas e proteções adequadas, não se responsabilizando o portal por procedimentos executados incorretamente por terceiros.</p>
     `
   },
   "politica-de-privacidade": {
@@ -465,7 +465,7 @@ export const STATIC_INSTITUTIONAL_PAGES: Record<string, InstitutionalPage> = {
       <p>Coletamos dados de navegação anonimizados para estatísticas de tráfego (via Google Analytics) e endereço de e-mail exclusivamente quando fornecido de forma voluntária para recebimento da newsletter ou publicação de comentários moderados.</p>
 
       <h2 id="exclusao-dados">3. Seus Direitos & Exclusão de Dados</h2>
-      <p>O titular tem o direito de solicitar a qualquer tempo a confirmação da existência de tratamento, o acesso aos dados ou a exclusão definitiva do seu e-mail de nossas listas de newsletter. Para exercer seus direitos, basta entrar em contato através do e-mail <strong>privacidade@motonapratica.com.br</strong>.</p>
+      <p>O titular tem o direito de solicitar a qualquer tempo a confirmação da existência de tratamento, o acesso aos dados ou a exclusão definitiva do seu e-mail de nossas listas de newsletter. Para exercer seus direitos, basta entrar em contato através do e-mail <strong>Fale conosco via Página de Contato</strong>.</p>
     `
   }
 };

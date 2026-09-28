@@ -183,8 +183,8 @@ export default function TermosDeUsoPage() {
         {/* DÚVIDAS */}
         <div className="p-4 bg-muted/40 border border-border text-[13px] text-muted-foreground flex items-center justify-between" style={BODY}>
           <span>Dúvidas jurídicas sobre nossos Termos de Uso?</span>
-          <a href="mailto:redacao@motonapratica.com.br?subject=Dúvida%20sobre%20Termos%20de%20Uso" className="text-primary font-semibold hover:underline">
-            redacao@motonapratica.com.br
+          <a href="/contato" className="text-primary font-semibold hover:underline">
+            Fale conosco via Página de Contato
           </a>
         </div>
       </div>

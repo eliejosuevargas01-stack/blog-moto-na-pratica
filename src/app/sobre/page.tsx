@@ -3,6 +3,7 @@ import { POSTS, TAG_COLORS, TEKO, BODY, optimizeImageUrl } from "../data";
 import SafeHtml from "../components/SafeHtml";
 import SocialLinks from "../components/SocialLinks";
 import Link from "next/link";
+import EditorialMethodologyCard from "../components/EditorialMethodologyCard";
 import { 
   Clock, 
   ArrowRight, 
@@ -39,12 +40,12 @@ export async function generateMetadata() {
     });
     return {
       title: page?.seoTitle || "Quem Somos · Jornalismo Independente & E-E-A-T · Moto na Prática",
-      description: page?.seoDescription || "Moto na Prática: portal informativo e jornalismo independente de motociclismo. Testes reais, oficina prática, rotas e cobertura esportiva.",
+      description: page?.seoDescription || "Conheça o Moto na Prática, uma publicação independente com pesquisa aprofundada focada na utilidade para o leitor.",
     };
   } catch (e) {
     return {
       title: "Quem Somos · Jornalismo Independente & E-E-A-T · Moto na Prática",
-      description: "Moto na Prática: portal informativo e jornalismo independente de motociclismo. Testes reais, oficina prática, rotas e cobertura esportiva."
+      description: "Conheça o Moto na Prática, uma publicação independente com pesquisa aprofundada focada na utilidade para o leitor."
     };
   }
 }
@@ -63,14 +64,14 @@ export default async function Sobre() {
   let content: any = {
     heroTitle: "Moto na Prática · Portal Informativo e Jornalismo Independente de Motociclismo",
     heroSubtitle: "PORTAL INFORMATIVO · E-E-A-T & JORNALISMO INDEPENDENTE",
-    heroDescription: "Nascido da vivência real diária sobre duas rodas com o fundador Eliezer e consolidado como portal de referência técnica, testes sem patrocínio velado, medição real de consumo na bomba e cobertura do motociclismo nacional e mundial.",
+    heroDescription: "O Moto na Prática é uma publicação independente focada em entregar pesquisa aprofundada, notícias claras e coberturas de mercado e manutenção úteis para o motociclista.",
     heroImage: "https://images.unsplash.com/photo-1625812184391-0359bf2344b9?w=1400&h=600&fit=crop&auto=format",
     heroFocalPoint: "center",
     stats: [
-      { value: "100% INDEPENDENTE", label: "Testes sem patrocínio velado", iconName: "ShieldCheck" },
-      { value: "CONSUMO NA BOMBA", label: "Medição real tanque a tanque", iconName: "Fuel" },
-      { value: "+8.400 KM", label: "Teste FZ25 Longa Duração", iconName: "Gauge" },
-      { value: "RIGOR E-E-A-T", label: "Jornalismo & Oficina Prática", iconName: "Wrench" }
+      { value: "100% INDEPENDENTE", label: "Pesquisa e Independência", iconName: "ShieldCheck" },
+      { value: "DADOS DOCUMENTADOS", label: "Análise baseada em documentação e especificações de fábrica", iconName: "Fuel" },
+      { value: "PESQUISA CONSTANTE", label: "Busca constante por informação útil", iconName: "Gauge" },
+      { value: "RIGOR E-E-A-T", label: "Informação Clara e Útil", iconName: "Wrench" }
     ],
     bioTitle: "Manifesto & História: Da Prática Real ao Portal Informativo",
     bioContentHtml: `<p class="mb-4 text-[15px] leading-relaxed text-muted-foreground">O <strong>Moto na Prática</strong> nasceu da vivência real diária sobre duas rodas. Em janeiro de 2026, o fundador <strong>Eliezer</strong> iniciou o projeto a partir de sua rotina de deslocamento no Vale do Itajaí (Gaspar e litoral de Santa Catarina) a bordo da sua <strong>Yamaha Fazer 250 (FZ25) Solid Grey 2026</strong> recém-adquirida.</p>
@@ -270,58 +271,6 @@ export default async function Sobre() {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-
-        {/* COLUNA TESTE DE LONGA DURAÇÃO */}
-        <div className="mb-20">
-          <div className="flex items-center gap-3 mb-8">
-            <span className="block w-1.5 h-8 bg-primary" />
-            <div>
-              <span className="text-primary text-[11px] font-bold uppercase tracking-widest block">Frota da Redação</span>
-              <h2 style={TEKO} className="text-[34px] md:text-[40px] font-semibold uppercase tracking-wide text-foreground">
-                {content.motoTitle}
-              </h2>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] bg-card border border-border overflow-hidden rounded shadow-sm">
-            <div className="relative min-h-[340px] lg:min-h-full">
-              <img 
-                src={optimizeImageUrl(content.motoImage, 900)} 
-                alt={content.motoSpecsTitle} 
-                className="w-full h-full object-cover absolute inset-0" 
-                style={{ objectPosition: content.motoFocalPoint || "center" }}
-                loading="lazy"
-              />
-              <div className="absolute top-4 left-4 bg-black/80 backdrop-blur-sm px-3 py-1.5 rounded border border-white/10">
-                <span className="text-[11px] font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  Teste Contínuo em Andamento
-                </span>
-              </div>
-            </div>
-
-            <div className="p-8 flex flex-col justify-center" style={BODY}>
-              <span className="text-primary text-[11px] font-bold uppercase tracking-widest mb-1">
-                {content.motoSubtitle}
-              </span>
-              <h3 style={TEKO} className="text-[32px] sm:text-[38px] font-semibold uppercase leading-tight text-foreground mb-3">
-                {content.motoSpecsTitle}
-              </h3>
-              <p className="text-[13.5px] text-muted-foreground leading-relaxed mb-6">
-                {content.motoDescription}
-              </p>
-
-              <div className="space-y-2.5">
-                {(content.motoSpecs || []).map((spec: any, idx: number) => (
-                  <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-border pb-2 gap-0.5">
-                    <span className="text-[12px] text-muted-foreground uppercase tracking-wider font-semibold">{spec.name}</span>
-                    <span className="text-[13px] text-foreground font-medium text-left sm:text-right">{spec.value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
         </div>
 

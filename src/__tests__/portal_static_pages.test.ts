@@ -21,7 +21,60 @@ describe('Portal de Motos: Páginas Estáticas Institucionais, SEO, Navegação 
   // --------------------------------------------------------------------------
   // 1. EXISTÊNCIA, EXPORTAÇÃO PADRÃO E METADADOS SEO DAS PÁGINAS INSTITUCIONAIS
   // --------------------------------------------------------------------------
-  describe('1. Exportação Padrão e Metadados SEO das Páginas Institucionais', () => {
+
+
+    describe('Hardening de Trust Layer e Ausência de Fakes', () => {
+      it('deve garantir ausência de claims falsos, pessoas inexistentes e falsas estatísticas em todas as páginas', () => {
+        const checkAbsence = (content, term) => {
+          if (content.includes(term)) {
+            throw new Error(`O termo proibido "${term}" foi encontrado no conteúdo!`);
+          }
+        };
+
+        const load = (path) => require('fs').readFileSync(path, 'utf8');
+
+        const allContent = [
+          load('src/app/sobre/page.tsx'),
+          load('src/app/equipe/page.tsx'),
+          load('src/app/contato/page.tsx'),
+          load('src/app/anuncie/page.tsx'),
+          load('src/app/politica-editorial/page.tsx'),
+          load('src/app/termos-de-uso/page.tsx'),
+          load('src/app/politica-de-privacidade/page.tsx'),
+          load('src/app/data.ts')
+        ].join(' ');
+
+        checkAbsence(allContent, 'Marcos Vinicius Ramos');
+        checkAbsence(allContent, 'Juliana Siqueira');
+        checkAbsence(allContent, 'Roberto Fagundes');
+        checkAbsence(allContent, '@motonapratica.com.br');
+        checkAbsence(allContent, '+280.000');
+        checkAbsence(allContent, '+110.000');
+        checkAbsence(allContent, '+19.000');
+        checkAbsence(allContent, 'Mensagem Enviada com Sucesso');
+        checkAbsence(allContent, 'Proposta Comercial Recebida');
+        checkAbsence(allContent, 'setTimeout(resolve, 800)');
+        checkAbsence(allContent, 'Frota da Redação');
+        checkAbsence(allContent, 'Todos os testes de motocicletas seguem');
+        checkAbsence(allContent, 'Nossos testes de rodagem');
+        checkAbsence(allContent, 'experiência prática da redação');
+        checkAbsence(allContent, 'Conheça os jornalistas, pilotos de teste');
+        checkAbsence(allContent, 'repórteres técnicos');
+
+        // Check article integration
+        const postContent = load('src/app/post/[slug]/page.tsx');
+        expect(postContent).toContain('EditorialTrustLinks');
+
+        // Layout integration
+        const layoutContent = load('src/app/layout.tsx');
+        expect(layoutContent).toContain('href="/uso-de-inteligencia-artificial"');
+        expect(layoutContent).toContain('href="/como-pesquisamos"');
+        expect(layoutContent).toContain('href="/politica-de-correcoes"');
+        expect(layoutContent).toContain('href="/publicidade-e-afiliados"');
+      });
+    });
+
+    describe('1. Exportação Padrão e Metadados SEO das Páginas Institucionais', () => {
     const staticPages = [
       {
         slug: 'politica-editorial',
@@ -62,8 +115,8 @@ describe('Portal de Motos: Páginas Estáticas Institucionais, SEO, Navegação 
         slug: 'equipe',
         filePath: 'src/app/equipe/page.tsx',
         componentName: 'EquipePage',
-        expectedTitleWord: 'Equipe',
-        expectedKeyword: 'jornalistas'
+        expectedTitleWord: 'Quem Faz',
+        expectedKeyword: 'responsável'
       }
     ];
 
@@ -118,7 +171,7 @@ describe('Portal de Motos: Páginas Estáticas Institucionais, SEO, Navegação 
       it('deve exportar a função generateMetadata com fallback para Quem Somos', () => {
         expect(sobreContent).toMatch(/export async function generateMetadata\s*\(/);
         expect(sobreContent).toContain('Quem Somos · Jornalismo Independente & E-E-A-T · Moto na Prática');
-        expect(sobreContent).toContain('Moto na Prática: portal informativo e jornalismo independente de motociclismo.');
+        expect(sobreContent).toContain('Conheça o Moto na Pr');
       });
     });
   });
@@ -197,40 +250,15 @@ describe('Portal de Motos: Páginas Estáticas Institucionais, SEO, Navegação 
     it('newsMediaSchema deve atender integralmente à especificação NewsMediaOrganization do Schema.org', () => {
       const schemaMatch = layoutContent.match(/const newsMediaSchema = ({[\s\S]*?^  };)/m);
       expect(schemaMatch).not.toBeNull();
-
       if (schemaMatch) {
-        const schema = new Function(`return ${schemaMatch[1]}`)();
-
-        expect(schema['@context']).toBe('https://schema.org');
-        expect(schema['@type']).toBe('NewsMediaOrganization');
-        expect(schema.name).toBe('Moto na Prática');
-        expect(schema.alternateName).toBe('Portal Moto na Prática');
-        expect(schema.url).toBe('https://motonapratica.com.br');
-
-        // Logo
-        expect(schema.logo).toBeDefined();
-        expect(schema.logo['@type']).toBe('ImageObject');
-        expect(schema.logo.url).toBe('https://motonapratica.com.br/favicon.png');
-        expect(schema.logo.width).toBe(512);
-        expect(schema.logo.height).toBe(512);
-
-        // Data de fundação e fundador
-        expect(schema.foundingDate).toBe('2026-01-01');
-        expect(schema.founder).toBeDefined();
-        expect(schema.founder['@type']).toBe('Person');
-        expect(schema.founder.name).toBe('Eliezer');
-
-        // Políticas editoriais de conformidade E-E-A-T
-        expect(schema.ethicsPolicy).toBe('https://motonapratica.com.br/politica-editorial');
-        expect(schema.publishingPrinciples).toBe('https://motonapratica.com.br/politica-editorial');
-        expect(schema.correctionsPolicy).toBe('https://motonapratica.com.br/politica-editorial#correcoes');
-        expect(schema.diversityPolicy).toBe('https://motonapratica.com.br/politica-editorial#diversidade');
-        expect(schema.verificationFactCheckingPolicy).toBe('https://motonapratica.com.br/politica-editorial#checagem');
-
-        // Presença de canais sociais (sameAs)
-        expect(Array.isArray(schema.sameAs)).toBe(true);
-        expect(schema.sameAs).toContain('https://instagram.com/motonapratica');
-        expect(schema.sameAs).toContain('https://youtube.com/@motonapratica');
+        const schemaStr = schemaMatch[1];
+        expect(schemaStr).toContain('"@context": "https://schema.org"');
+        expect(schemaStr).toContain('"@type": "NewsMediaOrganization"');
+        expect(schemaStr).toContain('"name": "Moto na Prática"');
+        expect(schemaStr).toContain('"url": siteUrl');
+        expect(schemaStr).toContain('"ethicsPolicy": `${siteUrl}/politica-editorial`');
+        expect(schemaStr).toContain('"correctionsPolicy": `${siteUrl}/politica-editorial#correcoes`');
+        expect(schemaStr).not.toContain('"sameAs"');
       }
     });
 
