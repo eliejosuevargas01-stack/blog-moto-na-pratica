@@ -3,6 +3,7 @@ import { POSTS, TAG_COLORS, TEKO, BODY, optimizeImageUrl } from "../data";
 import SafeHtml from "../components/SafeHtml";
 import SocialLinks from "../components/SocialLinks";
 import Link from "next/link";
+import EditorialMethodologyCard from "../components/EditorialMethodologyCard";
 import { 
   Clock, 
   ArrowRight, 

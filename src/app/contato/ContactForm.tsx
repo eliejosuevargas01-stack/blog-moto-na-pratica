@@ -20,9 +20,11 @@ interface FormErrors {
 
 const SUBJECT_OPTIONS = [
   "Sugestão de Pauta / Notícia",
-  "Dúvida Técnica / Mecânica",
   "Correção de Matéria",
+  "Imprensa / Press Release",
+  "Dúvida Técnica / Mecânica",
   "Parceria Comercial / Publicidade",
+  "Questões Gerais",
   "Outro",
 ];
 

@@ -2,6 +2,7 @@ import "./globals.css";
 import { prisma } from "../lib/db";
 import { TEKO, BODY } from "./data";
 import Header from "./components/Header";
+import EditorialTrustLinks from "./components/EditorialTrustLinks";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { Teko as TekoFont, Barlow as BarlowFont } from "next/font/google";
@@ -187,12 +188,27 @@ export default async function RootLayout({
               <ul className="space-y-2.5">
                 <li>
                   <Link href="/sobre" className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors">
-                    <ChevronRight size={11} className="text-primary shrink-0" /> Quem Somos
+                    <ChevronRight size={11} className="text-primary shrink-0" /> Sobre o Portal
                   </Link>
                 </li>
                 <li>
                   <Link href="/politica-editorial" className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors">
                     <ChevronRight size={11} className="text-primary shrink-0" /> Política Editorial
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/como-pesquisamos" className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors">
+                    <ChevronRight size={11} className="text-primary shrink-0" /> Como Pesquisamos
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/uso-de-inteligencia-artificial" className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors">
+                    <ChevronRight size={11} className="text-primary shrink-0" /> Uso de IA
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/politica-de-correcoes" className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors">
+                    <ChevronRight size={11} className="text-primary shrink-0" /> Correções
                   </Link>
                 </li>
                 <li>
@@ -202,12 +218,17 @@ export default async function RootLayout({
                 </li>
                 <li>
                   <Link href="/contato" className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors">
-                    <ChevronRight size={11} className="text-primary shrink-0" /> Fale com a Redação
+                    <ChevronRight size={11} className="text-primary shrink-0" /> Contato
                   </Link>
                 </li>
                 <li>
                   <Link href="/anuncie" className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors">
                     <ChevronRight size={11} className="text-primary shrink-0" /> Mídia Kit / Anuncie
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/publicidade-e-afiliados" className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors">
+                    <ChevronRight size={11} className="text-primary shrink-0" /> Publicidade & Afiliados
                   </Link>
                 </li>
               </ul>
@@ -243,6 +264,9 @@ export default async function RootLayout({
             </div>
           </div>
 
+          <div className="max-w-[1200px] mx-auto px-4 md:px-6 mb-8 mt-2">
+            <EditorialTrustLinks />
+          </div>
           <div className="border-t border-border py-5 px-4 text-center text-[11.5px] text-muted-foreground tracking-wider uppercase">
             © 2026 Moto na Prática · Portal Informativo e Jornalismo Independente de Motociclismo · {t.footer.rights}
           </div>

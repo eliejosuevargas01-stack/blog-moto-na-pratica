@@ -1,6 +1,7 @@
 import React from "react";
 import { TEKO, BODY } from "../data";
 import Link from "next/link";
+import EditorialMethodologyCard from "../components/EditorialMethodologyCard";
 import {
   ShieldCheck,
   Fuel,
@@ -217,6 +218,30 @@ export default function PoliticaEditorialPage() {
               </div>
             </div>
           </div>
+        </section>
+
+
+          {/* REGRAS DE PESQUISA E EXPERIÊNCIA (ADICIONADO V1) */}
+          <div className="bg-card border border-border p-6 md:p-8 space-y-4 mt-8">
+            <h3 style={TEKO} className="text-[24px] font-semibold uppercase text-foreground leading-none">
+              Limites Inegociáveis de Autoria e Pesquisa
+            </h3>
+            <ul className="space-y-3 text-[14px] text-muted-foreground leading-relaxed" style={BODY}>
+              <li className="flex items-start gap-2">
+                 <span className="text-primary font-bold mt-0.5">•</span>
+                 <span><strong>Experiência Própria:</strong> O Moto na Prática não apresenta uma experiência como própria se ela não tiver realmente ocorrido.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                 <span className="text-primary font-bold mt-0.5">•</span>
+                 <span><strong>Testes Físicos vs. Pesquisa:</strong> Conteúdos baseados em pesquisa não devem ser apresentados como testes físicos. Diferenciamos explicitamente análise documental de avaliação na estrada.</span>
+              </li>
+            </ul>
+          </div>
+
+
+        {/* METODOLOGIA EDITORIAL */}
+        <section className="scroll-mt-24 mb-14">
+            <EditorialMethodologyCard />
         </section>
 
         {/* DIVERSIDADE E REPRESENTATIVIDADE */}

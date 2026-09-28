@@ -1,6 +1,7 @@
 import { prisma } from "../../../lib/db";
 import { POSTS, TAG_COLORS, TEKO, BODY, optimizeImageUrl, slugify } from "../../data";
 import Sidebar from "../../components/Sidebar";
+import EditorialTrustLinks from "../../components/EditorialTrustLinks";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
@@ -435,6 +436,13 @@ export default async function PostPage(props: PostPageProps, langOverride?: stri
                 );
               });
             })()}
+          </div>
+
+          {/* Editorial Process Integration */}
+          <div className="mt-8">
+            <p className="text-[12px] text-muted-foreground uppercase tracking-widest font-semibold mb-2">Sobre nosso processo editorial</p>
+            <p className="text-[13px] text-muted-foreground mb-3 leading-relaxed">Este conteúdo segue a Política Editorial do Moto na Prática.</p>
+            <EditorialTrustLinks />
           </div>
 
           {/* Dynamic Post Tags */}
