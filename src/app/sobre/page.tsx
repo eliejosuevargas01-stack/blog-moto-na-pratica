@@ -274,58 +274,6 @@ export default async function Sobre() {
           </div>
         </div>
 
-        {/* COLUNA TESTE DE LONGA DURAÇÃO */}
-        <div className="mb-20">
-          <div className="flex items-center gap-3 mb-8">
-            <span className="block w-1.5 h-8 bg-primary" />
-            <div>
-              <span className="text-primary text-[11px] font-bold uppercase tracking-widest block">Frota da Redação</span>
-              <h2 style={TEKO} className="text-[34px] md:text-[40px] font-semibold uppercase tracking-wide text-foreground">
-                {content.motoTitle}
-              </h2>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] bg-card border border-border overflow-hidden rounded shadow-sm">
-            <div className="relative min-h-[340px] lg:min-h-full">
-              <img 
-                src={optimizeImageUrl(content.motoImage, 900)} 
-                alt={content.motoSpecsTitle} 
-                className="w-full h-full object-cover absolute inset-0" 
-                style={{ objectPosition: content.motoFocalPoint || "center" }}
-                loading="lazy"
-              />
-              <div className="absolute top-4 left-4 bg-black/80 backdrop-blur-sm px-3 py-1.5 rounded border border-white/10">
-                <span className="text-[11px] font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  Teste Contínuo em Andamento
-                </span>
-              </div>
-            </div>
-
-            <div className="p-8 flex flex-col justify-center" style={BODY}>
-              <span className="text-primary text-[11px] font-bold uppercase tracking-widest mb-1">
-                {content.motoSubtitle}
-              </span>
-              <h3 style={TEKO} className="text-[32px] sm:text-[38px] font-semibold uppercase leading-tight text-foreground mb-3">
-                {content.motoSpecsTitle}
-              </h3>
-              <p className="text-[13.5px] text-muted-foreground leading-relaxed mb-6">
-                {content.motoDescription}
-              </p>
-
-              <div className="space-y-2.5">
-                {(content.motoSpecs || []).map((spec: any, idx: number) => (
-                  <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-border pb-2 gap-0.5">
-                    <span className="text-[12px] text-muted-foreground uppercase tracking-wider font-semibold">{spec.name}</span>
-                    <span className="text-[13px] text-foreground font-medium text-left sm:text-right">{spec.value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* NAVEGAÇÃO INSTITUCIONAL DIRETA */}
         <div className="mb-20 bg-card border border-border p-8 rounded">
           <div className="max-w-[700px] mb-6">

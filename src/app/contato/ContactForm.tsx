@@ -79,15 +79,10 @@ export default function ContactForm() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validate()) return;
 
-    setIsSubmitting(true);
-    // Simula o processamento seguro de envio institucional
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setIsSubmitting(false);
-    setSubmitted(true);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    alert("No momento nosso sistema de formulário está passando por atualizações. Por favor, tente novamente mais tarde.");
   };
 
   const handleReset = () => {
@@ -257,19 +252,14 @@ export default function ContactForm() {
       {/* Botão de Envio */}
       <button
         type="submit"
-        disabled={isSubmitting}
+
         className="w-full inline-flex items-center justify-center gap-2.5 px-6 py-3.5 bg-primary text-primary-foreground text-[14px] font-semibold uppercase tracking-wider hover:bg-primary/90 disabled:opacity-50 transition-all cursor-pointer shadow-sm"
         style={TEKO}
       >
-        {isSubmitting ? (
-          <>
-            <RefreshCw size={18} className="animate-spin" /> Enviando Mensagem...
-          </>
-        ) : (
+        (
           <>
             <Send size={18} /> Enviar Mensagem para a Redação
           </>
-        )}
       </button>
 
       <p className="text-[11.5px] text-muted-foreground text-center" style={BODY}>

@@ -72,7 +72,7 @@ export default function ComoPesquisamosPage() {
                  </h3>
               </div>
               <p className="text-[14px] text-muted-foreground leading-relaxed ml-11" style={BODY}>
-                Priorizamos fontes originais: manuais de proprietário, fichas técnicas oficiais de montadoras, comunicados de imprensa homologados e documentos governamentais (como Denatran).
+                Priorizamos fontes originais: manuais de proprietário, fichas técnicas oficiais de montadoras, comunicados de imprensa homologados e documentos governamentais (como órgãos oficiais brasileiros).
               </p>
             </div>
 
@@ -86,7 +86,7 @@ export default function ComoPesquisamosPage() {
                  </h3>
               </div>
               <p className="text-[14px] text-muted-foreground leading-relaxed ml-11" style={BODY}>
-                Informações de mercado e especificações técnicas são cruzadas para identificar inconsistências. Uma ficha técnica de revenda é sempre validada contra o manual da montadora.
+                Informações de mercado e especificações técnicas são cruzadas para identificar inconsistências. Quando aplicável, buscamos confirmar especificações com documentação oficial do fabricante e outras fontes primárias.
               </p>
             </div>
 
@@ -121,7 +121,7 @@ export default function ComoPesquisamosPage() {
               Nesta etapa, o objetivo é traduzir termos técnicos complexos e manuais difíceis em linguagem clara, direta e acessível para o motociclista comum.
             </p>
             <p>
-              Antes da publicação, o conteúdo passa por uma revisão de formato, checagem da clareza das informações e garantia de que o texto final não deturpa o contexto original das fontes consultadas.
+              Antes da publicação, o conteúdo passa por um processo automatizado e/ou editorial para revisão de formato, checagem da clareza das informações e garantia de que o texto final não deturpa o contexto original das fontes consultadas.
             </p>
           </div>
         </section>

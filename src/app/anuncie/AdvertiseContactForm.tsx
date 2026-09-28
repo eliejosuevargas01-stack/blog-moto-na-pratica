@@ -366,8 +366,8 @@ export default function AdvertiseContactForm() {
 
       <p className="text-[12px] text-muted-foreground text-center" style={BODY}>
         Atendimento direto também por e-mail:{" "}
-        <a href="mailto:comercial@motonapratica.com.br" className="text-primary font-semibold hover:underline">
-          comercial@motonapratica.com.br
+        <a href="/contato" className="text-primary font-semibold hover:underline">
+          Fale conosco via Página de Contato
         </a>
       </p>
     </form>

@@ -397,22 +397,22 @@ export const STATIC_INSTITUTIONAL_PAGES: Record<string, InstitutionalPage> = {
         <div class="p-6 bg-card border border-border">
           <h3 class="font-bold text-lg mb-2">Pautas & Sugestões de Teste</h3>
           <p class="text-sm text-muted-foreground mb-3">Envie novidades, motos para avaliação ou flagras do setor.</p>
-          <p class="text-sm font-semibold text-primary">redacao@motonapratica.com.br</p>
+          <p class="text-sm font-semibold text-primary">Fale conosco via Página de Contato</p>
         </div>
         <div class="p-6 bg-card border border-border">
           <h3 class="font-bold text-lg mb-2">Correções & Erratas</h3>
           <p class="text-sm text-muted-foreground mb-3">Identificou um dado impreciso? Notifique nossa equipe imediatamente.</p>
-          <p class="text-sm font-semibold text-primary">correcoes@motonapratica.com.br</p>
+          <p class="text-sm font-semibold text-primary">Fale conosco via Página de Contato</p>
         </div>
         <div class="p-6 bg-card border border-border">
           <h3 class="font-bold text-lg mb-2">Publicidade & Parcerias</h3>
           <p class="text-sm text-muted-foreground mb-3">Propostas de mídia kit, patrocínio de rotas e anúncios institucionais.</p>
-          <p class="text-sm font-semibold text-primary">comercial@motonapratica.com.br</p>
+          <p class="text-sm font-semibold text-primary">Fale conosco via Página de Contato</p>
         </div>
         <div class="p-6 bg-card border border-border">
           <h3 class="font-bold text-lg mb-2">Privacidade & LGPD</h3>
           <p class="text-sm text-muted-foreground mb-3">Dúvidas sobre tratamento de dados e exercício de direitos legais.</p>
-          <p class="text-sm font-semibold text-primary">privacidade@motonapratica.com.br</p>
+          <p class="text-sm font-semibold text-primary">Fale conosco via Página de Contato</p>
         </div>
       </div>
     `
@@ -433,7 +433,7 @@ export const STATIC_INSTITUTIONAL_PAGES: Record<string, InstitutionalPage> = {
         <li><strong>Newsletter Exclusiva:</strong> Comunicação direta com leitores inscritos e segmentados por interesse.</li>
       </ul>
 
-      <p class="mt-6">Para solicitar nosso <strong>Mídia Kit completo</strong> com métricas de audiência, dados demográficos e tabela de formatos, envie um e-mail para <strong class="text-primary">comercial@motonapratica.com.br</strong>.</p>
+      <p class="mt-6">Para solicitar nosso <strong>Mídia Kit completo</strong> com métricas de audiência, dados demográficos e tabela de formatos, envie um e-mail para <strong class="text-primary">Fale conosco via Página de Contato</strong>.</p>
     `
   },
   "termos-de-uso": {
@@ -465,7 +465,7 @@ export const STATIC_INSTITUTIONAL_PAGES: Record<string, InstitutionalPage> = {
       <p>Coletamos dados de navegação anonimizados para estatísticas de tráfego (via Google Analytics) e endereço de e-mail exclusivamente quando fornecido de forma voluntária para recebimento da newsletter ou publicação de comentários moderados.</p>
 
       <h2 id="exclusao-dados">3. Seus Direitos & Exclusão de Dados</h2>
-      <p>O titular tem o direito de solicitar a qualquer tempo a confirmação da existência de tratamento, o acesso aos dados ou a exclusão definitiva do seu e-mail de nossas listas de newsletter. Para exercer seus direitos, basta entrar em contato através do e-mail <strong>privacidade@motonapratica.com.br</strong>.</p>
+      <p>O titular tem o direito de solicitar a qualquer tempo a confirmação da existência de tratamento, o acesso aos dados ou a exclusão definitiva do seu e-mail de nossas listas de newsletter. Para exercer seus direitos, basta entrar em contato através do e-mail <strong>Fale conosco via Página de Contato</strong>.</p>
     `
   }
 };

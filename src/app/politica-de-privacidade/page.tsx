@@ -192,8 +192,8 @@ export default function PoliticaDePrivacidadePage() {
               </p>
               <p className="text-[13px] text-foreground">
                 <strong>E-mail de Contato:</strong>{" "}
-                <a href="mailto:privacidade@motonapratica.com.br" className="text-primary font-semibold hover:underline">
-                  privacidade@motonapratica.com.br
+                <a href="/contato" className="text-primary font-semibold hover:underline">
+                  Fale conosco via Página de Contato
                 </a>
               </p>
               <p className="text-[12px] text-muted-foreground">

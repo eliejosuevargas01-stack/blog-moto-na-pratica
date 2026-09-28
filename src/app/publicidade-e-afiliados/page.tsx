@@ -80,7 +80,7 @@ export default function PublicidadeAfiliadosPage() {
                 Links de Afiliados
               </h3>
               <p className="text-[14px] text-muted-foreground leading-relaxed" style={BODY}>
-                Em alguns de nossos guias de compras e avaliações de equipamentos, podemos incluir links de afiliados para plataformas de e-commerce (como Amazon, Mercado Livre, etc.). Caso você realize uma compra através desses links, o Moto na Prática pode receber uma pequena comissão.
+                Em alguns de nossos guias de compras e avaliações de equipamentos, podemos incluir links de afiliados para plataformas de e-commerce parceiras. Caso você realize uma compra através desses links, o Moto na Prática pode receber uma pequena comissão.
               </p>
             </div>
 
@@ -92,7 +92,7 @@ export default function PublicidadeAfiliadosPage() {
                 Preço Inalterado
               </h3>
               <p className="text-[14px] text-muted-foreground leading-relaxed" style={BODY}>
-                O uso de um link de afiliado <strong>nunca altera o preço final</strong> que você paga pelo produto. A comissão é deduzida da margem de lucro da loja, não do seu bolso. Escolhemos recomendar produtos que acreditamos ter qualidade, independentemente da comissão.
+                Quando houver links de afiliados, o Moto na Prática poderá receber comissão conforme as regras da plataforma. Eventuais condições de preço são definidas pelo vendedor/plataforma e serão informadas quando relevantes. Escolhemos recomendar produtos que acreditamos ter qualidade, independentemente da comissão.
               </p>
             </div>
           </div>

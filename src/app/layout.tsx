@@ -63,29 +63,32 @@ export default async function RootLayout({
     console.warn("Database connection failed during SSR, using static fallbacks.", error);
   }
 
+
+
+
   const newsMediaSchema = {
     "@context": "https://schema.org",
     "@type": "NewsMediaOrganization",
     "name": "Moto na Prática",
     "alternateName": "Portal Moto na Prática",
-    "url": "https://motonapratica.com.br",
+    "url": "https://motonapratica.online",
     "logo": {
       "@type": "ImageObject",
-      "url": "https://motonapratica.com.br/favicon.png",
+      "url": "https://motonapratica.online/favicon.png",
       "width": 512,
       "height": 512
     },
-    "description": "Portal informativo e jornalismo independente de motociclismo. Testes reais sem patrocínio velado, medição real de consumo na bomba, oficina prática e cobertura esportiva com compromisso E-E-A-T.",
+    "description": "Portal informativo e jornalismo independente de motociclismo. Pesquisa aprofundada, manuais, guias e cobertura do mercado de duas rodas focada na utilidade para o leitor.",
     "foundingDate": "2026-01-01",
     "founder": {
       "@type": "Person",
       "name": "Eliezer"
     },
-    "ethicsPolicy": "https://motonapratica.com.br/politica-editorial",
-    "publishingPrinciples": "https://motonapratica.com.br/politica-editorial",
-    "correctionsPolicy": "https://motonapratica.com.br/politica-editorial#correcoes",
-    "diversityPolicy": "https://motonapratica.com.br/politica-editorial#diversidade",
-    "verificationFactCheckingPolicy": "https://motonapratica.com.br/politica-editorial#checagem",
+    "ethicsPolicy": "https://motonapratica.online/politica-editorial",
+    "publishingPrinciples": "https://motonapratica.online/politica-editorial",
+    "correctionsPolicy": "https://motonapratica.online/politica-editorial#correcoes",
+    "diversityPolicy": "https://motonapratica.online/politica-editorial#diversidade",
+    "verificationFactCheckingPolicy": "https://motonapratica.online/politica-editorial#checagem",
     "sameAs": [
       "https://instagram.com/motonapratica",
       "https://youtube.com/@motonapratica"
@@ -134,7 +137,7 @@ export default async function RootLayout({
                 </span>
               </div>
               <p className="text-[13px] text-muted-foreground leading-relaxed mb-5">
-                Portal de jornalismo independente especializado no universo das duas rodas. Análises técnicas rigorosas, testes reais sem patrocínio velado, manutenção na oficina e cobertura esportiva com credibilidade, transparência e respeito inegociável ao motociclista.
+                Portal de jornalismo independente especializado no universo das duas rodas. Pesquisa técnica rigorosa, cobertura esportiva e análises de mercado com credibilidade, transparência e utilidade para o motociclista.
               </p>
               <div className="mt-auto">
                 <SocialLinks iconSize={16} />

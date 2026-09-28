@@ -41,7 +41,7 @@ const TEAM_MEMBERS: TeamMember[] = [
     ],
     currentBike: "Yamaha Fazer 250 (FZ25) 2026",
     image: "https://images.unsplash.com/photo-1542351387-dde430deaaa7?w=700&h=800&fit=crop&auto=format",
-    email: "eliezer@motonapratica.com.br",
+    email: "Fale conosco via Página de Contato",
   },
   {
     name: "Marcos Vinicius Ramos",
@@ -55,7 +55,7 @@ const TEAM_MEMBERS: TeamMember[] = [
     ],
     currentBike: "Honda CB 500X & Ténéré 250",
     image: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=700&h=800&fit=crop&auto=format",
-    email: "marcos.mecanica@motonapratica.com.br",
+    email: "Fale conosco via Página de Contato",
   },
   {
     name: "Juliana Siqueira",
@@ -69,7 +69,7 @@ const TEAM_MEMBERS: TeamMember[] = [
     ],
     currentBike: "BMW F 850 GS & Kawasaki Ninja 400",
     image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=700&h=800&fit=crop&auto=format",
-    email: "juliana.testes@motonapratica.com.br",
+    email: "Fale conosco via Página de Contato",
   },
   {
     name: "Roberto Fagundes",
@@ -83,7 +83,7 @@ const TEAM_MEMBERS: TeamMember[] = [
     ],
     currentBike: "Royal Enfield Hunter 350",
     image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=700&h=800&fit=crop&auto=format",
-    email: "roberto.noticias@motonapratica.com.br",
+    email: "Fale conosco via Página de Contato",
   },
 ];
 
@@ -111,7 +111,7 @@ export default function EquipePage() {
           </h1>
 
           <p className="text-[15px] md:text-[16px] text-muted-foreground max-w-3xl leading-relaxed" style={BODY}>
-            Não usamos inteligência artificial para inventar experiências ou opiniões de bancada. Nossa equipe é composta por pessoas reais — pilotos, mecânicos e repórteres — que vivenciam o trânsito, a estrada e as oficinas no dia a dia.
+            Nossa publicação é mantida por pesquisa documental profunda e rigor técnico, liderada por Eliezer Josué Vargas, combinando ferramentas modernas e inteligência artificial para entregar informação clara e útil ao motociclista brasileiro.
           </p>
         </div>
       </div>
@@ -124,73 +124,37 @@ export default function EquipePage() {
           <div className="flex items-center gap-3">
             <span className="block w-1 h-7 bg-primary" />
             <h2 style={TEKO} className="text-[32px] font-semibold uppercase tracking-wide text-foreground">
-              Redação & Corpo Técnico
+              A Identidade Editorial
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {TEAM_MEMBERS.map((member, idx) => (
-              <div
-                key={idx}
-                className="bg-card border border-border overflow-hidden flex flex-col justify-between"
-              >
+          <div className="bg-card border border-border overflow-hidden flex flex-col justify-between">
                 <div className="p-6 md:p-8 space-y-5">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                    <div className="w-20 h-20 rounded-full overflow-hidden shrink-0 border-2 border-primary/20 bg-muted">
-                      <img
-                        src={optimizeImageUrl(member.image, 200)}
-                        alt={member.name}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
-                    </div>
                     <div>
                       <span className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 bg-primary/10 text-primary">
-                        {member.badge}
+                        Responsabilidade Editorial
                       </span>
                       <h3 style={TEKO} className="text-[26px] font-semibold uppercase text-foreground leading-tight mt-1">
-                        {member.name}
+                        Redação Moto na Prática
                       </h3>
                       <p className="text-[13px] text-muted-foreground font-medium" style={BODY}>
-                        {member.role}
+                        Publicação Independente
                       </p>
                     </div>
                   </div>
 
                   <p className="text-[13.5px] text-muted-foreground leading-relaxed border-t border-border pt-4" style={BODY}>
-                    {member.bio}
+                    Todos os conteúdos publicados sob a chancela da Redação Moto na Prática seguem nossas rígidas diretrizes editoriais. Não inventamos nomes, credenciais ou experiências físicas. Quando o conteúdo for fruto exclusivo de consolidação de dados e pesquisa documental, ele será assinado institucionalmente pelo portal.
                   </p>
-
-                  <div className="space-y-2 pt-1">
-                    <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-bold block" style={BODY}>
-                      Credenciais & Especialidades:
-                    </span>
-                    <ul className="space-y-1.5 text-[12.5px] text-foreground" style={BODY}>
-                      {member.credentials.map((cred, cIdx) => (
-                        <li key={cIdx} className="flex items-start gap-2">
-                          <CheckCircle2 size={14} className="text-primary shrink-0 mt-0.5" />
-                          <span>{cred}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
                 </div>
 
                 <div className="bg-background border-t border-border px-6 py-3.5 flex flex-wrap items-center justify-between gap-2 text-[12px]" style={BODY}>
-                  <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <Bike size={14} className="text-primary" />
-                    <span>Garagem atual: <strong className="text-foreground">{member.currentBike}</strong></span>
-                  </div>
-                  <a
-                    href={`mailto:${member.email}`}
-                    className="flex items-center gap-1 text-primary hover:underline font-semibold"
-                  >
-                    <Mail size={13} /> {member.email}
-                  </a>
+                  <Link href="/contato" className="flex items-center gap-1 text-primary hover:underline font-semibold">
+                    Falar com o Portal
+                  </Link>
                 </div>
               </div>
-            ))}
-          </div>
         </section>
 
         {/* COMPROMISSO COM O JORNALISMO E ÉTICA */}
@@ -209,7 +173,7 @@ export default function EquipePage() {
                 <span>Checagem Dupla (Double-Check)</span>
               </div>
               <p>
-                Nenhum valor de torque de aperto, especificação de óleo ou cálculo de consumo vai ao ar sem a revisão cruzada entre o redator da matéria e nosso consultor mecânico de bancada.
+                Especificações técnicas são consolidadas a partir de fontes oficiais e cruzadas com manuais para evitar a propagação de boatos e informações erradas.
               </p>
             </div>
 
@@ -219,7 +183,7 @@ export default function EquipePage() {
                 <span>Experiência Real Comprovada</span>
               </div>
               <p>
-                Todos os nossos pilotos e colunistas possuem Carteira Nacional de Habilitação (categoria A) válida e quilometragem comprovada de estrada, garantindo autoridade nas opiniões expressas.
+                Nossa abordagem é pautada na utilidade para o motociclista, separando claramente o que é fato documentado de especulação de mercado.
               </p>
             </div>
 
@@ -235,29 +199,22 @@ export default function EquipePage() {
           </div>
         </section>
 
+
         {/* EXPEDIENTE FORMAL */}
         <section className="bg-muted/30 border border-border p-6 md:p-8 space-y-4">
           <h3 style={TEKO} className="text-[24px] font-semibold uppercase tracking-wider text-foreground">
             Expediente do Portal Moto na Prática
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-[13px]" style={BODY}>
+          <div className="flex flex-col gap-4 text-[13px]" style={BODY}>
             <div>
-              <span className="text-muted-foreground block text-[11px] uppercase tracking-wider font-semibold">Editor-Chefe & Fundador</span>
+              <span className="text-muted-foreground block text-[11px] uppercase tracking-wider font-semibold">Responsável pelo Projeto</span>
               <span className="text-foreground font-medium">Eliezer Josué Vargas</span>
             </div>
             <div>
-              <span className="text-muted-foreground block text-[11px] uppercase tracking-wider font-semibold">Consultoria Técnica de Oficina</span>
-              <span className="text-foreground font-medium">Marcos Vinicius Ramos</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground block text-[11px] uppercase tracking-wider font-semibold">Piloto de Testes & Dinâmica</span>
-              <span className="text-foreground font-medium">Juliana Siqueira</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground block text-[11px] uppercase tracking-wider font-semibold">Contato da Redação</span>
-              <a href="mailto:redacao@motonapratica.com.br" className="text-primary font-semibold hover:underline">
-                redacao@motonapratica.com.br
-              </a>
+              <span className="text-muted-foreground block text-[11px] uppercase tracking-wider font-semibold">Contato Institucional</span>
+              <Link href="/contato" className="text-primary font-semibold hover:underline">
+                Página de Contato
+              </Link>
             </div>
           </div>
         </section>

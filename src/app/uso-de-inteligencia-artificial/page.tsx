@@ -6,7 +6,7 @@ import { ChevronRight, Cpu, FileSearch, Edit3, ShieldAlert } from "lucide-react"
 export const metadata = {
   title: "Uso de Inteligência Artificial · Moto na Prática",
   description:
-    "Saiba como utilizamos Inteligência Artificial como ferramenta de apoio à pesquisa e organização de conteúdo, mantendo a responsabilidade e supervisão humana.",
+    "Saiba como utilizamos Inteligência Artificial como ferramenta de apoio à pesquisa e organização de conteúdo, mantendo critérios editoriais, rastreabilidade de fontes e responsabilidade pelo conteúdo.",
 };
 
 export default function UsoIAPage() {

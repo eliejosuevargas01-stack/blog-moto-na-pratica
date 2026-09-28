@@ -84,7 +84,7 @@ export default function PoliticaEditorialPage() {
                 Separação Editorial x Comercial
               </h3>
               <p className="text-[13.5px] text-muted-foreground leading-relaxed" style={BODY}>
-                Nossa equipe de jornalistas e pilotos não participa de negociações comerciais. Qualquer publicação patrocinada ou publieditorial é identificada com destaque visual imediato para o leitor.
+                Nossa área editorial não participa de negociações comerciais. Qualquer publicação patrocinada ou publieditorial é identificada com destaque visual imediato para o leitor.
               </p>
             </div>
 
@@ -280,41 +280,32 @@ export default function PoliticaEditorialPage() {
           </div>
         </section>
 
-        {/* POLÍTICA DE TEST-RIDES E VEÍCULOS DE EMPRÉSTIMO */}
+        {/* VEÍCULOS E EVENTOS DE IMPRENSA */}
         <section>
           <div className="flex items-center gap-3 mb-6">
             <span className="block w-1 h-7 bg-primary" />
             <h2 style={TEKO} className="text-[32px] font-semibold uppercase tracking-wide text-foreground">
-              3. Política de Veículos de Empréstimo (Frotas de Imprensa)
+              3. Relação Institucional (Eventos e Empréstimos)
             </h2>
           </div>
 
           <div className="bg-card border border-border p-6 md:p-8 space-y-4 text-[14px] text-muted-foreground leading-relaxed" style={BODY}>
             <p>
-              Para trazer lançamentos em primeira mão aos leitores, o <strong>Moto na Prática</strong> aceita veículos cedidos temporariamente por montadoras e importadoras (frotas de imprensa). No entanto, nossa aceitação está estritamente condicionada aos seguintes termos inegociáveis:
+              Caso o Moto na Prática receba unidades de imprensa no futuro ou participe de lançamentos custeados por fabricantes, nossa aceitação estará estritamente condicionada aos seguintes termos:
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
               <div className="border-l-2 border-primary pl-4 py-1">
-                <strong className="text-foreground block mb-1">Sem Veto ou Aprovação Prévia:</strong>
-                Nenhum fabricante tem direito a ler, alterar ou vetar textos, fotos, vídeos ou notas antes da publicação. O conteúdo vai ao ar diretamente da redação.
+                <strong className="text-foreground block mb-1">Transparência Obrigatória:</strong>
+                Informaremos explicitamente aos leitores se uma unidade avaliada foi cedida por frota de imprensa.
               </div>
               <div className="border-l-2 border-primary pl-4 py-1">
-                <strong className="text-foreground block mb-1">Devolução Obrigatória e Integral:</strong>
-                Todas as motocicletas e equipamentos de teste são devolvidos integralmente após o período de avaliação, sem retenção de qualquer bem material.
-              </div>
-              <div className="border-l-2 border-primary pl-4 py-1">
-                <strong className="text-foreground block mb-1">Custos de Viagens e Lançamentos:</strong>
-                Quando a redação atende a convites de viagens para eventos de lançamento, os leitores são formalmente informados na matéria. A cobertura de despesas de deslocamento jamais condiciona elogios.
-              </div>
-              <div className="border-l-2 border-primary pl-4 py-1">
-                <strong className="text-foreground block mb-1">Identificação da Origem da Moto:</strong>
-                Especificamos com clareza se a unidade avaliada pertence à frota de imprensa da fabricante ou se é de propriedade da redação (testes de longa duração).
+                <strong className="text-foreground block mb-1">Sem Veto Editorial:</strong>
+                Nenhuma fabricante tem direito de ler, alterar ou vetar textos antes da publicação.
               </div>
             </div>
           </div>
         </section>
-
-        {/* POLÍTICA DE CORREÇÕES E ERRATAS */}
+{/* POLÍTICA DE CORREÇÕES E ERRATAS */}
         <section id="correcoes" className="scroll-mt-24">
           <div className="flex items-center gap-3 mb-6">
             <span className="block w-1 h-7 bg-primary" />
@@ -355,10 +346,10 @@ export default function PoliticaEditorialPage() {
             <div className="border-t border-border pt-4 text-[13px] text-muted-foreground flex flex-col md:flex-row md:items-center justify-between gap-3" style={BODY}>
               <span>Identificou algum dado impreciso em qualquer uma de nossas matérias?</span>
               <a
-                href="mailto:redacao@motonapratica.com.br?subject=Solicitação%20de%20Correção%20de%20Matéria"
+                href="/contato"
                 className="inline-flex items-center gap-1.5 text-primary font-semibold hover:underline"
               >
-                <FileCheck size={15} /> Solicitar correção à Redação (redacao@motonapratica.com.br)
+                <FileCheck size={15} /> Solicitar correção à Redação (Fale conosco via Página de Contato)
               </a>
             </div>
           </div>

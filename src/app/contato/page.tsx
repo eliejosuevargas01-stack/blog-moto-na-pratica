@@ -58,7 +58,7 @@ export default function ContatoPage() {
                 </h3>
               </div>
               <p className="text-[13.5px] text-muted-foreground leading-relaxed mb-4" style={BODY}>
-                Nosso time editorial recebe diariamente comunicações das montadoras, fabricantes de motopeças, entidades do setor e organizadores de eventos esportivos.
+                Recebemos comunicações institucionais de empresas do setor e organizadores de eventos esportivos.
               </p>
               
               <ul className="space-y-2.5 text-[13px] text-foreground border-t border-border pt-4 mb-4" style={BODY}>
@@ -66,20 +66,14 @@ export default function ContatoPage() {
                   <span className="text-primary mt-0.5">•</span>
                   <span><strong>Press Releases & Lançamentos:</strong> Envio de kits de imprensa, notas oficiais e dados técnicos homologados.</span>
                 </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary mt-0.5">•</span>
-                  <span><strong>Frotas de Imprensa & Test-Rides:</strong> Convites para avaliações de motocicletas e empréstimos temporários para testes práticos (veja nossa <Link href="/politica-editorial" className="text-primary underline">Política Editorial</Link>).</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary mt-0.5">•</span>
-                  <span><strong>Coletivas & Feiras:</strong> Credenciamento de nossos repórteres para feiras, lançamentos nacionais e internacionais.</span>
-                </li>
+
+
               </ul>
 
               <div className="p-3 bg-muted/50 border border-border text-[12.5px] text-muted-foreground" style={BODY}>
                 <strong className="text-foreground">E-mail da Assessoria:</strong>{" "}
-                <a href="mailto:redacao@motonapratica.com.br" className="text-primary font-medium hover:underline">
-                  redacao@motonapratica.com.br
+                <a href="/contato" className="text-primary font-medium hover:underline">
+                  Fale conosco via Página de Contato
                 </a>
               </div>
             </div>
@@ -93,62 +87,13 @@ export default function ContatoPage() {
                 </h3>
               </div>
               <div className="space-y-3.5 text-[13px]" style={BODY}>
-                <div className="border-b border-border pb-3">
-                  <span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold block mb-0.5">
-                    Redação & Conteúdo Jornalístico
-                  </span>
-                  <a href="mailto:redacao@motonapratica.com.br" className="text-foreground font-medium hover:text-primary transition-colors">
-                    redacao@motonapratica.com.br
-                  </a>
-                </div>
-
-                <div className="border-b border-border pb-3">
-                  <span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold block mb-0.5">
-                    Comercial, Parcerias & Mídia Kit
-                  </span>
-                  <a href="mailto:comercial@motonapratica.com.br" className="text-foreground font-medium hover:text-primary transition-colors">
-                    comercial@motonapratica.com.br
-                  </a>
-                </div>
-
-                <div className="border-b border-border pb-3">
-                  <span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold block mb-0.5">
-                    Dúvidas Mecânicas & Sugestões Técnicas
-                  </span>
-                  <a href="mailto:mecanica@motonapratica.com.br" className="text-foreground font-medium hover:text-primary transition-colors">
-                    mecanica@motonapratica.com.br
-                  </a>
-                </div>
-
-                <div>
-                  <span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold block mb-0.5">
-                    Encarregado de Privacidade (DPO / LGPD)
-                  </span>
-                  <a href="mailto:privacidade@motonapratica.com.br" className="text-foreground font-medium hover:text-primary transition-colors">
-                    privacidade@motonapratica.com.br
-                  </a>
-                </div>
+                <p className="text-muted-foreground">Por favor, utilize o formulário ao lado para direcionar sua solicitação ao departamento correto.</p>
               </div>
-            </div>
+                        </div>
+
 
             {/* Informações Institucionais de Operação */}
             <div className="bg-card border border-border p-6 rounded-none space-y-3 text-[13px]" style={BODY}>
-              <div className="flex items-center gap-2.5 text-foreground font-semibold">
-                <Clock size={16} className="text-primary" />
-                <span>Horário de Atendimento da Redação</span>
-              </div>
-              <p className="text-muted-foreground pl-6">
-                Segunda a Sexta-feira, das 09h00 às 18h00 (Horário de Brasília).
-              </p>
-
-              <div className="flex items-center gap-2.5 text-foreground font-semibold pt-2">
-                <MapPin size={16} className="text-primary" />
-                <span>Base Editorial & Testes</span>
-              </div>
-              <p className="text-muted-foreground pl-6">
-                Gaspar, Santa Catarina — Vale do Itajaí, Brasil.
-              </p>
-
               <div className="flex items-center gap-2.5 text-foreground font-semibold pt-2">
                 <ShieldCheck size={16} className="text-primary" />
                 <span>Independência Editorial</span>

@@ -205,12 +205,12 @@ describe('Portal de Motos: Páginas Estáticas Institucionais, SEO, Navegação 
         expect(schema['@type']).toBe('NewsMediaOrganization');
         expect(schema.name).toBe('Moto na Prática');
         expect(schema.alternateName).toBe('Portal Moto na Prática');
-        expect(schema.url).toBe('https://motonapratica.com.br');
+        expect(schema.url).toBe('https://motonapratica.online');
 
         // Logo
         expect(schema.logo).toBeDefined();
         expect(schema.logo['@type']).toBe('ImageObject');
-        expect(schema.logo.url).toBe('https://motonapratica.com.br/favicon.png');
+        expect(schema.logo.url).toBe('https://motonapratica.online/favicon.png');
         expect(schema.logo.width).toBe(512);
         expect(schema.logo.height).toBe(512);
 
@@ -221,11 +221,11 @@ describe('Portal de Motos: Páginas Estáticas Institucionais, SEO, Navegação 
         expect(schema.founder.name).toBe('Eliezer');
 
         // Políticas editoriais de conformidade E-E-A-T
-        expect(schema.ethicsPolicy).toBe('https://motonapratica.com.br/politica-editorial');
-        expect(schema.publishingPrinciples).toBe('https://motonapratica.com.br/politica-editorial');
-        expect(schema.correctionsPolicy).toBe('https://motonapratica.com.br/politica-editorial#correcoes');
-        expect(schema.diversityPolicy).toBe('https://motonapratica.com.br/politica-editorial#diversidade');
-        expect(schema.verificationFactCheckingPolicy).toBe('https://motonapratica.com.br/politica-editorial#checagem');
+        expect(schema.ethicsPolicy).toBe('https://motonapratica.online/politica-editorial');
+        expect(schema.publishingPrinciples).toBe('https://motonapratica.online/politica-editorial');
+        expect(schema.correctionsPolicy).toBe('https://motonapratica.online/politica-editorial#correcoes');
+        expect(schema.diversityPolicy).toBe('https://motonapratica.online/politica-editorial#diversidade');
+        expect(schema.verificationFactCheckingPolicy).toBe('https://motonapratica.online/politica-editorial#checagem');
 
         // Presença de canais sociais (sameAs)
         expect(Array.isArray(schema.sameAs)).toBe(true);
