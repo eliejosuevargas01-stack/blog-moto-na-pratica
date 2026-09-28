@@ -21,7 +21,56 @@ describe('Portal de Motos: Páginas Estáticas Institucionais, SEO, Navegação 
   // --------------------------------------------------------------------------
   // 1. EXISTÊNCIA, EXPORTAÇÃO PADRÃO E METADADOS SEO DAS PÁGINAS INSTITUCIONAIS
   // --------------------------------------------------------------------------
-  describe('1. Exportação Padrão e Metadados SEO das Páginas Institucionais', () => {
+
+
+    describe('Hardening de Trust Layer e Ausência de Fakes', () => {
+      it('deve garantir ausência de claims falsos, pessoas inexistentes e falsas estatísticas em todas as páginas', () => {
+        const checkAbsence = (content, term) => {
+          if (content.includes(term)) {
+            throw new Error(`O termo proibido "${term}" foi encontrado no conteúdo!`);
+          }
+        };
+
+        const load = (path) => require('fs').readFileSync(path, 'utf8');
+
+        const allContent = [
+          load('src/app/sobre/page.tsx'),
+          load('src/app/equipe/page.tsx'),
+          load('src/app/contato/page.tsx'),
+          load('src/app/anuncie/page.tsx'),
+          load('src/app/politica-editorial/page.tsx'),
+          load('src/app/termos-de-uso/page.tsx'),
+          load('src/app/politica-de-privacidade/page.tsx'),
+          load('src/app/data.ts')
+        ].join(' ');
+
+        checkAbsence(allContent, 'Marcos Vinicius Ramos');
+        checkAbsence(allContent, 'Juliana Siqueira');
+        checkAbsence(allContent, 'Roberto Fagundes');
+        checkAbsence(allContent, '@motonapratica.com.br');
+        checkAbsence(allContent, '+280.000');
+        checkAbsence(allContent, '+110.000');
+        checkAbsence(allContent, '+19.000');
+        checkAbsence(allContent, 'Mensagem Enviada com Sucesso');
+        checkAbsence(allContent, 'Proposta Comercial Recebida');
+        checkAbsence(allContent, 'setTimeout(resolve, 800)');
+        checkAbsence(allContent, 'Frota da Redação');
+        checkAbsence(allContent, 'Todos os testes de motocicletas seguem');
+        checkAbsence(allContent, 'Nossos testes de rodagem');
+        checkAbsence(allContent, 'experiência prática da redação');
+
+        // Check article integration
+        const postContent = load('src/app/post/[slug]/page.tsx');
+        expect(postContent).toContain('EditorialTrustLinks');
+
+        // Layout integration
+        const layoutContent = load('src/app/layout.tsx');
+        expect(layoutContent).toContain('href="/uso-de-inteligencia-artificial"');
+        expect(layoutContent).toContain('href="/publicidade-e-afiliados"');
+      });
+    });
+
+    describe('1. Exportação Padrão e Metadados SEO das Páginas Institucionais', () => {
     const staticPages = [
       {
         slug: 'politica-editorial',
@@ -63,7 +112,7 @@ describe('Portal de Motos: Páginas Estáticas Institucionais, SEO, Navegação 
         filePath: 'src/app/equipe/page.tsx',
         componentName: 'EquipePage',
         expectedTitleWord: 'Quem Faz',
-        expectedKeyword: 'jornalistas'
+        expectedKeyword: 'responsável'
       }
     ];
 

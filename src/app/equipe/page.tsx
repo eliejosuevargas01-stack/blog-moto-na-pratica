@@ -14,7 +14,7 @@ import {
 export const metadata = {
   title: "Quem Faz o Portal · Moto na Prática",
   description:
-    "Conheça os jornalistas, pilotos de teste, consultores mecânicos e fundadores do Moto na Prática. Credenciais técnicas, transparência e autoridade sobre duas rodas.",
+    "Conheça o responsável pelo projeto, a identidade editorial e os princípios de transparência do Moto na Prática.",
 };
 
 export default function EquipePage() {

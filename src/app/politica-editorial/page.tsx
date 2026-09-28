@@ -56,140 +56,13 @@ export default function PoliticaEditorialPage() {
       <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-12 md:py-16 space-y-14">
         {/* PILARES EDITORIAIS */}
         <section id="independencia" className="scroll-mt-24">
+<div id="checagem" className="scroll-mt-24"></div>
+
+
           <div className="flex items-center gap-3 mb-6">
             <span className="block w-1 h-7 bg-primary" />
             <h2 style={TEKO} className="text-[32px] font-semibold uppercase tracking-wide text-foreground">
-              1. Linha Editorial e Independência
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-card border border-border p-6 space-y-3">
-              <div className="w-10 h-10 rounded-sm bg-primary/10 text-primary flex items-center justify-center mb-2">
-                <ShieldCheck size={22} />
-              </div>
-              <h3 style={TEKO} className="text-[22px] font-semibold uppercase text-foreground">
-                Independência de Montadoras
-              </h3>
-              <p className="text-[13.5px] text-muted-foreground leading-relaxed" style={BODY}>
-                Nenhum fabricante, importador ou anunciante dita as conclusões das nossas análises. Nossas opiniões são formadas pelo uso real na estrada e no trânsito, apontando pontos positivos e fragilidades sem filtros.
-              </p>
-            </div>
-
-            <div className="bg-card border border-border p-6 space-y-3">
-              <div className="w-10 h-10 rounded-sm bg-primary/10 text-primary flex items-center justify-center mb-2">
-                <Scale size={22} />
-              </div>
-              <h3 style={TEKO} className="text-[22px] font-semibold uppercase text-foreground">
-                Separação Editorial x Comercial
-              </h3>
-              <p className="text-[13.5px] text-muted-foreground leading-relaxed" style={BODY}>
-                Nossa área editorial não participa de negociações comerciais. Qualquer publicação patrocinada ou publieditorial é identificada com destaque visual imediato para o leitor.
-              </p>
-            </div>
-
-            <div className="bg-card border border-border p-6 space-y-3">
-              <div className="w-10 h-10 rounded-sm bg-primary/10 text-primary flex items-center justify-center mb-2">
-                <Sparkles size={22} />
-              </div>
-              <h3 style={TEKO} className="text-[22px] font-semibold uppercase text-foreground">
-                Foco na Utilidade do Leitor
-              </h3>
-              <p className="text-[13.5px] text-muted-foreground leading-relaxed" style={BODY}>
-                Escrevemos para quem gasta seu dinheiro suado comprando e mantendo uma moto. Questões como custo de reposição de peças, consumo real e facilidade de manutenção têm peso central nas avaliações.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* METODOLOGIA DE TESTES */}
-        <section id="metodologia" className="scroll-mt-24 bg-card border border-border p-8 md:p-10 space-y-8">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <span className="block w-1 h-7 bg-primary" />
-              <h2 style={TEKO} className="text-[32px] font-semibold uppercase tracking-wide text-foreground">
-                2. Metodologia de Avaliação de Motos
-              </h2>
-            </div>
-            <p className="text-[14px] text-muted-foreground max-w-3xl" style={BODY}>
-              Não nos limitamos a "voltinhas" rápidas em estacionamentos. Todos os testes de motocicletas seguem um protocolo padronizado de testes práticos:
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Ciclo Urbano */}
-            <div className="border border-border p-5 bg-background space-y-2.5">
-              <div className="flex items-center gap-2 text-primary font-semibold text-[13px] uppercase tracking-wider" style={BODY}>
-                <Bike size={16} /> Ciclo Urbano Intenso
-              </div>
-              <h4 style={TEKO} className="text-[20px] font-semibold uppercase text-foreground">
-                Trânsito Diário e Corredor
-              </h4>
-              <p className="text-[13px] text-muted-foreground leading-relaxed" style={BODY}>
-                Aferição do comportamento em trânsito pesado, raio de esterço entre veículos, resposta de torque em baixas rotações, temperatura irradiada para as pernas do piloto e ergonomia no para-e-anda dos semáforos.
-              </p>
-            </div>
-
-            {/* Ciclo Rodoviário */}
-            <div className="border border-border p-5 bg-background space-y-2.5">
-              <div className="flex items-center gap-2 text-primary font-semibold text-[13px] uppercase tracking-wider" style={BODY}>
-                <Gauge size={16} /> Ciclo Rodoviário
-              </div>
-              <h4 style={TEKO} className="text-[20px] font-semibold uppercase text-foreground">
-                Velocidade de Cruzeiro e Retomadas
-              </h4>
-              <p className="text-[13px] text-muted-foreground leading-relaxed" style={BODY}>
-                Testes em rodovias sob velocidades permitidas (80 a 120 km/h). Avaliação de proteção aerodinâmica, estabilidade com ventos laterais, capacidade de ultrapassagem em 5ª/6ª marcha e nível de vibração em manoplas e pedaleiras.
-              </p>
-            </div>
-
-            {/* Teste com Garupa */}
-            <div className="border border-border p-5 bg-background space-y-2.5">
-              <div className="flex items-center gap-2 text-primary font-semibold text-[13px] uppercase tracking-wider" style={BODY}>
-                <CheckCircle2 size={16} /> Teste com Garupa
-              </div>
-              <h4 style={TEKO} className="text-[20px] font-semibold uppercase text-foreground">
-                Carga e Conforto do Passageiro
-              </h4>
-              <p className="text-[13px] text-muted-foreground leading-relaxed" style={BODY}>
-                Análise com piloto e garupa adultos. Verificação do afundamento do amortecedor traseiro (sag), fim de curso em lombadas, alcance e firmeza das alças de apoio e ângulo de flexão dos joelhos do passageiro.
-              </p>
-            </div>
-
-            {/* Testes de Frenagem */}
-            <div className="border border-border p-5 bg-background space-y-2.5">
-              <div className="flex items-center gap-2 text-primary font-semibold text-[13px] uppercase tracking-wider" style={BODY}>
-                <AlertTriangle size={16} /> Frenagem & Segurança
-              </div>
-              <h4 style={TEKO} className="text-[20px] font-semibold uppercase text-foreground">
-                Distância de Parada e Atuação ABS
-              </h4>
-              <p className="text-[13px] text-muted-foreground leading-relaxed" style={BODY}>
-                Frenagens sucessivas de emergência de 60 a 0 km/h e 80 a 0 km/h em pista seca e molhada. Medição de sensibilidade do manete, fadiga (fading) dos discos e pastilhas, e calibração de atuação do ABS (evitando destravamentos prematuros).
-              </p>
-            </div>
-
-            {/* Consumo com Bomba Aferida */}
-            <div className="border border-border p-5 bg-background space-y-2.5 lg:col-span-2">
-              <div className="flex items-center gap-2 text-primary font-semibold text-[13px] uppercase tracking-wider" style={BODY}>
-                <Fuel size={16} /> Consumo Real Aferido
-              </div>
-              <h4 style={TEKO} className="text-[20px] font-semibold uppercase text-foreground">
-                Medição com Bomba de Combustível Aferida
-              </h4>
-              <p className="text-[13px] text-muted-foreground leading-relaxed" style={BODY}>
-                Desconfiamos de médias meramente informadas pelo painel digital. O consumo é mensurado abastecendo o tanque até o bocal em posto padrão, rodando trajeto pré-determinado de 100 a 150 km e reabastecendo no mesmo bico de combustível aferido pelo Inmetro. Calculamos a média matemática de litros efetivamente injetados.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* CHECAGEM DE FATOS E AUDITORIA */}
-        <section id="checagem" className="scroll-mt-24">
-          <div className="flex items-center gap-3 mb-6">
-            <span className="block w-1 h-7 bg-primary" />
-            <h2 style={TEKO} className="text-[32px] font-semibold uppercase tracking-wide text-foreground">
-              Auditoria Técnica e Checagem de Fatos
+              Prioridade para Precisão e Pesquisa
             </h2>
           </div>
 
@@ -200,48 +73,25 @@ export default function PoliticaEditorialPage() {
               </div>
               <div className="space-y-3 text-[14px] text-muted-foreground leading-relaxed" style={BODY}>
                 <h3 style={TEKO} className="text-[22px] font-semibold uppercase text-foreground leading-none">
-                  Verificação Factual e Fontes Primárias
+                  Separação entre Fato, Análise e Opinião
                 </h3>
                 <p>
-                  Todas as avaliações, testes e notícias técnicas do <strong>Moto na Prática</strong> passam por auditoria minuciosa e conferência de dados com fontes primárias. Fichas técnicas, números de potência e torque, especificações de suspensão e freios são validadas através de manuais de serviço e registros oficiais disponíveis.
+                  Nossa base de trabalho é a pesquisa documental. Cruzamos especificações de manuais de proprietário oficiais, catálogos de peças e boletins de serviço oficiais dos fabricantes.
+                  Deixamos claro para o leitor quando estamos relatando um fato documentado, quando estamos analisando uma tendência de mercado e quando estamos emitindo uma opinião.
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
                   <div className="p-3 bg-background border border-border">
-                    <strong className="text-foreground text-[13px] block mb-1">Medições e Consumo:</strong>
-                    Priorizamos dados baseados em medições de longo prazo e registros documentados, apontando quando as informações de consumo são apenas estimativas de fábrica.
+                    <strong className="text-foreground text-[13px] block mb-1">Combate a Boatos:</strong>
+                    Rumores e especulações não são tratados como fatos. Lançamentos não confirmados são reportados estritamente como rumores.
                   </div>
                   <div className="p-3 bg-background border border-border">
-                    <strong className="text-foreground text-[13px] block mb-1">Combate a Boatos:</strong>
-                    Não publicamos especulações como fatos concretos. Notícias sobre novos modelos ou recalls contam sempre com confirmação documental prévia.
+                    <strong className="text-foreground text-[13px] block mb-1">Pesquisa Documental:</strong>
+                    O Moto na Prática não apresenta uma experiência como própria se ela não tiver realmente ocorrido. Conteúdos baseados em pesquisa não devem ser apresentados como testes físicos. Um teste de rodagem real só é declarado se for efetivamente realizado e identificado naquele artigo.
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </section>
-
-
-          {/* REGRAS DE PESQUISA E EXPERIÊNCIA (ADICIONADO V1) */}
-          <div className="bg-card border border-border p-6 md:p-8 space-y-4 mt-8">
-            <h3 style={TEKO} className="text-[24px] font-semibold uppercase text-foreground leading-none">
-              Limites Inegociáveis de Autoria e Pesquisa
-            </h3>
-            <ul className="space-y-3 text-[14px] text-muted-foreground leading-relaxed" style={BODY}>
-              <li className="flex items-start gap-2">
-                 <span className="text-primary font-bold mt-0.5">•</span>
-                 <span><strong>Experiência Própria:</strong> O Moto na Prática não apresenta uma experiência como própria se ela não tiver realmente ocorrido.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                 <span className="text-primary font-bold mt-0.5">•</span>
-                 <span><strong>Testes Físicos vs. Pesquisa:</strong> Conteúdos baseados em pesquisa não devem ser apresentados como testes físicos. Diferenciamos explicitamente análise documental de avaliação na estrada.</span>
-              </li>
-            </ul>
-          </div>
-
-
-        {/* METODOLOGIA EDITORIAL */}
-        <section className="scroll-mt-24 mb-14">
-            <EditorialMethodologyCard />
         </section>
 
         {/* DIVERSIDADE E REPRESENTATIVIDADE */}
@@ -281,7 +131,7 @@ export default function PoliticaEditorialPage() {
         </section>
 
         {/* VEÍCULOS E EVENTOS DE IMPRENSA */}
-        <section>
+        <section id="metodologia" className="scroll-mt-24">
           <div className="flex items-center gap-3 mb-6">
             <span className="block w-1 h-7 bg-primary" />
             <h2 style={TEKO} className="text-[32px] font-semibold uppercase tracking-wide text-foreground">

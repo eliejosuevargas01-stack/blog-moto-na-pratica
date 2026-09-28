@@ -349,8 +349,8 @@ export const STATIC_INSTITUTIONAL_PAGES: Record<string, InstitutionalPage> = {
       <p>Não aceitamos acordos comerciais que condicionem análises, imponham censura prévia, exijam aprovação de pauta ou obriguem vereditos positivos. Se um produto ou motocicleta apresentar falhas mecânicas, fragilidade construtiva ou consumo incompatível com as especificações declaradas pela montadora, isso será registrado de forma explícita e fundamentada.</p>
 
       <h2>2. Nossa Metodologia de Pesquisa</h2>
-      <p> Não nos pautamos unicamente por computadores de bordo eletrônicos.</p>
-      <p>Nossos testes de rodagem combinam trajetos urbanos pesados, rodovias de serra e vias de trânsito rápido com passageiro e carga para simular o uso real do proprietário brasileiro.</p>
+
+
 
       <h2>3. Política de Transparência e Financiamento</h2>
       <p>O portal é sustentado por publicidade programática, parcerias de mídia claramente identificadas e programas de afiliados. Todo conteúdo patrocinado ou comercial é ostensivamente rotulado com as etiquetas <em>"Publicidade"</em>, <em>"Informe Publicitário"</em> ou <em>"Conteúdo de Parceiro"</em>.</p>
@@ -366,7 +366,7 @@ export const STATIC_INSTITUTIONAL_PAGES: Record<string, InstitutionalPage> = {
     seoDescription: "Conheça os jornalistas, pilotos de teste e técnicos que compõem a redação do Moto na Prática.",
     bodyHtml: `
       <h2>Quem Faz o Moto na Prática</h2>
-      <p>Nossa equipe reúne profissionais apaixonados por duas rodas, unindo a prática diária de pilotagem urbana e rodoviária ao rigor da apuração jornalística e do conhecimento mecânico.</p>
+
       
       <div class="my-6 p-6 bg-card border border-border">
         <h3 class="text-xl font-bold mb-1 text-foreground">Eliezer</h3>
@@ -449,7 +449,7 @@ export const STATIC_INSTITUTIONAL_PAGES: Record<string, InstitutionalPage> = {
       <p>Todo o conteúdo publicado — incluindo textos, fotografias originais, dados de testes e elementos gráficos — é protegido pelas leis brasileiras de direitos autorais. A reprodução parcial é permitida exclusivamente com citação expressa da fonte com link ativo do portal.</p>
 
       <h2>3. Responsabilidade Técnica</h2>
-      <p>Os relatos de manutenção preventiva e mecânica refletem a experiência prática da redação. Cada motociclista deve consultar o manual oficial do proprietário e executar reparos com ferramentas e proteções adequadas, não se responsabilizando o portal por procedimentos executados incorretamente por terceiros.</p>
+      <p>Os relatos de manutenção preventiva e mecânica refletem a pesquisa documental. Cada motociclista deve consultar o manual oficial do proprietário e executar reparos com ferramentas e proteções adequadas, não se responsabilizando o portal por procedimentos executados incorretamente por terceiros.</p>
     `
   },
   "politica-de-privacidade": {
