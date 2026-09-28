@@ -192,7 +192,7 @@ describe("Hardening & Security Test Suite", () => {
       const [calledUrl, calledInit] = fetchSpy.mock.calls[0];
       expect(calledUrl).toBe("https://n8n.example.com/webhook/test");
       expect(calledInit?.method).toBe("POST");
-      expect((calledInit?.headers as any)[\"x-api-key\"]).toBe("test-api-secret-key-2026");
+      expect((calledInit?.headers as any)["x-api-key"]).toBe("test-api-secret-key-2026");
       expect(JSON.parse(calledInit?.body as string)).toEqual(payload);
     });
 
