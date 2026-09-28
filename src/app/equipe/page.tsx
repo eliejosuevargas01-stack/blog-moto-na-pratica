@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 
 export const metadata = {
-  title: "Equipe Editorial & Ficha Técnica · Moto na Prática",
+  title: "Quem Faz o Portal · Moto na Prática",
   description:
     "Conheça os jornalistas, pilotos de teste, consultores mecânicos e fundadores do Moto na Prática. Credenciais técnicas, transparência e autoridade sobre duas rodas.",
 };
@@ -26,13 +26,13 @@ export default function EquipePage() {
           <div className="flex items-center gap-2 text-[12px] text-muted-foreground uppercase tracking-widest mb-3" style={BODY}>
             <Link href="/" className="hover:text-primary transition-colors">Home</Link>
             <ChevronRight size={12} className="text-primary" />
-            <span className="text-foreground font-semibold">Equipe Editorial</span>
+            <span className="text-foreground font-semibold">Quem faz o portal</span>
           </div>
 
           <div className="flex items-center gap-3 mb-2">
             <span className="block w-1.5 h-8 bg-primary" />
             <span className="text-primary text-[12px] font-bold uppercase tracking-widest">
-              Ficha Técnica & Redação E-E-A-T
+              Identidade Institucional
             </span>
           </div>
 

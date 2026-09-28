@@ -40,12 +40,12 @@ export async function generateMetadata() {
     });
     return {
       title: page?.seoTitle || "Quem Somos · Jornalismo Independente & E-E-A-T · Moto na Prática",
-      description: page?.seoDescription || "Moto na Prática: portal informativo e jornalismo independente de motociclismo. Testes reais, oficina prática, rotas e cobertura esportiva.",
+      description: page?.seoDescription || "Conheça o Moto na Prática, uma publicação independente com pesquisa aprofundada focada na utilidade para o leitor.",
     };
   } catch (e) {
     return {
       title: "Quem Somos · Jornalismo Independente & E-E-A-T · Moto na Prática",
-      description: "Moto na Prática: portal informativo e jornalismo independente de motociclismo. Testes reais, oficina prática, rotas e cobertura esportiva."
+      description: "Conheça o Moto na Prática, uma publicação independente com pesquisa aprofundada focada na utilidade para o leitor."
     };
   }
 }

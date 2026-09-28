@@ -361,7 +361,7 @@ export const STATIC_INSTITUTIONAL_PAGES: Record<string, InstitutionalPage> = {
   },
   "equipe": {
     slug: "equipe",
-    title: "Equipe Editorial & Redação",
+    title: "A Identidade Editorial",
     seoTitle: "Equipe da Redação & Especialistas · Moto na Prática",
     seoDescription: "Conheça os jornalistas, pilotos de teste e técnicos que compõem a redação do Moto na Prática.",
     bodyHtml: `

@@ -203,12 +203,12 @@ export default function PoliticaEditorialPage() {
                   Verificação Factual e Fontes Primárias
                 </h3>
                 <p>
-                  Todas as avaliações, testes e notícias técnicas do <strong>Moto na Prática</strong> passam por auditoria minuciosa e conferência de dados com fontes primárias. Fichas técnicas, números de potência e torque, especificações de suspensão e freios são confirmados junto a manuais de serviço dos fabricantes e registros de homologação oficiais (Denatran, Senatran, Inmetro e Promot).
+                  Todas as avaliações, testes e notícias técnicas do <strong>Moto na Prática</strong> passam por auditoria minuciosa e conferência de dados com fontes primárias. Fichas técnicas, números de potência e torque, especificações de suspensão e freios são validadas através de manuais de serviço e registros oficiais disponíveis.
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
                   <div className="p-3 bg-background border border-border">
-                    <strong className="text-foreground text-[13px] block mb-1">Medições Próprias de Oficina:</strong>
-                    Valores de consumo e desgaste não dependem de dados fornecidos por montadoras; são validados em nossa oficina e com instrumentos de medição física.
+                    <strong className="text-foreground text-[13px] block mb-1">Medições e Consumo:</strong>
+                    Priorizamos dados baseados em medições de longo prazo e registros documentados, apontando quando as informações de consumo são apenas estimativas de fábrica.
                   </div>
                   <div className="p-3 bg-background border border-border">
                     <strong className="text-foreground text-[13px] block mb-1">Combate a Boatos:</strong>
@@ -296,7 +296,7 @@ export default function PoliticaEditorialPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
               <div className="border-l-2 border-primary pl-4 py-1">
                 <strong className="text-foreground block mb-1">Transparência Obrigatória:</strong>
-                Informaremos explicitamente aos leitores se uma unidade avaliada foi cedida por frota de imprensa.
+                Caso uma unidade seja cedida por fabricante ou frota de imprensa, essa condição será informada no conteúdo.
               </div>
               <div className="border-l-2 border-primary pl-4 py-1">
                 <strong className="text-foreground block mb-1">Sem Veto Editorial:</strong>
