@@ -1,5 +1,6 @@
 {
-  "name": "blog-moto-na-pratica",
+  "name": "@figma/my-make-file",
+  "private": true,
   "version": "0.0.1",
   "type": "module",
   "scripts": {
@@ -31,7 +32,7 @@
     "@radix-ui/react-progress": "1.1.2",
     "@radix-ui/react-radio-group": "1.2.3",
     "@radix-ui/react-scroll-area": "1.2.3",
-    "@radix-ui/react-select": "1.2.3",
+    "@radix-ui/react-select": "2.1.6",
     "@radix-ui/react-separator": "1.1.2",
     "@radix-ui/react-slider": "1.2.3",
     "@radix-ui/react-slot": "1.1.2",
@@ -96,7 +97,8 @@
       "@prisma/engines",
       "esbuild",
       "prisma",
-      "@tailwindcss/oxide"
+      "@tailwindcss/oxide",
+      "sharp"
     ]
   }
 }
