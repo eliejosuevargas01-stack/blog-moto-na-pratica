@@ -46,8 +46,25 @@ Parse local com dados reais: 60 itens brutos (Crash.net + Moto Adventure), 60 ap
 - Conexões: trigger `noticias` → 6 RSS; `Normaliza Feeds RSS` → Merge idx 3; `parser motosport1` → `Merge MotoGP` → `cria um id unico2`
 - Workflow reativado (ativo: true)
 
+## Correção de topologia (2026-09-28 15:48 UTC)
+
+**Problema apontado pelo usuário:** na primeira versão, os 6 RSS nodes apontavam direto para o Code `Normaliza Feeds RSS`. No n8n, um node downstream de N branches executa **N vezes** (1 por branch) — o normalizador rodaria 6× e empurraria 6 execuções parciais para o Merge final/Diretor.
+
+**Correção aplicada (verificada remotamente):**
+
+```
+RSS (6x) → [Merge Feeds RSS (append, 6 inputs)] → [Normaliza Feeds RSS] (1 execução, todos os itens) → [Merge] idx3 → ...
+RSS (3x) → [Merge Feeds RSS MotoGP (append, 3 inputs)] → [Normaliza Feeds RSS MotoGP] (1 execução) → [Merge MotoGP] idx1 → ...
+```
+
+- 2 nodes novos: `Merge Feeds RSS` e `Merge Feeds RSS MotoGP` (mode=`append`)
+- Cada RSS alimenta um input dedicado do append-merge (índices 0-5 / 0-2)
+- Normalizador agora roda **exatamente 1 vez** sobre o array combinado — dedupe global entre feeds funciona
+- Re-GET confirmou: modes `append`, índices corretos, workflow ativo
+
 ## Resultado
 
 - Pipeline 1: **3 → 9 fontes** (Motosport, Google News SerpApi, Google Trends + 6 feeds RSS)
 - Pipeline 2: **1 → 4 fontes** (Motosport + 3 feeds RSS MotoGP)
+- Diretor é chamado **uma única vez** por ciclo (após o Merge final), com todas as manchetes consolidadas
 - Próxima execução real: 06:10 (schedule diário) — não foi disparada execução manual para não gerar ciclo de pesquisa fora de hora.
