@@ -20,6 +20,32 @@ vi.mock("@/lib/db", () => ({
   }
 }));
 
+vi.mock("../../../lib/db", () => ({
+  prisma: {
+    post: {
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
+      findFirst: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      updateMany: vi.fn(),
+      delete: vi.fn(),
+      deleteMany: vi.fn(),
+    }
+  }
+}));
+
+vi.mock("@/lib/image-utils", () => ({
+  processImageBase64: vi.fn(),
+  saveAudioBuffer: vi.fn(),
+  calculateReadTime: vi.fn(() => "5 min"),
+  saveOptimizedImageBuffer: vi.fn(),
+}));
+
+vi.mock("next/cache", () => ({
+  revalidatePath: vi.fn(),
+}));
+
 describe("Hardening & Security Test Suite", () => {
   const originalEnv = { ...process.env };
 
