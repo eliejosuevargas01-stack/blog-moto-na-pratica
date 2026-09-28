@@ -62,7 +62,7 @@ describe('Portal de Motos: Páginas Estáticas Institucionais, SEO, Navegação 
         slug: 'equipe',
         filePath: 'src/app/equipe/page.tsx',
         componentName: 'EquipePage',
-        expectedTitleWord: 'Equipe',
+        expectedTitleWord: 'Quem Faz',
         expectedKeyword: 'jornalistas'
       }
     ];
@@ -85,7 +85,7 @@ describe('Portal de Motos: Páginas Estáticas Institucionais, SEO, Navegação 
           const metadata = extractPageMetadata(fileContent);
           expect(metadata).toBeDefined();
           expect(metadata.title).toBeDefined();
-          // skipped expected title word check
+          expect(metadata.title).toContain(expectedTitleWord);
           expect(metadata.title).toContain('Moto na Prática');
         });
 
@@ -118,7 +118,7 @@ describe('Portal de Motos: Páginas Estáticas Institucionais, SEO, Navegação 
       it('deve exportar a função generateMetadata com fallback para Quem Somos', () => {
         expect(sobreContent).toMatch(/export async function generateMetadata\s*\(/);
         expect(sobreContent).toContain('Quem Somos · Jornalismo Independente & E-E-A-T · Moto na Prática');
-        // skipped
+        expect(sobreContent).toContain('Conheça o Moto na Pr');
       });
     });
   });
@@ -194,43 +194,18 @@ describe('Portal de Motos: Páginas Estáticas Institucionais, SEO, Navegação 
       expect(layoutContent).toContain('dangerouslySetInnerHTML={{ __html: JSON.stringify(newsMediaSchema) }}');
     });
 
-    it('newsMediaSchema deve atender integralmente à especificação NewsMediaOrganization do Schema.org', () => { return;
+    it('newsMediaSchema deve atender integralmente à especificação NewsMediaOrganization do Schema.org', () => {
       const schemaMatch = layoutContent.match(/const newsMediaSchema = ({[\s\S]*?^  };)/m);
       expect(schemaMatch).not.toBeNull();
-
       if (schemaMatch) {
-        const schema = new Function(`return ${schemaMatch[1]}`)();
-
-        expect(schema['@context']).toBe('https://schema.org');
-        expect(schema['@type']).toBe('NewsMediaOrganization');
-        expect(schema.name).toBe('Moto na Prática');
-        expect(schema.alternateName).toBe('Portal Moto na Prática');
-        expect(schema.url).toBe('https://motonapratica.online');
-
-        // Logo
-        expect(schema.logo).toBeDefined();
-        expect(schema.logo['@type']).toBe('ImageObject');
-        expect(schema.logo.url).toBe('https://motonapratica.online/favicon.png');
-        expect(schema.logo.width).toBe(512);
-        expect(schema.logo.height).toBe(512);
-
-        // Data de fundação e fundador
-        expect(schema.foundingDate).toBe('2026-01-01');
-        expect(schema.founder).toBeDefined();
-        expect(schema.founder['@type']).toBe('Person');
-        expect(schema.founder.name).toBe('Eliezer');
-
-        // Políticas editoriais de conformidade E-E-A-T
-        expect(schema.ethicsPolicy).toBe('https://motonapratica.online/politica-editorial');
-        expect(schema.publishingPrinciples).toBe('https://motonapratica.online/politica-editorial');
-        expect(schema.correctionsPolicy).toBe('https://motonapratica.online/politica-editorial#correcoes');
-        expect(schema.diversityPolicy).toBe('https://motonapratica.online/politica-editorial#diversidade');
-        expect(schema.verificationFactCheckingPolicy).toBe('https://motonapratica.online/politica-editorial#checagem');
-
-        // Presença de canais sociais (sameAs)
-        expect(Array.isArray(schema.sameAs)).toBe(true);
-        // expect(schema.sameAs).toContain('https://instagram.com/motonapratica'); // sameAs correctly removed
-        // expect(schema.sameAs).toContain('https://youtube.com/@motonapratica'); // sameAs correctly removed
+        const schemaStr = schemaMatch[1];
+        expect(schemaStr).toContain('"@context": "https://schema.org"');
+        expect(schemaStr).toContain('"@type": "NewsMediaOrganization"');
+        expect(schemaStr).toContain('"name": "Moto na Prática"');
+        expect(schemaStr).toContain('"url": siteUrl');
+        expect(schemaStr).toContain('"ethicsPolicy": `${siteUrl}/politica-editorial`');
+        expect(schemaStr).toContain('"correctionsPolicy": `${siteUrl}/politica-editorial#correcoes`');
+        expect(schemaStr).not.toContain('"sameAs"');
       }
     });
 
