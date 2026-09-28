@@ -375,13 +375,13 @@ export const STATIC_INSTITUTIONAL_PAGES: Record<string, InstitutionalPage> = {
       </div>
 
       <div class="my-6 p-6 bg-card border border-border">
-        <h3 class="text-xl font-bold mb-1 text-foreground">Redação Técnica & Colaboradores</h3>
-        <p class="text-sm text-primary font-semibold mb-3">Mecânica, Motorsport & Viagens</p>
+        <h3 class="text-xl font-bold mb-1 text-foreground">Redação Moto na Prática</h3>
+        <p class="text-sm text-primary font-semibold mb-3">Pesquisa & Documentação</p>
 
       </div>
 
       <h2>Canal Direto com a Redação</h2>
-      <p>Sugestões de pauta, correções técnicas ou dúvidas mecânicas podem ser enviadas diretamente para a equipe através da nossa página de contato.</p>
+      <p>Sugestões de pauta, correções técnicas ou dúvidas mecânicas podem ser enviadas ao Moto na Prática pela página de contato.</p>
     `
   },
   "contato": {

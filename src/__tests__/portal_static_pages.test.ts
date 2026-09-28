@@ -68,6 +68,8 @@ describe('Portal de Motos: Páginas Estáticas Institucionais, SEO, Navegação 
         // Layout integration
         const layoutContent = load('src/app/layout.tsx');
         expect(layoutContent).toContain('href="/uso-de-inteligencia-artificial"');
+        expect(layoutContent).toContain('href="/como-pesquisamos"');
+        expect(layoutContent).toContain('href="/politica-de-correcoes"');
         expect(layoutContent).toContain('href="/publicidade-e-afiliados"');
       });
     });
