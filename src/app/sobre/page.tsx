@@ -64,7 +64,7 @@ export default async function Sobre() {
   let content: any = {
     heroTitle: "Moto na Prática · Portal Informativo e Jornalismo Independente de Motociclismo",
     heroSubtitle: "PORTAL INFORMATIVO · E-E-A-T & JORNALISMO INDEPENDENTE",
-    heroDescription: "Nascido da vivência real diária sobre duas rodas com o fundador Eliezer e consolidado como portal de referência técnica, testes sem patrocínio velado, medição real de consumo na bomba e cobertura do motociclismo nacional e mundial.",
+    heroDescription: "O Moto na Prática é uma publicação independente focada em entregar pesquisa aprofundada, notícias claras e coberturas de mercado e manutenção úteis para o motociclista.",
     heroImage: "https://images.unsplash.com/photo-1625812184391-0359bf2344b9?w=1400&h=600&fit=crop&auto=format",
     heroFocalPoint: "center",
     stats: [

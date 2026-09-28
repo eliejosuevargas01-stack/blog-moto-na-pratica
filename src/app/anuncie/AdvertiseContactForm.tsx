@@ -92,14 +92,9 @@ export default function AdvertiseContactForm() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validate()) return;
 
-    setIsSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setIsSubmitting(false);
-    setSubmitted(true);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
   };
 
   const handleReset = () => {
@@ -131,13 +126,11 @@ export default function AdvertiseContactForm() {
           enviará a tabela de preços detalhada e disponibilidade de inventário em até 24 horas úteis no e-mail{" "}
           <span className="text-foreground font-semibold">{formData.corporateEmail}</span>.
         </p>
-        <button
-          type="button"
-          onClick={handleReset}
-          className="inline-flex items-center gap-2 px-6 py-2.5 bg-foreground text-background text-[13px] font-semibold uppercase tracking-wider hover:bg-primary hover:text-white transition-colors cursor-pointer"
-        >
-          <RefreshCw size={14} /> Enviar Nova Solicitação Comercial
-        </button>
+
+      <div className="w-full text-center px-6 py-3.5 bg-muted text-muted-foreground text-[14px] font-semibold uppercase tracking-wider border border-border" style={TEKO}>
+        Envio comercial temporariamente indisponível. Use a página de contato quando o canal estiver habilitado.
+      </div>
+
       </div>
     );
   }

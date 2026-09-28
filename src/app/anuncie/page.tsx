@@ -20,13 +20,6 @@ export const metadata = {
     "Conecte sua marca a milhares de motociclistas qualificados, entusiastas e viajantes. Conheça nossos formatos IAB, publieditoriais transparentes e mídia kit.",
 };
 
-const STATS = [
-  { value: "+280.000", label: "Visualizações de Página / Mês", icon: Eye },
-  { value: "+110.000", label: "Leitores Únicos Mensais", icon: Users },
-  { value: "4m 15s", label: "Tempo Médio de Leitura", icon: Clock },
-  { value: "+19.000", label: "Inscritos na Newsletter", icon: Mail },
-];
-
 const TARGET_AUDIENCES = [
   {
     title: "Motociclistas do Dia a Dia",
@@ -77,7 +70,7 @@ const MEDIA_FORMATS = [
     title: "Testes de Longa Duração & Motopeças",
     badge: "Validação em Condições Reais",
     icon: Wrench,
-    desc: "Avaliação técnica prolongada (1.000 a 10.000 km) de pneus, kits de relação, óleos lubrificantes, pastilhas e acessórios, documentada com medições periódicas de desgaste.",
+    desc: "Avaliação documental e técnica de equipamentos, pneus e acessórios.",
   },
 ];
 
@@ -110,27 +103,7 @@ export default function AnunciePage() {
         </div>
       </div>
 
-      {/* MÉTRICAS DE ENGAJAMENTO (STATS) */}
-      <div className="max-w-[1200px] mx-auto px-4 md:px-6 -mt-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-border shadow-sm border border-border">
-          {STATS.map((stat, idx) => {
-            const Icon = stat.icon;
-            return (
-              <div key={idx} className="bg-card p-6 text-center flex flex-col items-center justify-center gap-1.5">
-                <span className="text-primary mb-1">
-                  <Icon size={22} />
-                </span>
-                <span style={TEKO} className="text-[34px] font-semibold uppercase leading-none text-foreground">
-                  {stat.value}
-                </span>
-                <span className="text-[11.5px] text-muted-foreground uppercase tracking-wider font-medium" style={BODY}>
-                  {stat.label}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+
 
       {/* CONTEÚDO PRINCIPAL */}
       <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-14 space-y-16">

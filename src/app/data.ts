@@ -370,7 +370,7 @@ export const STATIC_INSTITUTIONAL_PAGES: Record<string, InstitutionalPage> = {
       
       <div class="my-6 p-6 bg-card border border-border">
         <h3 class="text-xl font-bold mb-1 text-foreground">Eliezer</h3>
-        <p class="text-sm text-primary font-semibold mb-3">Fundador & Editor-Chefe de Testes</p>
+        <p class="text-sm text-primary font-semibold mb-3">Fundador & Responsável pelo Projeto</p>
         <p class="text-muted-foreground text-sm">Piloto e entusiasta com base de operações em Gaspar - SC. Responsável pela coordenação do teste de longa duração da Fazer 250 (FZ25) e pelas avaliações de consumo real na bomba, ergonomia diária e manutenção preventiva.</p>
       </div>
 
@@ -433,7 +433,7 @@ export const STATIC_INSTITUTIONAL_PAGES: Record<string, InstitutionalPage> = {
         <li><strong>Newsletter Exclusiva:</strong> Comunicação direta com leitores inscritos e segmentados por interesse.</li>
       </ul>
 
-      <p class="mt-6">Para solicitar nosso <strong>Mídia Kit completo</strong> com métricas de audiência, dados demográficos e tabela de formatos, envie um e-mail para <strong class="text-primary">Fale conosco via Página de Contato</strong>.</p>
+      <p class="mt-6">Para consultar nossos formatos e propostas comerciais, escreva para <strong class="text-primary">Fale conosco via Página de Contato</strong>.</p>
     `
   },
   "termos-de-uso": {
