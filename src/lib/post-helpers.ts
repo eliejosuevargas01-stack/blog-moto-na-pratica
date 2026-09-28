@@ -1,5 +1,5 @@
 import { prisma } from "./db";
-import { POSTS, slugify } from "../app/data";
+import { slugify } from "../app/data";
 
 function stripHtml(html: string): string {
   if (!html) return "";
@@ -73,8 +73,7 @@ export async function findPostBySlugOrId(identifier: string, requestedLang: stri
     console.warn("findMany by ID/translationGroupId failed", err);
   }
 
-  const staticPost = POSTS.find(p => p.slug === cleanId || String(p.id) === cleanId);
-  return staticPost || null;
+  return null;
 }
 
 export async function generatePostMetadata(slug: string, lang: string = "pt") {

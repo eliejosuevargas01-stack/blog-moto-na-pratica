@@ -1,11 +1,11 @@
 import { prisma } from "../../../lib/db";
-import { POSTS, TAG_COLORS, TEKO, BODY, optimizeImageUrl, slugify } from "../../data";
+import { TAG_COLORS, TEKO, BODY, optimizeImageUrl, slugify } from "../../data";
 import Sidebar from "../../components/Sidebar";
 import EditorialTrustLinks from "../../components/EditorialTrustLinks";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
-import { Clock, ChevronLeft, Tag, Eye, Globe } from "lucide-react";
+import { Clock, ChevronLeft, Tag, Eye, ShieldCheck } from "lucide-react";
 import TableOfContents from "../../components/TableOfContents";
 import CommentsSection from "../../components/CommentsSection";
 import SafeHtml, { SAFE_DOMPURIFY_CONFIG } from "../../components/SafeHtml";
@@ -14,6 +14,15 @@ import PostActionsBar from "../../components/PostActionsBar";
 import PostViewTracker from "../../components/PostViewTracker";
 import AudioNarrationPlayer from "../../components/AudioNarrationPlayer";
 import { findPostBySlugOrId, generatePostMetadata } from "@/lib/post-helpers";
+import {
+  buildArticleViewModel,
+  buildArticleStructuredData,
+} from "@/lib/editorial-contract";
+import AuthorByline from "../../components/AuthorByline";
+import FreshnessMeta from "../../components/FreshnessMeta";
+import ArticleSources from "../../components/ArticleSources";
+import ArticleDisclosure from "../../components/ArticleDisclosure";
+import CorrectionNotice from "../../components/CorrectionNotice";
 
 export const dynamic = "force-dynamic";
 
@@ -31,11 +40,11 @@ function extractListOrContent(htmlSnippet: string): string {
   const pMatches = htmlSnippet.match(/<p[\s\S]*?<\/p>/gi);
   if (pMatches && pMatches.length > 0) {
     const items = pMatches
-      .map(p => p.replace(/<\/?p[^>]*>/g, '').trim())
-      .filter(t => t.length > 0 && !/pontos\s+(fortes|fracos)|prós|contras|👍|👎|✅|❌/i.test(t))
-      .map(t => `<li>${t.replace(/^[•\-\*\s]+/, '')}</li>`);
+      .map((p) => p.replace(/<\/?p[^>]*>/g, "").trim())
+      .filter((t) => t.length > 0 && !/pontos\s+(fortes|fracos)|prós|contras|👍|👎|✅|❌/i.test(t))
+      .map((t) => `<li>${t.replace(/^[•\-\*\s]+/, "")}</li>`);
     if (items.length > 0) {
-      return `<ul>${items.join('')}</ul>`;
+      return `<ul>${items.join("")}</ul>`;
     }
   }
   return "";
@@ -49,8 +58,8 @@ function normalizeProsConsHtml(html: string): string {
   }
 
   let cleanInput = html
-    .replace(/^<ul[^>]*>\s*<li[^>]*>/i, '')
-    .replace(/<\/li>\s*<\/ul>$/i, '');
+    .replace(/^<ul[^>]*>\s*<li[^>]*>/i, "")
+    .replace(/<\/li>\s*<\/ul>$/i, "");
 
   const hasProsKeyword = /(?:pontos\s+fortes|prós|pros|vantagens|strengths|puntos\s+fuertes|ventajas|👍|✅)/i.test(cleanInput);
   const hasConsKeyword = /(?:pontos\s+fracos|contras|desvantagens|cons|weaknesses|puntos\s+débiles|desventajas|👎|❌)/i.test(cleanInput);
@@ -59,44 +68,43 @@ function normalizeProsConsHtml(html: string): string {
     return cleanInput;
   }
 
-  if (cleanInput.includes('box-pros') && cleanInput.includes('box-cons')) {
-    cleanInput = cleanInput.replace(/<li[^>]*>\s*(<div\b[^>]*class=["'][^"']*box-pros-cons[\s\S]*?<\/div>)\s*<\/li>/gi, '$1');
+  if (cleanInput.includes("box-pros") && cleanInput.includes("box-cons")) {
+    cleanInput = cleanInput.replace(/<li[^>]*>\s*(<div\b[^>]*class=["'][^"']*box-pros-cons[\s\S]*?<\/div>)\s*<\/li>/gi, "$1");
     return cleanInput;
   }
 
-  // 1. CASO ESPECIAL: O HTML possui uma lista de <li> onde alguns são Prós e outros são Contras
   const allLiMatches = Array.from(cleanInput.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi));
   if (allLiMatches.length > 0) {
     const prosLis: string[] = [];
     const consLis: string[] = [];
-    let currentMode: 'pros' | 'cons' = 'pros';
+    let currentMode: "pros" | "cons" = "pros";
     let foundExplicitLabels = false;
 
     for (const match of allLiMatches) {
       const fullLi = match[0];
       const liInner = match[1];
-      const cleanText = liInner.replace(/<[^>]*>/g, '').trim();
+      const cleanText = liInner.replace(/<[^>]*>/g, "").trim();
 
-      const isConsLi = /^(?:contras?|pontos\s+fracos|desvantagens|cons|weaknesses|puntos\s+débiles|desventajas|👎|❌)\s*:?/i.test(cleanText) ||
-                       /<strong>\s*(?:contras?|pontos\s+fracos|desvantagens|cons|weaknesses|puntos\s+débiles|desventajas|👎|❌)\s*:?\s*<\/strong>/i.test(liInner);
-      
-      const isProsLi = /^(?:prós|pros|pontos\s+fortes|vantagens|strengths|puntos\s+fuertes|ventajas|👍|✅)\s*:?/i.test(cleanText) ||
-                       /<strong>\s*(?:prós|pros|pontos\s+fortes|vantagens|strengths|puntos\s+fuertes|ventajas|👍|✅)\s*:?\s*<\/strong>/i.test(liInner);
+      const isConsLi =
+        /^(?:contras?|pontos\s+fracos|desvantagens|cons|weaknesses|puntos\s+débiles|desventajas|👎|❌)\s*:?/i.test(cleanText) ||
+        /<strong>\s*(?:contras?|pontos\s+fracos|desvantagens|cons|weaknesses|puntos\s+débiles|desventajas|👎|❌)\s*:?\s*<\/strong>/i.test(liInner);
+
+      const isProsLi =
+        /^(?:prós|pros|pontos\s+fortes|vantagens|strengths|puntos\s+fuertes|ventajas|👍|✅)\s*:?/i.test(cleanText) ||
+        /<strong>\s*(?:prós|pros|pontos\s+fortes|vantagens|strengths|puntos\s+fuertes|ventajas|👍|✅)\s*:?\s*<\/strong>/i.test(liInner);
 
       if (isConsLi) {
         foundExplicitLabels = true;
-        currentMode = 'cons';
-        const cleanedLi = liInner
-          .replace(/^(?:<strong>)?\s*(?:contras?|pontos\s+fracos|desvantagens|cons|weaknesses|puntos\s+débiles|desventajas|👎|❌)\s*:?\s*(?:<\/strong>)?\s*/i, '');
+        currentMode = "cons";
+        const cleanedLi = liInner.replace(/^(?:<strong>)?\s*(?:contras?|pontos\s+fracos|desvantagens|cons|weaknesses|puntos\s+débiles|desventajas|👎|❌)\s*:?\s*(?:<\/strong>)?\s*/i, "");
         consLis.push(`<li>${cleanedLi}</li>`);
       } else if (isProsLi) {
         foundExplicitLabels = true;
-        currentMode = 'pros';
-        const cleanedLi = liInner
-          .replace(/^(?:<strong>)?\s*(?:prós|pros|pontos\s+fortes|vantagens|strengths|puntos\s+fuertes|ventajas|👍|✅)\s*:?\s*(?:<\/strong>)?\s*/i, '');
+        currentMode = "pros";
+        const cleanedLi = liInner.replace(/^(?:<strong>)?\s*(?:prós|pros|pontos\s+fortes|vantagens|strengths|puntos\s+fuertes|ventajas|👍|✅)\s*:?\s*(?:<\/strong>)?\s*/i, "");
         prosLis.push(`<li>${cleanedLi}</li>`);
       } else {
-        if (currentMode === 'cons') {
+        if (currentMode === "cons") {
           consLis.push(fullLi);
         } else {
           prosLis.push(fullLi);
@@ -105,15 +113,14 @@ function normalizeProsConsHtml(html: string): string {
     }
 
     if (foundExplicitLabels && prosLis.length > 0 && consLis.length > 0) {
-      const prosBox = `<div class="box-pros"><h4>👍 Pontos Fortes</h4><ul>${prosLis.join('')}</ul></div>`;
-      const consBox = `<div class="box-cons"><h4>👎 Pontos Fracos</h4><ul>${consLis.join('')}</ul></div>`;
+      const prosBox = `<div class="box-pros"><h4>👍 Pontos Fortes</h4><ul>${prosLis.join("")}</ul></div>`;
+      const consBox = `<div class="box-cons"><h4>👎 Pontos Fracos</h4><ul>${consLis.join("")}</ul></div>`;
       const prefixMatch = cleanInput.split(/<(h[1-6]|p|ul|ol)\b/i);
       const prefix = prefixMatch && prefixMatch[0] ? prefixMatch[0] : "";
       return `${prefix}<div class="box-pros-cons">${prosBox}${consBox}</div>`;
     }
   }
 
-  // 2. CASO GERAL: Seções com Títulos H2-H4 dedicados exclusivamente a "Prós" e "Contras"
   const prosHeaderRegex = /<(h[2-4])\b[^>]*>\s*(?:pontos\s+fortes|prós|pros|vantagens|strengths|puntos\s+fuertes|ventajas|👍|✅)\s*:?\s*<\/\1>/gi;
   const consHeaderRegex = /<(h[2-4])\b[^>]*>\s*(?:pontos\s+fracos|contras|desvantagens|cons|weaknesses|puntos\s+débiles|desventajas|👎|❌)\s*:?\s*<\/\1>/gi;
 
@@ -172,7 +179,7 @@ function cleanBlockHtml(html: string): string {
 function injectHeadingIds(html: string): string {
   if (!html) return "";
   return html.replace(/<(h[23])\b([^>]*)>(.*?)<\/\1>/gi, (match, tag, attrs, content) => {
-    if (attrs.includes('id=')) return match;
+    if (attrs.includes("id=")) return match;
     const cleanText = content.replace(/<[^>]*>/g, "");
     const id = slugify(cleanText);
     return `<${tag}${attrs} id="${id}">${content}</${tag}>`;
@@ -192,26 +199,27 @@ export async function generateMetadata(props: PostPageProps) {
 export default async function PostPage(props: PostPageProps, langOverride?: string) {
   const { slug } = props.params;
   const lang = langOverride || "pt";
-  let post: any = null;
+  let rawPost: any = null;
   let related: any[] = [];
-  let translations: any[] = [];
 
   try {
-    post = await findPostBySlugOrId(slug, lang);
+    rawPost = await findPostBySlugOrId(slug, lang);
   } catch (error) {
-    console.warn("Post query failed, falling back to static POSTS.", error);
-    post = POSTS.find(p => p.slug === slug || String(p.id) === slug);
+    console.warn("Post query failed", error);
+    rawPost = null;
   }
 
-  if (!post) {
+  if (!rawPost) {
     return notFound();
   }
 
-  const currentLang = post.lang || "pt";
-  const expectedPrefix = currentLang === "en" ? "/en/post" : currentLang === "es" ? "/es/post" : "/post";
-  const expectedPath = `${expectedPrefix}/${post.slug}`;
+  const viewModel = buildArticleViewModel(rawPost);
 
-  if (slug !== post.slug) {
+  const currentLang = viewModel.lang || "pt";
+  const expectedPrefix = currentLang === "en" ? "/en/post" : currentLang === "es" ? "/es/post" : "/post";
+  const expectedPath = `${expectedPrefix}/${viewModel.slug}`;
+
+  if (slug !== viewModel.slug) {
     redirect(expectedPath);
   }
 
@@ -222,31 +230,20 @@ export default async function PostPage(props: PostPageProps, langOverride?: stri
     ],
   };
 
-  if (post.translationGroupId) {
-    try {
-      translations = await prisma.post.findMany({
-        where: { translationGroupId: post.translationGroupId },
-        select: { lang: true, slug: true, title: true }
-      });
-    } catch (e) {
-      translations = [];
-    }
-  }
-
   try {
     related = await prisma.post.findMany({
       where: {
         AND: [
           langFilter,
-          { id: { not: post.id } },
-          { tag: post.tag }
-        ]
+          { id: { not: viewModel.id } },
+          { tag: viewModel.tag },
+        ],
       },
       take: 2,
-      orderBy: { createdAt: "desc" }
+      orderBy: { createdAt: "desc" },
     });
   } catch (error) {
-    related = POSTS.filter(p => p.slug !== post.slug && p.tag === post.tag).slice(0, 2);
+    related = [];
   }
 
   if (related.length === 0) {
@@ -255,48 +252,44 @@ export default async function PostPage(props: PostPageProps, langOverride?: stri
         where: {
           AND: [
             langFilter,
-            { id: { not: post.id } }
-          ]
+            { id: { not: viewModel.id } },
+          ],
         },
         take: 2,
-        orderBy: { createdAt: "desc" }
+        orderBy: { createdAt: "desc" },
       });
     } catch (error) {
-      related = POSTS.filter(p => p.slug !== post.slug).slice(0, 2);
+      related = [];
     }
   }
 
-  let blocks: any[] = [];
-  if (Array.isArray(post.blocks)) {
-    blocks = post.blocks;
-  } else if (typeof post.blocks === "string") {
-    try {
-      blocks = JSON.parse(post.blocks);
-    } catch (e) {
-      blocks = [];
-    }
-  } else {
-    const paragraphs = (post.content ?? "").split("\n\n").filter(Boolean);
+  let blocks: any[] = viewModel.blocks;
+  if (!blocks || blocks.length === 0) {
+    const paragraphs = (viewModel.content ?? "").split("\n\n").filter(Boolean);
     const htmlParagraphs = paragraphs.map((p: string) => {
       if (p.startsWith("**") && p.endsWith("**")) {
         return `<h2>${p.replace(/\*\*/g, "")}</h2>`;
       }
-      return `<p>${p.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')}</p>`;
+      return `<p>${p.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")}</p>`;
     });
 
-    const size = Math.ceil(htmlParagraphs.length / 3);
+    const size = Math.ceil(htmlParagraphs.length / 3) || 1;
+    blocks = [];
     for (let i = 0; i < 3; i++) {
-      blocks.push({
-        text: htmlParagraphs.slice(i * size, (i + 1) * size).join("\n"),
-        image: "",
-        focalPoint: "center"
-      });
+      const slice = htmlParagraphs.slice(i * size, (i + 1) * size).join("\n");
+      if (slice) {
+        blocks.push({
+          text: slice,
+          image: "",
+          focalPoint: "center",
+        });
+      }
     }
   }
 
-  const dynamicPostTags: string[] = [post.tag];
-  if (post.seoKeywords) {
-    post.seoKeywords.split(",").forEach((k: string) => {
+  const dynamicPostTags: string[] = [viewModel.tag];
+  if (viewModel.seoKeywords) {
+    viewModel.seoKeywords.split(",").forEach((k: string) => {
       const trimmed = k.trim();
       if (trimmed && !dynamicPostTags.includes(trimmed)) {
         dynamicPostTags.push(trimmed);
@@ -304,34 +297,33 @@ export default async function PostPage(props: PostPageProps, langOverride?: stri
     });
   }
 
-  const createdDate = post.createdAt ? new Date(post.createdAt) : (post.date ? new Date(post.date) : new Date());
-  const updatedDate = post.updatedAt ? new Date(post.updatedAt) : null;
-  const isUpdated = updatedDate && (updatedDate.getTime() - createdDate.getTime() > 24 * 60 * 60 * 1000);
-
-  const dateLocale = currentLang === "en" ? "en-US" : currentLang === "es" ? "es-ES" : "pt-BR";
-  const formattedCreated = createdDate.toLocaleDateString(dateLocale, { day: "2-digit", month: "short", year: "numeric" });
-  const formattedUpdated = updatedDate ? updatedDate.toLocaleDateString(dateLocale, { day: "2-digit", month: "short", year: "numeric" }) : "";
-
   const recommendedSectionTitle = currentLang === "en" ? "Recommended Posts" : currentLang === "es" ? "Artículos Recomendados" : "Posts recomendados";
   const backHomeText = currentLang === "en" ? "Back to Home" : currentLang === "es" ? "Volver a Inicio" : "Volver para Home";
-  const readTimeSuffix = currentLang === "en" ? "read time" : currentLang === "es" ? "de lectura" : "de leitura";
+  const readTimeSuffix = currentLang === "en" ? "read time" : currentLang === "es" ? "de leitura" : "de leitura";
   const viewsSuffix = currentLang === "en" ? "views" : currentLang === "es" ? "visitas" : "visualizações";
-  const updatedPrefix = currentLang === "en" ? "Updated on" : currentLang === "es" ? "Actualizado el" : "Atualizado em";
+
+  const structuredData = buildArticleStructuredData(viewModel);
 
   return (
     <div>
-      <PostViewTracker postId={post.id} />
+      {/* Structured Data JSON-LD */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
+
+      <PostViewTracker postId={viewModel.id} />
 
       {/* POST HERO */}
       <div id="img-1" className="relative w-full overflow-hidden scroll-mt-10" style={{ height: "60vh", minHeight: "360px" }}>
         <Image 
-          src={optimizeImageUrl(post.img, 1200)} 
-          alt={stripHtml(post.title)}
+          src={optimizeImageUrl(viewModel.img, 1200)}
+          alt={stripHtml(viewModel.title)}
           fill
           priority
           sizes="100vw"
           className="object-cover"
-          style={{ objectPosition: post.imgFocalPoint || "center" }}
+          style={{ objectPosition: viewModel.imgFocalPoint || "center" }}
         />
         <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,.90) 0%, rgba(0,0,0,.40) 55%, rgba(0,0,0,.15) 100%)" }} />
         <div className="absolute inset-0 flex flex-col justify-end px-4 md:px-6 pb-10 max-w-[1200px] mx-auto z-10">
@@ -342,23 +334,28 @@ export default async function PostPage(props: PostPageProps, langOverride?: stri
             <ChevronLeft size={14} /> {backHomeText}
           </Link>
           <div className="flex flex-wrap items-center gap-3 mb-3">
-            <span className={`text-[11px] font-bold uppercase tracking-widest px-2 py-1 ${TAG_COLORS[post.tag] ?? "bg-white/20 text-white"}`}>
-              {post.tag}
+            <span className={`text-[11px] font-bold uppercase tracking-widest px-2 py-1 ${TAG_COLORS[viewModel.tag] ?? "bg-white/20 text-white"}`}>
+              {viewModel.tag}
             </span>
-            <span className="flex items-center gap-1 text-[12px] text-white/80"><Clock size={11} /> {post.readTime} {readTimeSuffix}</span>
-            <span className="flex items-center gap-1 text-[12px] text-white/80"><Eye size={11} /> {post.views || 0} {viewsSuffix}</span>
-            <span className="text-[12px] text-white/80">{formattedCreated}</span>
-            {isUpdated && (
-              <span className="text-[11px] text-gray-300 italic">
-                ({updatedPrefix} {formattedUpdated})
+            {viewModel.meta.personalExperienceVerified && (
+              <span className="flex items-center gap-1 bg-emerald-600/90 text-white text-[11px] font-bold uppercase tracking-wider px-2 py-1 rounded">
+                <ShieldCheck size={13} /> Experiência Real Verificada
               </span>
             )}
+            <span className="flex items-center gap-1 text-[12px] text-white/80"><Clock size={11} /> {viewModel.readTime} {readTimeSuffix}</span>
+            <span className="flex items-center gap-1 text-[12px] text-white/80"><Eye size={11} /> {viewModel.views || 0} {viewsSuffix}</span>
+            <FreshnessMeta
+              publishedAt={viewModel.meta.publishedAt}
+              modifiedAt={viewModel.meta.modifiedAt}
+              lang={currentLang}
+            />
+            <AuthorByline author={viewModel.meta.author} />
           </div>
           <SafeHtml 
             tag="h1"
             style={TEKO} 
             className="text-[48px] md:text-[64px] font-semibold leading-none uppercase tracking-wide text-white"
-            html={post.title}
+            html={viewModel.title}
           />
         </div>
       </div>
@@ -367,18 +364,22 @@ export default async function PostPage(props: PostPageProps, langOverride?: stri
       <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-12 md:py-16 grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-12 lg:gap-14">
         <div className="min-w-0 max-w-[70ch] mx-auto w-full">
           {/* Excerpt */}
-          <p className="text-[17px] md:text-[18px] text-[#374151] leading-relaxed border-l-4 border-primary pl-5 mb-10 font-normal" style={BODY}>
-            {post.excerpt}
+          <p className="text-[17px] md:text-[18px] text-[#374151] leading-relaxed border-l-4 border-primary pl-5 mb-8 font-normal" style={BODY}>
+            {viewModel.excerpt}
           </p>
+
+          {/* Disclosure e Correção */}
+          <ArticleDisclosure disclosure={viewModel.meta.disclosure} />
+          <CorrectionNotice correction={viewModel.meta.correction} />
 
           {/* Player de Áudio de Narração do Post com Âncora #audio */}
           <div id="audio" className="scroll-mt-24 mb-6">
-            <AudioNarrationPlayer audioUrl={post.audioUrl} title={stripHtml(post.title)} lang={currentLang} />
+            <AudioNarrationPlayer audioUrl={viewModel.audioUrl} title={stripHtml(viewModel.title)} lang={currentLang} />
           </div>
 
           {/* Bar de Curtir e Compartilhar */}
           <div className="mb-8">
-            <PostActionsBar postId={post.id} postTitle={stripHtml(post.title)} initialLikes={post.likes || 0} />
+            <PostActionsBar postId={viewModel.id} postTitle={stripHtml(viewModel.title)} initialLikes={viewModel.likes || 0} />
           </div>
 
           {/* Índice de Tópicos do Artigo (Table of Contents) */}
@@ -427,7 +428,7 @@ export default async function PostPage(props: PostPageProps, langOverride?: stri
                           </figcaption>
                         ) : (
                           <figcaption className="text-xs text-muted-foreground text-center mt-2.5 italic">
-                            Registro fotográfico e detalhes: {stripHtml(post.title)}
+                            Registro fotográfico e detalhes: {stripHtml(viewModel.title)}
                           </figcaption>
                         )}
                       </figure>
@@ -437,6 +438,9 @@ export default async function PostPage(props: PostPageProps, langOverride?: stri
               });
             })()}
           </div>
+
+          {/* Fontes Estruturadas do Artigo */}
+          <ArticleSources sources={viewModel.meta.sources} />
 
           {/* Editorial Process Integration */}
           <div className="mt-8">
@@ -503,7 +507,7 @@ export default async function PostPage(props: PostPageProps, langOverride?: stri
           )}
 
           {/* Seção de Comentários */}
-          <CommentsSection postId={post.id} />
+          <CommentsSection postId={viewModel.id} />
         </div>
 
         {/* SIDEBAR */}

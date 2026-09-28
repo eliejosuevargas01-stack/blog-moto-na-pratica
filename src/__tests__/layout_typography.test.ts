@@ -387,12 +387,12 @@ describe('Design System: Layout, Tipografia e Acessibilidade (Vitest)', () => {
       expect(post).toEqual(postFromId);
     });
 
-    it('findPostBySlugOrId deve recorrer ao fallback estático POSTS quando banco falhar ou não encontrar', async () => {
+    it('findPostBySlugOrId deve retornar null quando banco falhar ou post não for encontrado (sem fallback fictício)', async () => {
       (prisma.post.findUnique as any).mockRejectedValueOnce(new Error('DB offline'));
       (prisma.post.findMany as any).mockRejectedValueOnce(new Error('DB offline'));
 
-      const fallbackPost = await findPostBySlugOrId(POSTS[0].slug);
-      expect(fallbackPost).toEqual(POSTS[0]);
+      const fallbackPost = await findPostBySlugOrId('slug-qualquer');
+      expect(fallbackPost).toBeNull();
 
       const empty = await findPostBySlugOrId('');
       expect(empty).toBeNull();

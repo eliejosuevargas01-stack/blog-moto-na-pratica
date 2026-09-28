@@ -86,7 +86,7 @@ describe('Segurança XSS, SSR e Contraste Visual (REV-SEC-001, REV-LOG-001, REV-
 
     it('post/[slug]/page.tsx deve sanitizar o título e os blocos de texto com DOMPurify/SafeHtml', () => {
       // Título usando SafeHtml
-      expect(postPageContent).toMatch(/<SafeHtml\s+tag="h1"[^>]*html=\{post\.title\}/);
+      expect(postPageContent).toMatch(/<SafeHtml\s+tag="h1"[^>]*html=\{(?:post|viewModel)\.title\}/);
       // Sanitização de blocos antes da renderização
       expect(postPageContent).toMatch(/DOMPurify\.sanitize\(cleanedText/);
     });

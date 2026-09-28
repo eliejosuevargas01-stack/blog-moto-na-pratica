@@ -1,5 +1,5 @@
 import { prisma } from "../../lib/db";
-import { POSTS, TAG_COLORS, TEKO, BODY, optimizeImageUrl, formatPostUrl } from "../data";
+import { TAG_COLORS, TEKO, BODY, optimizeImageUrl, formatPostUrl } from "../data";
 import Link from "next/link";
 import SafeHtml from "../components/SafeHtml";
 import { Clock, Search, ArrowRight, Tag } from "lucide-react";
@@ -66,8 +66,8 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
       orderBy: { createdAt: "desc" },
     });
   } catch (error) {
-    console.warn("Falha ao buscar posts no banco, usando POSTS estáticos:", error);
-    posts = POSTS;
+    console.warn("Falha ao buscar posts no banco, usando lista vazia:", error);
+    posts = [];
   }
 
   return (
