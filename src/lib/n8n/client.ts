@@ -28,7 +28,8 @@ export class N8nClient {
   }
 
   /**
-   * Envia o payload exato para o Webhook do n8n via POST HTTPS com autenticação exclusivamente por headers.
+   * Envia o payload exato para o Webhook do n8n via POST HTTPS.
+   * Autenticação padronizada exclusivamente pelo header 'x-api-key'.
    * Não altera o formato nem envelopa os dados (suporta objetos e arrays no root).
    */
   static async send(payload: unknown, timeoutMs = 10000): Promise<{ success: boolean; data?: unknown }> {
@@ -47,7 +48,6 @@ export class N8nClient {
         headers: {
           "Content-Type": "application/json",
           "x-api-key": apiKey,
-          "Authorization": `Bearer ${apiKey}`,
         },
         body: JSON.stringify(payload),
         signal: controller.signal,

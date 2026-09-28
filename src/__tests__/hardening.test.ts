@@ -2,6 +2,23 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { signAdminToken, signUserToken, verifyAdminToken, verifyUserToken } from "@/lib/auth";
 import { verifyM2MAuth } from "@/lib/m2m";
 import { N8nClient } from "@/lib/n8n/client";
+import { GET as getPostsRoute } from "@/app/api/posts/route";
+import { prisma } from "@/lib/db";
+
+vi.mock("@/lib/db", () => ({
+  prisma: {
+    post: {
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
+      findFirst: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      updateMany: vi.fn(),
+      delete: vi.fn(),
+      deleteMany: vi.fn(),
+    }
+  }
+}));
 
 describe("Hardening & Security Test Suite", () => {
   const originalEnv = { ...process.env };
@@ -86,14 +103,70 @@ describe("Hardening & Security Test Suite", () => {
     });
   });
 
-  describe("Item 9: N8nClient Payload Contracts & HTTPS Enforcement", () => {
+  describe("Item 3: GET /api/posts Draft Leakage Prevention", () => {
+    it("public request without status should strictly filter by publicado", async () => {
+      (prisma.post.findMany as any).mockResolvedValueOnce([]);
+
+      const req = new Request("https://motonapratica.online/api/posts");
+      await getPostsRoute(req);
+
+      expect(prisma.post.findMany).toHaveBeenCalledTimes(1);
+      const queryArg = (prisma.post.findMany as any).mock.calls[0][0];
+      expect(queryArg.where.AND).toContainEqual({ status: "publicado" });
+    });
+
+    it("public request with ?status=rascunho should IGNORE status param and strictly filter by publicado", async () => {
+      (prisma.post.findMany as any).mockResolvedValueOnce([]);
+
+      const req = new Request("https://motonapratica.online/api/posts?status=rascunho");
+      await getPostsRoute(req);
+
+      expect(prisma.post.findMany).toHaveBeenCalledTimes(1);
+      const queryArg = (prisma.post.findMany as any).mock.calls[0][0];
+      expect(queryArg.where.AND).toContainEqual({ status: "publicado" });
+      expect(queryArg.where.AND).not.toContainEqual({ status: "rascunho" });
+    });
+
+    it("draft posts should never be exposed in public API response", async () => {
+      const publishedPost = { id: "p1", title: "Publicado", status: "publicado", slug: "pub-1" };
+      (prisma.post.findMany as any).mockImplementationOnce(async ({ where }: any) => {
+        const enforcesPublicado = where.AND.some((cond: any) => cond.status === "publicado");
+        if (enforcesPublicado) {
+          return [publishedPost];
+        }
+        return [publishedPost, { id: "p2", title: "Draft", status: "rascunho", slug: "draft-1" }];
+      });
+
+      const req = new Request("https://motonapratica.online/api/posts?status=rascunho");
+      const res = await getPostsRoute(req);
+      const body = await res.json();
+
+      expect(body.posts).toHaveLength(1);
+      expect(body.posts[0].status).toBe("publicado");
+    });
+
+    it("authenticated M2M request can filter by arbitrary status or list all", async () => {
+      (prisma.post.findMany as any).mockResolvedValueOnce([]);
+
+      const req = new Request("https://motonapratica.online/api/posts?status=rascunho", {
+        headers: { "x-api-key": "test-api-secret-key-2026" }
+      });
+      await getPostsRoute(req);
+
+      expect(prisma.post.findMany).toHaveBeenCalledTimes(1);
+      const queryArg = (prisma.post.findMany as any).mock.calls[0][0];
+      expect(queryArg.where.AND).toContainEqual({ status: "rascunho" });
+    });
+  });
+
+  describe("Item 7 & 9: N8nClient Canonical Auth & Payload Contracts", () => {
     it("should reject non-HTTPS webhook URLs", async () => {
       process.env.N8N_WEBHOOK_URL = "http://n8n.insecure.com/webhook";
       const result = await N8nClient.send({ action: "update" });
       expect(result.success).toBe(false);
     });
 
-    it("should send root object payload directly without wrapping", async () => {
+    it("should send root object payload directly with canonical x-api-key header", async () => {
       const fetchSpy = vi.spyOn(global, "fetch").mockResolvedValueOnce({
         ok: true,
         json: async () => ({ status: "ok" })
@@ -114,7 +187,6 @@ describe("Hardening & Security Test Suite", () => {
       expect(calledUrl).toBe("https://n8n.example.com/webhook/test");
       expect(calledInit?.method).toBe("POST");
       expect((calledInit?.headers as any)["x-api-key"]).toBe("test-api-secret-key-2026");
-      expect((calledInit?.headers as any)["Authorization"]).toBe("Bearer test-api-secret-key-2026");
       expect(JSON.parse(calledInit?.body as string)).toEqual(payload);
     });
 

@@ -40,9 +40,19 @@ vi.mock('../lib/db', () => ({
 
 vi.mock('../lib/auth', () => ({
   signToken: vi.fn(() => 'mocked_token'),
+  signAdminToken: vi.fn(async () => 'mocked_admin_token'),
+  signUserToken: vi.fn(async () => 'mocked_user_token'),
   checkCredentials: vi.fn((u, p) => u === 'admin' && p === 'password'),
-  verifyToken: vi.fn((token) => {
-    if (token === 'mocked_valid_token') return { username: 'admin' };
+  verifyAdminToken: vi.fn(async (token) => {
+    if (token === 'mocked_valid_token') return { username: 'admin', role: 'admin', tokenType: 'admin' };
+    return null;
+  }),
+  verifyUserToken: vi.fn(async (token) => {
+    if (token === 'mocked_valid_user_token') return { userId: '1', email: 'user@test.com', name: 'User', role: 'user', tokenType: 'user' };
+    return null;
+  }),
+  verifyToken: vi.fn(async (token) => {
+    if (token === 'mocked_valid_token') return { username: 'admin', role: 'admin' };
     return null;
   })
 }));
