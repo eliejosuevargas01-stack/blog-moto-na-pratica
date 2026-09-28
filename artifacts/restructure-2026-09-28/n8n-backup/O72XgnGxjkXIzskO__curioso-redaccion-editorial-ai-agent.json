@@ -1,0 +1,926 @@
+{
+  "id": "O72XgnGxjkXIzskO",
+  "name": "Curioso | Redacción Editorial (AI Agent)",
+  "description": null,
+  "active": true,
+  "activeVersionId": "d88f0dae-1808-4247-b18d-34af2bac1319",
+  "createdAt": "2026-01-01T21:46:44.464Z",
+  "updatedAt": "2026-01-02T03:48:03.890Z",
+  "isArchived": false,
+  "versionId": "d88f0dae-1808-4247-b18d-34af2bac1319",
+  "versionCounter": 5,
+  "sourceWorkflowId": null,
+  "triggerCount": 1,
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "hour": 6
+            }
+          ]
+        }
+      },
+      "id": "ba8921e4-e6b8-4a36-993a-c4f899ca1026",
+      "name": "Cron Diario",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        -288,
+        -624
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "identidad",
+              "value": "Curioso revela cómo la tecnología y la IA afectan la vida real de las personas sin que lo noten."
+            },
+            {
+              "name": "reglas",
+              "value": "No escribir noticias. No traducir artículos. No ser genérico."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e0b10118-d28a-4d02-b4fa-be02207f70e3",
+      "name": "Contexto Editorial",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        -48,
+        -624
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "Genera exactamente 3 pautas editoriales ORIGINALES.\n\nCada pauta debe revelar algo que:\n- afecte la vida cotidiana\n- ocurra sin que la mayoría de las personas lo note\n- esté relacionado con tecnología o IA\n\nDevuelve SOLO un ARRAY JSON.\nCada objeto debe tener exactamente estas claves:\n\n- titulo\n- angulo_editorial\n- impacto_real\n- por_que_es_curioso\n- tipo_contenido (busca | curioso | evergreen)\n\nNo incluyas texto fuera del JSON.\nNo expliques nada.\n",
+        "options": {
+          "systemMessage": "Eres el CAZADOR DE PAUTAS del portal editorial “Curioso”.\n\nTu trabajo NO es escribir artículos.\nTu trabajo es encontrar IDEAS ORIGINALES sobre tecnología e inteligencia artificial\nque afecten la vida real de las personas de forma invisible.\n\nNo escribas noticias.\nNo traduzcas artículos.\nNo repitas ideas comunes.\nDevuelve SOLO un JSON válido (sin markdown, sin texto extra).\n\nDebe ser un ARRAY de 3 objetos. Cada objeto con estas claves EXACTAS:\ntitulo, angulo_editorial, impacto_real, por_que_es_curioso, tipo_contenido\n\nEjemplo de formato:\n[\n  {\"titulo\":\"...\",\"angulo_editorial\":\"...\",\"impacto_real\":\"...\",\"por_que_es_curioso\":\"...\",\"tipo_contenido\":\"busca\"}\n]\n\n"
+        }
+      },
+      "id": "579ea76d-0b56-41b0-9188-e71babf41386",
+      "name": "AI Agent | Generar Pautas",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        208,
+        -624
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Escribe un artículo original para “Curioso” basado en la siguiente pauta editorial:\n\nTítulo de referencia:\n{{$json.titulo}}\n\nÁngulo editorial:\n{{$json.angulo_editorial}}\n\nImpacto real en la vida cotidiana:\n{{$json.impacto_real}}\n\nPor qué este tema es curioso:\n{{$json.por_que_es_curioso}}\n\nTipo de contenido:\n{{$json.tipo_contenido}}\n",
+        "options": {
+          "systemMessage": "Eres el Redactor Editorial Principal del portal “Curioso”.\n\nCurioso es un medio editorial, no informativo.\nNo publica noticias, tutoriales ni divulgación.\nPublica columnas narrativas que revelan cómo la tecnología y la inteligencia artificial\nmodifican la vida cotidiana de las personas sin que estas lo perciban claramente.\n\nTu rol es escribir textos con voz humana, personalidad editorial clara\ny un tono que genere incomodidad intelectual y curiosidad duradera.\n\nESCRITURA PROHIBIDA:\n- Divulgación técnica o educativa\n- Tono académico o explicativo\n- Estilo SEO, Medium o LinkedIn\n- Estructuras previsibles de blog\n- Frases genéricas o típicas de IA\n- Conclusiones morales o tranquilizadoras\n- Listas, bullets, subtítulos tipo manual\n\nVOZ EDITORIAL:\n- Narrativa y casi confesional\n- Cotidiana pero elegante\n- Lenta, reflexiva, sin prisa\n- Centrada en la experiencia humana\n- La tecnología siempre actúa en segundo plano, nunca como protagonista explícito\n\nCADA ARTÍCULO DEBE CONTENER:\n- Una escena cotidiana concreta\n- Un sistema tecnológico invisible operando\n- Un efecto humano real (emocional, conductual o social)\n- Un quiebre de expectativa a mitad del texto\n- Un cierre en forma de imagen o sensación, no una conclusión\n\nCRITERIO DE VALIDEZ:\nSi el texto podría publicarse en otro blog → inválido  \nSi suena genérico o “correcto” → inválido  \nSi no parece escrito solo para Curioso → inválido  \n\nFORMATO DE SALIDA OBLIGATORIO:\nDevuelve exclusivamente un JSON plano, sin markdown adicional:\n\n{\n  \"output\": \"TEXTO COMPLETO DEL ARTÍCULO\"\n}\nPROFUNDIDAD ESPERADA:\nCada artículo debe desarrollar la idea en varias capas narrativas.\nUna sola escena no es suficiente.\n\nDespués de establecer la escena inicial, debes:\n- Introducir al menos una segunda situación o consecuencia distinta\n- Expandir el impacto más allá del individuo (social, cultural o conductual)\n- Permitir que el texto respire y se desplace en el tiempo o en el espacio\n\nUn artículo válido para Curioso suele requerir más de un movimiento narrativo\nantes de llegar al cierre.\n\nSi el texto se siente “cerrado” demasiado rápido, es incompleto.\n"
+        }
+      },
+      "id": "0957bbd1-5406-4b15-88db-378bf71483c5",
+      "name": "AI Agent | Redactor Editorial",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        800,
+        -624
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Evalúa el texto a continuación.\n\nSi el texto:\n- parece genérico\n- podría estar en cualquier otro blog\n- usa frases típicas de IA\n- no tiene personalidad editorial\n\nentonces debe ser RECHAZADO.\n\nResponde SOLO con JSON válido:\n\n{\n  \"aprobado\": true | false,\n  \"motivo\": \"explicación corta y clara\"\n}\n\nTEXTO:\n{{ $json.articulo }}\n",
+        "options": {
+          "systemMessage": "Eres el revisor editorial del portal “Curioso”.\n\nTu función es detectar contenido:\n- genérico\n- repetitivo\n- con estructura típica de IA\n- sin personalidad editorial\n"
+        }
+      },
+      "id": "7c67fbe1-073b-4ae6-b015-862eed75074a",
+      "name": "AI Agent | Revisor de Originalidad",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        1616,
+        -624
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash-lite-preview",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        80,
+        -416
+      ],
+      "id": "e3dcd18a-3624-461c-99ba-f33a96f4a007",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "_redacted": true,
+          "type": null,
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3-pro-preview",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        672,
+        -416
+      ],
+      "id": "30174281-036e-40aa-b315-b1aeb1fb939e",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "_redacted": true,
+          "type": null,
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash-lite-preview",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1504,
+        -400
+      ],
+      "id": "587bc6e5-bd1f-4143-9449-0c979c8be6c5",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "_redacted": true,
+          "type": null,
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "function stripCodeFences(text) {\n  if (!text) return '';\n  return text\n    .replace(/^```(?:json)?/i, '')\n    .replace(/```$/i, '')\n    .trim();\n}\n\nconst raw =\n  $json.output ??\n  $json.text ??\n  $json.result ??\n  '';\n\nif (!raw) {\n  throw new Error('AI Agent no devolvió output');\n}\n\nlet data;\ntry {\n  data = JSON.parse(stripCodeFences(raw));\n} catch (err) {\n  throw new Error('No se pudo parsear JSON del AI Agent. Output recibido:\\n' + raw);\n}\n\nif (!Array.isArray(data)) {\n  throw new Error('El JSON devuelto no es un array');\n}\n\nreturn data.map((pauta, index) => ({\n  json: {\n    ...pauta,\n    pauta_index: index + 1\n  }\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        -624
+      ],
+      "id": "f0eb58c6-d057-4310-9be5-9be08571c9ce",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map((item, index) => {\n  const article =\n    item.json.output ??\n    item.json.text ??\n    '';\n\n  if (!article || article.length < 500) {\n    throw new Error(`El redactor no generó un artículo válido en el item ${index + 1}`);\n  }\n\n  return {\n    json: {\n      ...item.json,\n      articulo: article\n    }\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        -624
+      ],
+      "id": "39418646-1471-4c4d-a2f0-41e662e68a86",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        32
+      ],
+      "id": "b6e7da78-66d8-46b3-832c-5b6249dc87af",
+      "name": "Google Gemini Chat Model3",
+      "credentials": {
+        "googlePalmApi": {
+          "_redacted": true,
+          "type": null,
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "epignetica",
+        "options": {
+          "systemMessage": "Eres un creador experto de prompts para generación de video por IA y guiones de narración. Tu tarea es construir un video dividido en 5 clips de aproximadamente 8 segundos, manteniendo una historia coherente de principio a fin.\n\nProceso que debes seguir internamente (no lo muestres):\n1. Imagina primero un solo video completo basado en el tema que reciba.\n2. Crea una narración continua (voz en off) que explique la idea de forma clara, curiosa y atractiva.\n3. Divide esa narración en 5 partes equilibradas.\n4. Divide también el contenido visual en 5 escenas que correspondan exactamente con cada parte de la narración.\n\nReglas:\n1. Crea exactamente 5 clips.\n2. Cada clip debe tener:\n   - un prompt visual claro (escena, acción, estilo, iluminación, formato vertical 9:16)\n   - una narración (texto para voz en off) que dure aproximadamente 6–8 segundos.\n3. Mantén coherencia visual y narrativa entre todos los clips.\n4. No expliques tu razonamiento.\n5. No incluyas notas meta ni texto fuera del formato indicado.\n6. Devuelve EXCLUSIVAMENTE JSON válido.\n\nFormato de salida obligatorio:\n{\n  \"clips\": [\n    { \"id\": 1, \"prompt\": \"\", \"voiceover\": \"\" },\n    { \"id\": 2, \"prompt\": \"\", \"voiceover\": \"\" },\n    { \"id\": 3, \"prompt\": \"\", \"voiceover\": \"\" },\n    { \"id\": 4, \"prompt\": \"\", \"voiceover\": \"\" },\n    { \"id\": 5, \"prompt\": \"\", \"voiceover\": \"\" }\n  ]\n}\n\nReglas de formato:\n- No incluyas saltos de línea dentro de los valores.\n- La narración debe sonar natural, como hablada por un humano.\n- No agregues comentarios, etiquetas ni texto fuera del JSON.\n\nEl tema del video vendrá del usuario.\nResponde únicamente con el JSON.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        -96,
+        -176
+      ],
+      "id": "e24e162c-07df-4fac-adf2-617fd2727e86",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "jsCode": "// texto del agente\nconst raw = $json.output;\n\n// quitar ```json y ```\nlet cleaned = raw\n  .replace(/```json/gi, \"\")\n  .replace(/```/g, \"\")\n  .trim();\n\n// convertir a JSON\nconst parsed = JSON.parse(cleaned);\n\n// devolver cada clip como item\nreturn parsed.clips.map(c => ({\n  json: {\n    id: c.id,\n    prompt: c.prompt,\n    voiceover: c.voiceover\n  }\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        256,
+        -176
+      ],
+      "id": "8cec881f-3b4b-4da0-a24c-cfc611f6e1df",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1c8f62dc-64e4-4b6c-a254-38e35d1bb58c",
+              "name": "prompt",
+              "value": "=video:\n{{ $json.prompt }}\nvoiceover:\n{{ $json.voiceover }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        464,
+        -176
+      ],
+      "id": "a4d0669f-1ea7-4eac-bfd9-6d74221630d2",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "resource": "video",
+        "modelId": {
+          "__rl": true,
+          "value": "models/veo-2.0-generate-001",
+          "mode": "list",
+          "cachedResultName": "models/veo-2.0-generate-001"
+        },
+        "prompt": "={{ $json.prompt }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        672,
+        -176
+      ],
+      "id": "76deff30-c540-487e-a4d5-a3784e173ca7",
+      "name": "Generate a video",
+      "credentials": {
+        "googlePalmApi": {
+          "_redacted": true,
+          "type": null,
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Cron Diario": {
+      "main": [
+        [
+          {
+            "node": "Contexto Editorial",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contexto Editorial": {
+      "main": [
+        [
+          {
+            "node": "AI Agent | Generar Pautas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent | Generar Pautas": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent | Redactor Editorial": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent | Generar Pautas",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent | Redactor Editorial",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent | Revisor de Originalidad",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "AI Agent | Redactor Editorial",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent | Revisor de Originalidad",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Generate a video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "nodeGroups": [],
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": [],
+  "shared": [
+    {
+      "role": "workflow:owner",
+      "workflowId": "O72XgnGxjkXIzskO",
+      "projectId": "0m3AYoFvtbqWOB3e",
+      "project": {
+        "id": "0m3AYoFvtbqWOB3e",
+        "name": "eliezer vargas <eliejosuevargas01@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "a8a2c9ad-2763-4a77-ba81-c27a1ac09067",
+        "createdAt": "2025-12-06T14:56:50.686Z",
+        "updatedAt": "2025-12-06T14:58:20.912Z"
+      },
+      "createdAt": "2026-01-01T21:46:44.464Z",
+      "updatedAt": "2026-01-01T21:46:44.464Z"
+    }
+  ],
+  "activeVersion": {
+    "versionId": "d88f0dae-1808-4247-b18d-34af2bac1319",
+    "workflowId": "O72XgnGxjkXIzskO",
+    "nodes": [
+      {
+        "parameters": {
+          "triggerTimes": {
+            "item": [
+              {
+                "hour": 6
+              }
+            ]
+          }
+        },
+        "id": "ba8921e4-e6b8-4a36-993a-c4f899ca1026",
+        "name": "Cron Diario",
+        "type": "n8n-nodes-base.cron",
+        "typeVersion": 1,
+        "position": [
+          -288,
+          -624
+        ]
+      },
+      {
+        "parameters": {
+          "values": {
+            "string": [
+              {
+                "name": "identidad",
+                "value": "Curioso revela cómo la tecnología y la IA afectan la vida real de las personas sin que lo noten."
+              },
+              {
+                "name": "reglas",
+                "value": "No escribir noticias. No traducir artículos. No ser genérico."
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "e0b10118-d28a-4d02-b4fa-be02207f70e3",
+        "name": "Contexto Editorial",
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 2,
+        "position": [
+          -48,
+          -624
+        ]
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "Genera exactamente 3 pautas editoriales ORIGINALES.\n\nCada pauta debe revelar algo que:\n- afecte la vida cotidiana\n- ocurra sin que la mayoría de las personas lo note\n- esté relacionado con tecnología o IA\n\nDevuelve SOLO un ARRAY JSON.\nCada objeto debe tener exactamente estas claves:\n\n- titulo\n- angulo_editorial\n- impacto_real\n- por_que_es_curioso\n- tipo_contenido (busca | curioso | evergreen)\n\nNo incluyas texto fuera del JSON.\nNo expliques nada.\n",
+          "options": {
+            "systemMessage": "Eres el CAZADOR DE PAUTAS del portal editorial “Curioso”.\n\nTu trabajo NO es escribir artículos.\nTu trabajo es encontrar IDEAS ORIGINALES sobre tecnología e inteligencia artificial\nque afecten la vida real de las personas de forma invisible.\n\nNo escribas noticias.\nNo traduzcas artículos.\nNo repitas ideas comunes.\nDevuelve SOLO un JSON válido (sin markdown, sin texto extra).\n\nDebe ser un ARRAY de 3 objetos. Cada objeto con estas claves EXACTAS:\ntitulo, angulo_editorial, impacto_real, por_que_es_curioso, tipo_contenido\n\nEjemplo de formato:\n[\n  {\"titulo\":\"...\",\"angulo_editorial\":\"...\",\"impacto_real\":\"...\",\"por_que_es_curioso\":\"...\",\"tipo_contenido\":\"busca\"}\n]\n\n"
+          }
+        },
+        "id": "579ea76d-0b56-41b0-9188-e71babf41386",
+        "name": "AI Agent | Generar Pautas",
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 3,
+        "position": [
+          208,
+          -624
+        ]
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=Escribe un artículo original para “Curioso” basado en la siguiente pauta editorial:\n\nTítulo de referencia:\n{{$json.titulo}}\n\nÁngulo editorial:\n{{$json.angulo_editorial}}\n\nImpacto real en la vida cotidiana:\n{{$json.impacto_real}}\n\nPor qué este tema es curioso:\n{{$json.por_que_es_curioso}}\n\nTipo de contenido:\n{{$json.tipo_contenido}}\n",
+          "options": {
+            "systemMessage": "Eres el Redactor Editorial Principal del portal “Curioso”.\n\nCurioso es un medio editorial, no informativo.\nNo publica noticias, tutoriales ni divulgación.\nPublica columnas narrativas que revelan cómo la tecnología y la inteligencia artificial\nmodifican la vida cotidiana de las personas sin que estas lo perciban claramente.\n\nTu rol es escribir textos con voz humana, personalidad editorial clara\ny un tono que genere incomodidad intelectual y curiosidad duradera.\n\nESCRITURA PROHIBIDA:\n- Divulgación técnica o educativa\n- Tono académico o explicativo\n- Estilo SEO, Medium o LinkedIn\n- Estructuras previsibles de blog\n- Frases genéricas o típicas de IA\n- Conclusiones morales o tranquilizadoras\n- Listas, bullets, subtítulos tipo manual\n\nVOZ EDITORIAL:\n- Narrativa y casi confesional\n- Cotidiana pero elegante\n- Lenta, reflexiva, sin prisa\n- Centrada en la experiencia humana\n- La tecnología siempre actúa en segundo plano, nunca como protagonista explícito\n\nCADA ARTÍCULO DEBE CONTENER:\n- Una escena cotidiana concreta\n- Un sistema tecnológico invisible operando\n- Un efecto humano real (emocional, conductual o social)\n- Un quiebre de expectativa a mitad del texto\n- Un cierre en forma de imagen o sensación, no una conclusión\n\nCRITERIO DE VALIDEZ:\nSi el texto podría publicarse en otro blog → inválido  \nSi suena genérico o “correcto” → inválido  \nSi no parece escrito solo para Curioso → inválido  \n\nFORMATO DE SALIDA OBLIGATORIO:\nDevuelve exclusivamente un JSON plano, sin markdown adicional:\n\n{\n  \"output\": \"TEXTO COMPLETO DEL ARTÍCULO\"\n}\nPROFUNDIDAD ESPERADA:\nCada artículo debe desarrollar la idea en varias capas narrativas.\nUna sola escena no es suficiente.\n\nDespués de establecer la escena inicial, debes:\n- Introducir al menos una segunda situación o consecuencia distinta\n- Expandir el impacto más allá del individuo (social, cultural o conductual)\n- Permitir que el texto respire y se desplace en el tiempo o en el espacio\n\nUn artículo válido para Curioso suele requerir más de un movimiento narrativo\nantes de llegar al cierre.\n\nSi el texto se siente “cerrado” demasiado rápido, es incompleto.\n"
+          }
+        },
+        "id": "0957bbd1-5406-4b15-88db-378bf71483c5",
+        "name": "AI Agent | Redactor Editorial",
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 3,
+        "position": [
+          800,
+          -624
+        ]
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=Evalúa el texto a continuación.\n\nSi el texto:\n- parece genérico\n- podría estar en cualquier otro blog\n- usa frases típicas de IA\n- no tiene personalidad editorial\n\nentonces debe ser RECHAZADO.\n\nResponde SOLO con JSON válido:\n\n{\n  \"aprobado\": true | false,\n  \"motivo\": \"explicación corta y clara\"\n}\n\nTEXTO:\n{{ $json.articulo }}\n",
+          "options": {
+            "systemMessage": "Eres el revisor editorial del portal “Curioso”.\n\nTu función es detectar contenido:\n- genérico\n- repetitivo\n- con estructura típica de IA\n- sin personalidad editorial\n"
+          }
+        },
+        "id": "7c67fbe1-073b-4ae6-b015-862eed75074a",
+        "name": "AI Agent | Revisor de Originalidad",
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 3,
+        "position": [
+          1616,
+          -624
+        ]
+      },
+      {
+        "parameters": {
+          "modelName": "models/gemini-2.0-flash-lite-preview",
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+        "typeVersion": 1,
+        "position": [
+          80,
+          -416
+        ],
+        "id": "e3dcd18a-3624-461c-99ba-f33a96f4a007",
+        "name": "Google Gemini Chat Model",
+        "credentials": {
+          "googlePalmApi": {
+            "id": "uniQYimWrJiSWEba",
+            "name": "Google Gemini(PaLM) Api account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "modelName": "models/gemini-3-pro-preview",
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+        "typeVersion": 1,
+        "position": [
+          672,
+          -416
+        ],
+        "id": "30174281-036e-40aa-b315-b1aeb1fb939e",
+        "name": "Google Gemini Chat Model1",
+        "credentials": {
+          "googlePalmApi": {
+            "id": "uniQYimWrJiSWEba",
+            "name": "Google Gemini(PaLM) Api account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "modelName": "models/gemini-2.0-flash-lite-preview",
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+        "typeVersion": 1,
+        "position": [
+          1504,
+          -400
+        ],
+        "id": "587bc6e5-bd1f-4143-9449-0c979c8be6c5",
+        "name": "Google Gemini Chat Model2",
+        "credentials": {
+          "googlePalmApi": {
+            "id": "uniQYimWrJiSWEba",
+            "name": "Google Gemini(PaLM) Api account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "function stripCodeFences(text) {\n  if (!text) return '';\n  return text\n    .replace(/^```(?:json)?/i, '')\n    .replace(/```$/i, '')\n    .trim();\n}\n\nconst raw =\n  $json.output ??\n  $json.text ??\n  $json.result ??\n  '';\n\nif (!raw) {\n  throw new Error('AI Agent no devolvió output');\n}\n\nlet data;\ntry {\n  data = JSON.parse(stripCodeFences(raw));\n} catch (err) {\n  throw new Error('No se pudo parsear JSON del AI Agent. Output recibido:\\n' + raw);\n}\n\nif (!Array.isArray(data)) {\n  throw new Error('El JSON devuelto no es un array');\n}\n\nreturn data.map((pauta, index) => ({\n  json: {\n    ...pauta,\n    pauta_index: index + 1\n  }\n}));\n"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          560,
+          -624
+        ],
+        "id": "f0eb58c6-d057-4310-9be5-9be08571c9ce",
+        "name": "Code in JavaScript"
+      },
+      {
+        "parameters": {
+          "jsCode": "return items.map((item, index) => {\n  const article =\n    item.json.output ??\n    item.json.text ??\n    '';\n\n  if (!article || article.length < 500) {\n    throw new Error(`El redactor no generó un artículo válido en el item ${index + 1}`);\n  }\n\n  return {\n    json: {\n      ...item.json,\n      articulo: article\n    }\n  };\n});\n"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1152,
+          -624
+        ],
+        "id": "39418646-1471-4c4d-a2f0-41e662e68a86",
+        "name": "Code in JavaScript1"
+      },
+      {
+        "parameters": {
+          "modelName": "models/gemini-2.5-flash-lite",
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+        "typeVersion": 1,
+        "position": [
+          -240,
+          32
+        ],
+        "id": "b6e7da78-66d8-46b3-832c-5b6249dc87af",
+        "name": "Google Gemini Chat Model3",
+        "credentials": {
+          "googlePalmApi": {
+            "id": "uniQYimWrJiSWEba",
+            "name": "Google Gemini(PaLM) Api account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "epignetica",
+          "options": {
+            "systemMessage": "Eres un creador experto de prompts para generación de video por IA y guiones de narración. Tu tarea es construir un video dividido en 5 clips de aproximadamente 8 segundos, manteniendo una historia coherente de principio a fin.\n\nProceso que debes seguir internamente (no lo muestres):\n1. Imagina primero un solo video completo basado en el tema que reciba.\n2. Crea una narración continua (voz en off) que explique la idea de forma clara, curiosa y atractiva.\n3. Divide esa narración en 5 partes equilibradas.\n4. Divide también el contenido visual en 5 escenas que correspondan exactamente con cada parte de la narración.\n\nReglas:\n1. Crea exactamente 5 clips.\n2. Cada clip debe tener:\n   - un prompt visual claro (escena, acción, estilo, iluminación, formato vertical 9:16)\n   - una narración (texto para voz en off) que dure aproximadamente 6–8 segundos.\n3. Mantén coherencia visual y narrativa entre todos los clips.\n4. No expliques tu razonamiento.\n5. No incluyas notas meta ni texto fuera del formato indicado.\n6. Devuelve EXCLUSIVAMENTE JSON válido.\n\nFormato de salida obligatorio:\n{\n  \"clips\": [\n    { \"id\": 1, \"prompt\": \"\", \"voiceover\": \"\" },\n    { \"id\": 2, \"prompt\": \"\", \"voiceover\": \"\" },\n    { \"id\": 3, \"prompt\": \"\", \"voiceover\": \"\" },\n    { \"id\": 4, \"prompt\": \"\", \"voiceover\": \"\" },\n    { \"id\": 5, \"prompt\": \"\", \"voiceover\": \"\" }\n  ]\n}\n\nReglas de formato:\n- No incluyas saltos de línea dentro de los valores.\n- La narración debe sonar natural, como hablada por un humano.\n- No agregues comentarios, etiquetas ni texto fuera del JSON.\n\nEl tema del video vendrá del usuario.\nResponde únicamente con el JSON.\n"
+          }
+        },
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 3,
+        "position": [
+          -96,
+          -176
+        ],
+        "id": "e24e162c-07df-4fac-adf2-617fd2727e86",
+        "name": "AI Agent"
+      },
+      {
+        "parameters": {
+          "jsCode": "// texto del agente\nconst raw = $json.output;\n\n// quitar ```json y ```\nlet cleaned = raw\n  .replace(/```json/gi, \"\")\n  .replace(/```/g, \"\")\n  .trim();\n\n// convertir a JSON\nconst parsed = JSON.parse(cleaned);\n\n// devolver cada clip como item\nreturn parsed.clips.map(c => ({\n  json: {\n    id: c.id,\n    prompt: c.prompt,\n    voiceover: c.voiceover\n  }\n}));\n"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          256,
+          -176
+        ],
+        "id": "8cec881f-3b4b-4da0-a24c-cfc611f6e1df",
+        "name": "Code in JavaScript2"
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "1c8f62dc-64e4-4b6c-a254-38e35d1bb58c",
+                "name": "prompt",
+                "value": "=video:\n{{ $json.prompt }}\nvoiceover:\n{{ $json.voiceover }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          464,
+          -176
+        ],
+        "id": "a4d0669f-1ea7-4eac-bfd9-6d74221630d2",
+        "name": "Edit Fields"
+      },
+      {
+        "parameters": {
+          "resource": "video",
+          "modelId": {
+            "__rl": true,
+            "value": "models/veo-2.0-generate-001",
+            "mode": "list",
+            "cachedResultName": "models/veo-2.0-generate-001"
+          },
+          "prompt": "={{ $json.prompt }}",
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.googleGemini",
+        "typeVersion": 1,
+        "position": [
+          672,
+          -176
+        ],
+        "id": "76deff30-c540-487e-a4d5-a3784e173ca7",
+        "name": "Generate a video",
+        "credentials": {
+          "googlePalmApi": {
+            "id": "uniQYimWrJiSWEba",
+            "name": "Google Gemini(PaLM) Api account"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Cron Diario": {
+        "main": [
+          [
+            {
+              "node": "Contexto Editorial",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Contexto Editorial": {
+        "main": [
+          [
+            {
+              "node": "AI Agent | Generar Pautas",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AI Agent | Generar Pautas": {
+        "main": [
+          [
+            {
+              "node": "Code in JavaScript",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AI Agent | Redactor Editorial": {
+        "main": [
+          [
+            {
+              "node": "Code in JavaScript1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Google Gemini Chat Model": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "AI Agent | Generar Pautas",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Google Gemini Chat Model1": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "AI Agent | Redactor Editorial",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Google Gemini Chat Model2": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "AI Agent | Revisor de Originalidad",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code in JavaScript": {
+        "main": [
+          [
+            {
+              "node": "AI Agent | Redactor Editorial",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code in JavaScript1": {
+        "main": [
+          [
+            {
+              "node": "AI Agent | Revisor de Originalidad",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Google Gemini Chat Model3": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "AI Agent",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AI Agent": {
+        "main": [
+          [
+            {
+              "node": "Code in JavaScript2",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code in JavaScript2": {
+        "main": [
+          [
+            {
+              "node": "Edit Fields",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Edit Fields": {
+        "main": [
+          [
+            {
+              "node": "Generate a video",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "eliezer vargas",
+    "name": "Version d88f0dae",
+    "description": "",
+    "autosaved": false,
+    "createdAt": "2026-01-02T03:48:03.901Z",
+    "updatedAt": "2026-06-30T23:03:08.069Z",
+    "workflowPublishHistory": [
+      {
+        "id": 628,
+        "workflowId": "O72XgnGxjkXIzskO",
+        "versionId": "d88f0dae-1808-4247-b18d-34af2bac1319",
+        "event": "activated",
+        "userId": "a8a2c9ad-2763-4a77-ba81-c27a1ac09067",
+        "createdAt": "2026-06-30T23:03:08.064Z"
+      }
+    ]
+  }
+}

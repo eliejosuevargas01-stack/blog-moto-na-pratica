@@ -1,0 +1,664 @@
+{
+  "id": "GhiEcBPGM0JKP0Qt",
+  "name": "Deep Research - Sweeper (auto-recuperacao)",
+  "description": null,
+  "active": true,
+  "activeVersionId": "fc117232-201c-418c-99cd-ab8510cc7ff6",
+  "createdAt": "2026-09-27T01:03:55.345Z",
+  "updatedAt": "2026-09-27T04:19:03.562Z",
+  "isArchived": false,
+  "versionId": "fc117232-201c-418c-99cd-ab8510cc7ff6",
+  "versionCounter": 5,
+  "sourceWorkflowId": null,
+  "triggerCount": 1,
+  "nodes": [
+    {
+      "id": "a743be26-953d-47bf-8e82-cf67d04b58de",
+      "name": "A cada 5 min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "d4b8f1c0-2309-48a7-ad11-b99cef1af0c9",
+      "name": "Lista passos em execucao",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "arAS2xvz1XBxyA57",
+          "mode": "list"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "Processando",
+              "condition": "isTrue"
+            }
+          ]
+        },
+        "returnAll": true
+      }
+    },
+    {
+      "id": "4e7300dd-40b6-446d-b19f-339bcf6d659d",
+      "name": "Filtra travados (10min-6h)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const agora = Date.now();\nconst MIN10 = 10 * 60 * 1000;\nconst H6 = 6 * 60 * 60 * 1000;\nconst out = [];\nfor (const item of $input.all()) {\n  const j = item.json;\n  if (j.status !== 'processando' && j.status !== 'auditando') continue;\n  const upd = Date.parse(j.updatedAt || '');\n  if (isNaN(upd)) continue;\n  const idade = agora - upd;\n  if (idade < MIN10) continue;   // ainda pode estar rodando de verdade\n  if (idade > H6) continue;      // não ressuscita pesquisas antigas\n  out.push({ json: {\n    id: j.id,\n    id_pesquisa: j.id_pesquisa,\n    passo_id: j.passo_id,\n    statusAnterior: j.status,\n    novoStatus: j.status === 'processando' ? 'pendente' : 'auditar',\n    alvo: j.status === 'processando' ? 'scrapper' : 'auditor'\n  }});\n}\nreturn out;"
+      }
+    },
+    {
+      "id": "fd5365e5-8415-4aea-9b02-4e2d52d9b021",
+      "name": "Destrava passo",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        720,
+        0
+      ],
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "arAS2xvz1XBxyA57",
+          "mode": "list"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $json.id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "={{ $json.novoStatus }}",
+            "Processando": false
+          },
+          "matchingColumns": [],
+          "schema": []
+        }
+      }
+    },
+    {
+      "id": "465c6cc3-69e8-439a-b7d6-0e7ffd6fa6a2",
+      "name": "Agrupa por pesquisa e alvo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const vistos = new Set();\nconst out = [];\nfor (const item of $input.all()) {\n  const j = item.json;\n  const chave = j.id_pesquisa + '|' + j.alvo;\n  if (vistos.has(chave)) continue;\n  vistos.add(chave);\n  out.push({ json: { id_pesquisa: j.id_pesquisa, alvo: j.alvo } });\n}\nreturn out;"
+      }
+    },
+    {
+      "id": "d914f421-4099-4b4d-b632-b6b1cbe0a940",
+      "name": "Para quem religar?",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1200,
+        0
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "7b5b7489-8da4-45f1-9b09-3e35a1f86b8d",
+                    "leftValue": "={{ $json.alvo }}",
+                    "rightValue": "scrapper",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "scrapper"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "7af52efb-1489-430c-bf9e-1f09bcb4ff5f",
+                    "leftValue": "={{ $json.alvo }}",
+                    "rightValue": "auditor",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "auditor"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "172919d3-474c-462f-bd3a-e654c2596ecf",
+      "name": "Religa Scrapper",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1460,
+        -100
+      ],
+      "parameters": {
+        "url": "https://myn8n.dominuslabs.online/webhook/Scrapper",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "id_pesquisa",
+              "value": "={{ $json.id_pesquisa }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "3a9acdcc-1f54-415e-8a64-d33fd71a9618",
+      "name": "Religa Auditor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1460,
+        100
+      ],
+      "parameters": {
+        "url": "https://myn8n.dominuslabs.online/webhook/auditor",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "id_pesquisa",
+              "value": "={{ $json.id_pesquisa }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "A cada 5 min": {
+      "main": [
+        [
+          {
+            "node": "Lista passos em execucao",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lista passos em execucao": {
+      "main": [
+        [
+          {
+            "node": "Filtra travados (10min-6h)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtra travados (10min-6h)": {
+      "main": [
+        [
+          {
+            "node": "Destrava passo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Destrava passo": {
+      "main": [
+        [
+          {
+            "node": "Agrupa por pesquisa e alvo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agrupa por pesquisa e alvo": {
+      "main": [
+        [
+          {
+            "node": "Para quem religar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Para quem religar?": {
+      "main": [
+        [
+          {
+            "node": "Religa Scrapper",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Religa Auditor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "nodeGroups": [],
+  "settings": {
+    "availableInMCP": true
+  },
+  "staticData": {
+    "node:A cada 5 min": {
+      "recurrenceRules": [
+        null
+      ],
+      "recurrenceRuleSignatures": [
+        null
+      ]
+    }
+  },
+  "pinData": null,
+  "meta": null,
+  "tags": [],
+  "shared": [
+    {
+      "role": "workflow:owner",
+      "workflowId": "GhiEcBPGM0JKP0Qt",
+      "projectId": "0m3AYoFvtbqWOB3e",
+      "project": {
+        "id": "0m3AYoFvtbqWOB3e",
+        "name": "eliezer vargas <eliejosuevargas01@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "a8a2c9ad-2763-4a77-ba81-c27a1ac09067",
+        "createdAt": "2025-12-06T14:56:50.686Z",
+        "updatedAt": "2025-12-06T14:58:20.912Z"
+      },
+      "createdAt": "2026-09-27T01:03:55.345Z",
+      "updatedAt": "2026-09-27T01:03:55.345Z"
+    }
+  ],
+  "activeVersion": {
+    "versionId": "fc117232-201c-418c-99cd-ab8510cc7ff6",
+    "workflowId": "GhiEcBPGM0JKP0Qt",
+    "nodes": [
+      {
+        "id": "a743be26-953d-47bf-8e82-cf67d04b58de",
+        "name": "A cada 5 min",
+        "type": "n8n-nodes-base.scheduleTrigger",
+        "typeVersion": 1.3,
+        "position": [
+          0,
+          0
+        ],
+        "parameters": {
+          "rule": {
+            "interval": [
+              {
+                "field": "minutes",
+                "minutesInterval": 5
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": "d4b8f1c0-2309-48a7-ad11-b99cef1af0c9",
+        "name": "Lista passos em execucao",
+        "type": "n8n-nodes-base.dataTable",
+        "typeVersion": 1,
+        "position": [
+          240,
+          0
+        ],
+        "parameters": {
+          "operation": "get",
+          "dataTableId": {
+            "__rl": true,
+            "value": "arAS2xvz1XBxyA57",
+            "mode": "list"
+          },
+          "matchType": "allConditions",
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "Processando",
+                "condition": "isTrue"
+              }
+            ]
+          },
+          "returnAll": true
+        }
+      },
+      {
+        "id": "4e7300dd-40b6-446d-b19f-339bcf6d659d",
+        "name": "Filtra travados (10min-6h)",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          480,
+          0
+        ],
+        "parameters": {
+          "jsCode": "const agora = Date.now();\nconst MIN10 = 10 * 60 * 1000;\nconst H6 = 6 * 60 * 60 * 1000;\nconst out = [];\nfor (const item of $input.all()) {\n  const j = item.json;\n  if (j.status !== 'processando' && j.status !== 'auditando') continue;\n  const upd = Date.parse(j.updatedAt || '');\n  if (isNaN(upd)) continue;\n  const idade = agora - upd;\n  if (idade < MIN10) continue;   // ainda pode estar rodando de verdade\n  if (idade > H6) continue;      // não ressuscita pesquisas antigas\n  out.push({ json: {\n    id: j.id,\n    id_pesquisa: j.id_pesquisa,\n    passo_id: j.passo_id,\n    statusAnterior: j.status,\n    novoStatus: j.status === 'processando' ? 'pendente' : 'auditar',\n    alvo: j.status === 'processando' ? 'scrapper' : 'auditor'\n  }});\n}\nreturn out;"
+        }
+      },
+      {
+        "id": "fd5365e5-8415-4aea-9b02-4e2d52d9b021",
+        "name": "Destrava passo",
+        "type": "n8n-nodes-base.dataTable",
+        "typeVersion": 1,
+        "position": [
+          720,
+          0
+        ],
+        "parameters": {
+          "operation": "update",
+          "dataTableId": {
+            "__rl": true,
+            "value": "arAS2xvz1XBxyA57",
+            "mode": "list"
+          },
+          "matchType": "allConditions",
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "id",
+                "keyValue": "={{ $json.id }}"
+              }
+            ]
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "status": "={{ $json.novoStatus }}",
+              "Processando": false
+            },
+            "matchingColumns": [],
+            "schema": []
+          }
+        }
+      },
+      {
+        "id": "465c6cc3-69e8-439a-b7d6-0e7ffd6fa6a2",
+        "name": "Agrupa por pesquisa e alvo",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          960,
+          0
+        ],
+        "parameters": {
+          "jsCode": "const vistos = new Set();\nconst out = [];\nfor (const item of $input.all()) {\n  const j = item.json;\n  const chave = j.id_pesquisa + '|' + j.alvo;\n  if (vistos.has(chave)) continue;\n  vistos.add(chave);\n  out.push({ json: { id_pesquisa: j.id_pesquisa, alvo: j.alvo } });\n}\nreturn out;"
+        }
+      },
+      {
+        "id": "d914f421-4099-4b4d-b632-b6b1cbe0a940",
+        "name": "Para quem religar?",
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.2,
+        "position": [
+          1200,
+          0
+        ],
+        "parameters": {
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict"
+                  },
+                  "conditions": [
+                    {
+                      "id": "7b5b7489-8da4-45f1-9b09-3e35a1f86b8d",
+                      "leftValue": "={{ $json.alvo }}",
+                      "rightValue": "scrapper",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "scrapper"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict"
+                  },
+                  "conditions": [
+                    {
+                      "id": "7af52efb-1489-430c-bf9e-1f09bcb4ff5f",
+                      "leftValue": "={{ $json.alvo }}",
+                      "rightValue": "auditor",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "auditor"
+              }
+            ]
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "172919d3-474c-462f-bd3a-e654c2596ecf",
+        "name": "Religa Scrapper",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1460,
+          -100
+        ],
+        "parameters": {
+          "url": "https://myn8n.dominuslabs.online/webhook/Scrapper",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "id_pesquisa",
+                "value": "={{ $json.id_pesquisa }}"
+              }
+            ]
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "3a9acdcc-1f54-415e-8a64-d33fd71a9618",
+        "name": "Religa Auditor",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.2,
+        "position": [
+          1460,
+          100
+        ],
+        "parameters": {
+          "url": "https://myn8n.dominuslabs.online/webhook/auditor",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "id_pesquisa",
+                "value": "={{ $json.id_pesquisa }}"
+              }
+            ]
+          },
+          "options": {}
+        }
+      }
+    ],
+    "connections": {
+      "A cada 5 min": {
+        "main": [
+          [
+            {
+              "node": "Lista passos em execucao",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Lista passos em execucao": {
+        "main": [
+          [
+            {
+              "node": "Filtra travados (10min-6h)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Filtra travados (10min-6h)": {
+        "main": [
+          [
+            {
+              "node": "Destrava passo",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Destrava passo": {
+        "main": [
+          [
+            {
+              "node": "Agrupa por pesquisa e alvo",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Agrupa por pesquisa e alvo": {
+        "main": [
+          [
+            {
+              "node": "Para quem religar?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Para quem religar?": {
+        "main": [
+          [
+            {
+              "node": "Religa Scrapper",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Religa Auditor",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "eliezer vargas",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "createdAt": "2026-09-27T01:21:04.594Z",
+    "updatedAt": "2026-09-27T01:21:04.594Z",
+    "workflowPublishHistory": [
+      {
+        "id": 3618,
+        "workflowId": "GhiEcBPGM0JKP0Qt",
+        "versionId": "fc117232-201c-418c-99cd-ab8510cc7ff6",
+        "event": "activated",
+        "userId": "a8a2c9ad-2763-4a77-ba81-c27a1ac09067",
+        "createdAt": "2026-09-27T01:21:04.847Z"
+      }
+    ]
+  }
+}

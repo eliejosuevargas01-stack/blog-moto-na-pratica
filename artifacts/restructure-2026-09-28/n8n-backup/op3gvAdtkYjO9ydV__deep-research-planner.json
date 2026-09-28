@@ -1,0 +1,2713 @@
+{
+  "id": "op3gvAdtkYjO9ydV",
+  "name": "Deep Research - Planner",
+  "description": "planeja a pesquisa profunda e chama scrapper",
+  "active": true,
+  "activeVersionId": "39d4ff4e-3d98-4b67-9cb3-e0610d156871",
+  "createdAt": "2026-09-23T19:59:48.778Z",
+  "updatedAt": "2026-09-27T04:19:03.523Z",
+  "isArchived": false,
+  "versionId": "39d4ff4e-3d98-4b67-9cb3-e0610d156871",
+  "versionCounter": 37,
+  "sourceWorkflowId": null,
+  "triggerCount": 1,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "deep-research",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "386ce54c-a9df-4a7b-b02a-b778784f4bf1",
+      "name": "Entrada: nova pesquisa",
+      "webhookId": "52e90967-cca5-4784-90e1-4ff356962bcd",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -2128,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"status\": 202,\n  \"message\": \"Accepted\",\n  \"description\": \"The request has been received and is being processed in the background.\",\n  \"data\": {\n    \"jobId\": \"{{ $json.query.id }}\",\n    \"status\": \"processing\",\n    \"statusUrl\": \"https://myn8n.dominuslabs.online/webhook/deepresearch_status\",\n    \"createdAt\": \"{{ $now.toISO() }}\",\n    \"estimatedCompletionTime\": \"{{ $now.plus({ minutes: 5 }).toISO() }}\"\n  }\n}",
+        "options": {
+          "responseCode": 202,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "OK",
+                "value": "Deep research initiated."
+              },
+              {
+                "name": "Warning",
+                "value": " Do NOT call this tool again. We will send the final report via webhook upon completion of the research."
+              }
+            ]
+          }
+        }
+      },
+      "id": "bbf8ab50-6d7c-4400-b841-58d3521a0ab8",
+      "name": "Responde 202 aceito",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -1680,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 400,
+          "responseHeaders": {
+            "entries": []
+          }
+        }
+      },
+      "id": "b9c2e1f8-8a41-4d3b-8133-1c047d0550bc",
+      "name": "Responde 400 rejeitado",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -1456,
+        656
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c6b7fb74-e73d-4ca0-87d4-193128918757",
+              "leftValue": "={{ $json.query.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "57605277-7555-488a-8e14-1a421c0c820d",
+              "leftValue": "={{ $json.body.tema }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "0212c5b7-8e60-4c7a-ada3-052a6649181c",
+              "leftValue": "={{ $json.query.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "781247ed-7e9b-497c-8507-e761ab213875",
+              "leftValue": "={{ $json.body.tema }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "a781601b-69d7-4913-a25b-8d2df4453001",
+              "leftValue": "={{ $json.headers[\"x-apify-secret\"] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "c157859a-5fd3-46cf-a666-bf1294cfad1e",
+              "leftValue": "={{ $json.headers[\"x-apify-secret\"] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "8c6fc4fe-a47b-4f27-91be-ae4802e18f90",
+              "leftValue": "={{ $json.headers[\"x-apify-secret\"] }}",
+              "rightValue": "***REDACTED***",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c68c6894-7e3b-46bf-8063-4a10686d0eda",
+      "name": "Valida entrada (auth+schema)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1904,
+        560
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "9ltZLFGUXe11LFQk",
+          "mode": "list",
+          "cachedResultName": "Pesquisa",
+          "cachedResultUrl": "/projects/0m3AYoFvtbqWOB3e/datatables/9ltZLFGUXe11LFQk"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id_pesquisa",
+              "keyValue": "={{ $('Entrada: nova pesquisa').item.json.query.id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "asssunto": "={{ $json.guardrailsInput }}",
+            "webhook_callback": "={{ $('Entrada: nova pesquisa').item.json.body.callbackUrl }}",
+            "id_pesquisa": "={{ $('Entrada: nova pesquisa').item.json.query.id }}",
+            "Fase": "planejar",
+            "lang": "={{ $('Entrada: nova pesquisa').item.json.body.language }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "asssunto",
+              "displayName": "asssunto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "id_pesquisa",
+              "displayName": "id_pesquisa",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "angulo",
+              "displayName": "angulo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "gancho",
+              "displayName": "gancho",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "relatorio",
+              "displayName": "relatorio",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "justificativa_angulo",
+              "displayName": "justificativa_angulo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "justificativa_gancho",
+              "displayName": "justificativa_gancho",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "justificativa_assunto",
+              "displayName": "justificativa_assunto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "keywords_assunto",
+              "displayName": "keywords_assunto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "atualizacao",
+              "displayName": "atualizacao",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "webhook_callback",
+              "displayName": "webhook_callback",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Fase",
+              "displayName": "Fase",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "lang",
+              "displayName": "lang",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "1a281335-1a37-4544-b460-a59277039aea",
+      "name": "Lê pesquisa por ID",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -1232,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "value": "9ltZLFGUXe11LFQk",
+          "mode": "list",
+          "cachedResultName": "Pesquisa",
+          "cachedResultUrl": "/projects/0m3AYoFvtbqWOB3e/datatables/9ltZLFGUXe11LFQk"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id_pesquisa",
+              "keyValue": "={{ $('Lê pesquisa por ID').first().json.id_pesquisa }}"
+            },
+            {
+              "keyName": "Fase",
+              "keyValue": "planejar"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Fase": "garimpar"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "asssunto",
+              "displayName": "asssunto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "id_pesquisa",
+              "displayName": "id_pesquisa",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "angulo",
+              "displayName": "angulo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "gancho",
+              "displayName": "gancho",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "relatorio",
+              "displayName": "relatorio",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "justificativa_angulo",
+              "displayName": "justificativa_angulo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "justificativa_gancho",
+              "displayName": "justificativa_gancho",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "justificativa_assunto",
+              "displayName": "justificativa_assunto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "keywords_assunto",
+              "displayName": "keywords_assunto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "atualizacao",
+              "displayName": "atualizacao",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "webhook_callback",
+              "displayName": "webhook_callback",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Fase",
+              "displayName": "Fase",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "c21794a6-c57c-4ef7-892b-30e170b27e9d",
+      "name": "Atualiza fase: planejar→garimpar",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "executeOnce": true,
+      "position": [
+        16,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "amount": "={{ Math.random() * 3 }}"
+      },
+      "id": "fd5e5ef0-fa24-4244-bb03-6faab741d07d",
+      "name": "Aguarda antes do garimpo",
+      "webhookId": "26d01100-6434-479f-be13-92cf21f2c9c8",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        16,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://myn8n.dominuslabs.online/webhook/Scrapper",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "id_pesquisa",
+              "value": "={{ $json.id_pesquisa }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5cf9b1ba-9e66-45a6-8d9e-be688af8c157",
+      "name": "Dispara Scrapper",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "executeOnce": false,
+      "position": [
+        464,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pega os dados que chegaram no Webhook\nconst item = $input.first().json;\n\nconst errors = [];\nconst EXPECTED_SECRET = \"***REDACTED***\";\n\n// 1. Validate query.id (Must exist, not empty, and MUST be an integer)\nconst idRaw = item.query?.id;\nconst idNum = Number(idRaw);\n\nif (idRaw === undefined || idRaw === null || String(idRaw).trim() === '') {\n  errors.push(\"Missing or empty required parameter: 'query.id'.\");\n} else if (isNaN(idNum) || !Number.isInteger(idNum)) {\n  errors.push(\"Invalid parameter: 'query.id' must be a valid integer number (e.g. 123456).\");\n}\n\n// 2. Validate body.tema\nconst tema = item.body?.tema;\nif (tema === undefined || tema === null || String(tema).trim() === '') {\n  errors.push(\"Missing or empty required parameter: 'body.tema'.\");\n}\n\n// 3. Validate x-apify-secret\nconst secretHeader = item.headers ? (item.headers['x-apify-secret'] || item.headers['X-Apify-Secret']) : undefined;\n\nif (!secretHeader || String(secretHeader).trim() === '') {\n  errors.push(\"Missing required header: 'x-apify-secret'.\");\n} else if (secretHeader !== EXPECTED_SECRET) {\n  errors.push(\"Unauthorized: Invalid 'x-apify-secret' header provided.\");\n}\n\n// 4. Validate body.webhook_callback\nconst webhookCallback = item.body?.webhook_callback;\nif (webhookCallback === undefined || webhookCallback === null || String(webhookCallback).trim() === '') {\n  errors.push(\"Missing or empty required parameter: 'body.webhook_callback'.\");\n}\n\nconst isValid = errors.length === 0;\n\n// Return JSON error response\nreturn [{\n  json: {\n    status: isValid ? 200 : 400,\n    success: isValid,\n    is_valid: isValid,\n    error: isValid ? null : \"Input Validation Error\",\n    errors: errors,\n    message: isValid ? \"Validation successful.\" : errors.join(\" | \")\n  }\n}];"
+      },
+      "id": "095eb874-7600-4541-9178-68bd642eb4eb",
+      "name": "Valida payload + secret",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1680,
+        656
+      ]
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "arAS2xvz1XBxyA57",
+          "mode": "list",
+          "cachedResultName": "passos",
+          "cachedResultUrl": "/projects/0m3AYoFvtbqWOB3e/datatables/arAS2xvz1XBxyA57"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Processando": "={{ false }}",
+            "id_pesquisa": "={{ $json.id_pesquisa }}",
+            "passo_id": "={{ $json.passo_id }}",
+            "topico_principal": "={{ $json.topico_principal }}",
+            "status": "pendente",
+            "descricao_subtopico": "={{ $json.descricao_subtopico }}",
+            "webhook_callback": "={{ $json.webhook_callback }}",
+            "tentativas": 0
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "id_pesquisa",
+              "displayName": "id_pesquisa",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "passo_id",
+              "displayName": "passo_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "topico_principal",
+              "displayName": "topico_principal",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "descricao_subtopico",
+              "displayName": "descricao_subtopico",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "ultima_query",
+              "displayName": "ultima_query",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "informacao_consolidada",
+              "displayName": "informacao_consolidada",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "webhook_callback",
+              "displayName": "webhook_callback",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "tentativas",
+              "displayName": "tentativas",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Processando",
+              "displayName": "Processando",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "acab8921-fb7f-498c-9063-6f42ac1bc29e",
+      "name": "Grava plano na pesquisa",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -208,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "sanitize",
+        "text": "={{ $json.body.tema }}",
+        "guardrails": {
+          "secretKeys": {
+            "value": {
+              "permissiveness": "balanced"
+            }
+          }
+        }
+      },
+      "id": "3033ab0e-15ec-4371-a8af-0a68329c5bfb",
+      "name": "Guardrails do plano",
+      "type": "@n8n/n8n-nodes-langchain.guardrails",
+      "typeVersion": 2,
+      "position": [
+        -1456,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Tema da pesquisa: {{ $json.asssunto }}\nIdioma das perguntas: {{ $json.lang || 'português do Brasil' }}\n\nGere as perguntas exclusivamente da SUA perspectiva, no idioma indicado, no formato JSON estruturado.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "Você é o ESCRITOR DE FATOS ESSENCIAIS de um pipeline de deep research (metodologia STORM — perspectiva p0, cobertura fundamental do tema).\n\nSUA MISSÃO: gerar de 4 a 6 perguntas de pesquisa FACTUAIS sobre o tema: o que é, especificações oficiais, datas e lançamentos, versões/modelos, preços oficiais, números-chave, quem/quando/onde.\n\nREGRAS:\n- Cada pergunta busca UM fato ou conjunto de fatos específico e verificável na web.\n- Linguagem direta e prática; NADA de opinião, especulação ou análise subjetiva.\n- Perguntas independentes entre si (uma não depende da resposta da outra).\n- Para cada pergunta preencha: 'pergunta' (a pergunta em si), 'foco' (o dado exato que a resposta deve conter), 'prioridade' (1=essencial, 2=importante, 3=complementar).\n- Responda EXCLUSIVAMENTE no formato JSON estruturado."
+        }
+      },
+      "id": "97ff8ad6-b751-4f67-8aef-85434425122f",
+      "name": "Persona Fatos Essenciais",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -1008,
+        -240
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"persona\": \"fatos_essenciais\",\n  \"perguntas\": [\n    {\n      \"pergunta\": \"pergunta de pesquisa específica sobre o tema\",\n      \"foco\": \"dado exato que a resposta deve conter\",\n      \"prioridade\": 1\n    }\n  ]\n}"
+      },
+      "id": "fd590024-6eb1-4261-bae5-ea35e310a909",
+      "name": "Parser Fatos Essenciais",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -880,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Tema da pesquisa: {{ $json.asssunto }}\nIdioma das perguntas: {{ $json.lang || 'português do Brasil' }}\n\nGere as perguntas exclusivamente da SUA perspectiva, no idioma indicado, no formato JSON estruturado.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "Você é o ANALISTA TÉCNICO de um pipeline de deep research (metodologia STORM — perspectiva de engenharia).\n\nSUA MISSÃO: gerar de 3 a 5 perguntas de pesquisa TÉCNICAS sobre o tema: arquitetura, mecânica/engenharia, desempenho MEDIDO (não apenas declarado), comparativos técnicos contra concorrentes diretos, tecnologia embarcada, materiais, eficiência.\n\nREGRAS:\n- Cada pergunta busca UM aspecto técnico específico e verificável na web.\n- Priorize dados mensuráveis (números, testes, medições) sobre opinião.\n- Perguntas independentes entre si.\n- Para cada pergunta preencha: 'pergunta', 'foco' (dado técnico exato esperado), 'prioridade' (1=essencial, 2=importante, 3=complementar).\n- Responda EXCLUSIVAMENTE no formato JSON estruturado."
+        }
+      },
+      "id": "f22482fe-b70a-49c3-8aa8-d34c1b38e784",
+      "name": "Persona Analista Tecnico",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -1008,
+        160
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gemini-3.8-flash",
+          "mode": "list",
+          "cachedResultName": "gemini-3.8-flash"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "797785a5-f315-4825-a8a2-820fb935a5a1",
+      "name": "LLM Análise Técnica",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -1008,
+        400
+      ],
+      "credentials": {
+        "openAiApi": {
+          "_redacted": true,
+          "type": null,
+          "name": "Dominus-LLM-Router"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"persona\": \"analise_tecnica\",\n  \"perguntas\": [\n    {\n      \"pergunta\": \"pergunta de pesquisa específica sobre o tema\",\n      \"foco\": \"dado exato que a resposta deve conter\",\n      \"prioridade\": 1\n    }\n  ]\n}"
+      },
+      "id": "e2d92fa4-1920-42d6-acea-da75a3689ac2",
+      "name": "Parser Análise Técnica",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -880,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Tema da pesquisa: {{ $json.asssunto }}\nIdioma das perguntas: {{ $json.lang || 'português do Brasil' }}\n\nGere as perguntas exclusivamente da SUA perspectiva, no idioma indicado, no formato JSON estruturado.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "Você é o ANALISTA DE MERCADO E CONSUMIDOR de um pipeline de deep research (metodologia STORM — perspectiva do comprador real).\n\nSUA MISSÃO: gerar de 3 a 5 perguntas de pesquisa sobre MERCADO E CONSUMIDOR: preço real praticado vs oficial, disponibilidade e prazos, custo total de propriedade (seguro, impostos/IPVA, manutenção, consumo), opinião e experiência de proprietários, concorrentes diretos e posicionamento, tendências de mercado.\n\nREGRAS:\n- Cada pergunta busca UM aspecto de mercado/consumo específico e verificável na web.\n- Foque no que importa para quem vai gastar dinheiro real.\n- Perguntas independentes entre si.\n- Para cada pergunta preencha: 'pergunta', 'foco' (dado exato esperado), 'prioridade' (1=essencial, 2=importante, 3=complementar).\n- Responda EXCLUSIVAMENTE no formato JSON estruturado."
+        }
+      },
+      "id": "09c44a9b-5013-4f6f-a371-cb86a941da55",
+      "name": "Persona Mercado Consumidor",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -1008,
+        560
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gemini-3.8-flash",
+          "mode": "list",
+          "cachedResultName": "gemini-3.8-flash"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "6d35baeb-27b9-48e5-87d3-a887d7fad8fe",
+      "name": "LLM Mercado e Consumidor",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -1008,
+        800
+      ],
+      "credentials": {
+        "openAiApi": {
+          "_redacted": true,
+          "type": null,
+          "name": "Dominus-LLM-Router"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"persona\": \"mercado_consumidor\",\n  \"perguntas\": [\n    {\n      \"pergunta\": \"pergunta de pesquisa específica sobre o tema\",\n      \"foco\": \"dado exato que a resposta deve conter\",\n      \"prioridade\": 1\n    }\n  ]\n}"
+      },
+      "id": "5adb1ff2-ae73-45fb-be19-8ae637230db0",
+      "name": "Parser Mercado e Consumidor",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -880,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Tema da pesquisa: {{ $json.asssunto }}\nIdioma das perguntas: {{ $json.lang || 'português do Brasil' }}\n\nGere as perguntas exclusivamente da SUA perspectiva, no idioma indicado, no formato JSON estruturado.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "Você é o VERIFICADOR CÉTICO de um pipeline de deep research (metodologia STORM — perspectiva de fact-checking).\n\nSUA MISSÃO: gerar de 3 a 5 perguntas de VERIFICAÇÃO CÉTICA sobre o tema: problemas crônicos documentados, recalls e campanhas oficiais, reclamações formais (Procon, Reclame Aqui ou equivalente do país), controvérsias e polêmicas, mitos vs fatos, riscos e pontos fracos, desmentidos oficiais.\n\nREGRAS:\n- Cada pergunta busca UM risco/problema específico e verificável na web.\n- Ceticismo construtivo: só o que for documentável, não boatos.\n- Perguntas independentes entre si.\n- Para cada pergunta preencha: 'pergunta', 'foco' (evidência exata esperada), 'prioridade' (1=essencial, 2=importante, 3=complementar).\n- Responda EXCLUSIVAMENTE no formato JSON estruturado."
+        }
+      },
+      "id": "dc13403d-3e79-4982-bb89-c8d7180d373c",
+      "name": "Persona Verificador Cetico",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -1008,
+        1072
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gemini-3.8-flash",
+          "mode": "list",
+          "cachedResultName": "gemini-3.8-flash"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "8f0e1f6b-111f-4c05-9173-0ddda82ad6d7",
+      "name": "LLM Verificação Cética",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -1008,
+        1296
+      ],
+      "credentials": {
+        "openAiApi": {
+          "_redacted": true,
+          "type": null,
+          "name": "Dominus-LLM-Router"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"persona\": \"verificacao_cetica\",\n  \"perguntas\": [\n    {\n      \"pergunta\": \"pergunta de pesquisa específica sobre o tema\",\n      \"foco\": \"dado exato que a resposta deve conter\",\n      \"prioridade\": 1\n    }\n  ]\n}"
+      },
+      "id": "9050b25f-c534-4795-b1dd-6d8823c615fd",
+      "name": "Parser Verificação Cética",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -880,
+        1296
+      ]
+    },
+    {
+      "parameters": {
+        "numberInputs": 4
+      },
+      "id": "220c93e4-ece0-4871-b0fe-eeded5d9d916",
+      "name": "Merge 4 personas",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -656,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const PERSONAS = [\n  { node: 'Persona Fatos Essenciais',   numero: 1, topico: 'Fatos Essenciais' },\n  { node: 'Persona Analista Tecnico',   numero: 2, topico: 'Análise Técnica' },\n  { node: 'Persona Mercado Consumidor', numero: 3, topico: 'Mercado e Consumidor' },\n  { node: 'Persona Verificador Cetico', numero: 4, topico: 'Verificação Cética' },\n];\nconst CAP = 18;\n\nconst norm = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\\s+/g,' ').trim();\nconst tokens = s => new Set(norm(s).split(' ').filter(w => w.length > 2));\nconst jaccard = (a,b) => { const A=tokens(a), B=tokens(b); if(!A.size||!B.size) return 0; const inter=[...A].filter(x=>B.has(x)).length; return inter/(A.size+B.size-inter); };\n\nfunction extractPerguntas(nodeName) {\n  let out;\n  try { out = $(nodeName).first().json.output; } catch(e) { return []; }\n  if (out === undefined || out === null) return [];\n  if (typeof out === 'string') {\n    let t = out.replace(/^```(json)?|```$/gm,'').trim();\n    const m = t.match(/\\{[\\s\\S]*\\}/); if (m) t = m[0];\n    try { out = JSON.parse(t); } catch(e) { return []; }\n  }\n  const arr = out.perguntas || out.questions || [];\n  return Array.isArray(arr) ? arr : [];\n}\n\nconst pesqRaw = $('Lê pesquisa por ID').first().json;\nconst hook = $('Entrada: nova pesquisa').first().json;\nconst pesq = { id_pesquisa: pesqRaw.id_pesquisa ?? Number(hook.query.id), webhook_callback: pesqRaw.webhook_callback ?? hook.body.callbackUrl ?? hook.body.webhook_callback };\nconst seen = [];\nconst steps = [];\nconst relatorio = [];\nfor (const p of PERSONAS) {\n  let perguntas = extractPerguntas(p.node);\n  perguntas.sort((a,b) => (a.prioridade||3) - (b.prioridade||3));\n  let letter = 97; // 'a'\n  let usadas = 0;\n  for (const q of perguntas) {\n    const pergunta = String(q.pergunta || '').trim();\n    if (!pergunta) continue;\n    if (seen.some(s => jaccard(s, pergunta) > 0.75)) continue;\n    seen.push(pergunta);\n    steps.push({\n      id_pesquisa: pesq.id_pesquisa,\n      webhook_callback: pesq.webhook_callback,\n      topico_principal: `Step ${p.numero} — ${p.topico}`,\n      passo_id: `${p.numero}${String.fromCharCode(letter++)}`,\n      descricao_subtopico: pergunta + (q.foco ? ` (Foco: ${q.foco})` : '')\n    });\n    usadas++;\n    if (steps.length >= CAP) break;\n  }\n  relatorio.push(`${p.node}: ${perguntas.length} geradas, ${usadas} usadas`);\n  if (steps.length >= CAP) break;\n}\nif (steps.length === 0) {\n  throw new Error('Nenhuma persona gerou perguntas válidas. Detalhes: ' + relatorio.join(' | '));\n}\nconsole.log('Plano consolidado: ' + steps.length + ' passos. ' + relatorio.join(' | '));\nreturn steps.map(s => ({ json: s }));"
+      },
+      "id": "b0a53da4-baf6-4739-bd08-7addb74794c7",
+      "name": "Consolida plano 4 personas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -432,
+        368
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [$input.first()];"
+      },
+      "id": "6d3339c8-e315-4d6e-99cb-d017958b65d4",
+      "name": "Unico disparo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gemini-3.8-flash",
+          "mode": "list",
+          "cachedResultName": "gemini-3.8-flash"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "c50c8ef5-e4e8-4fc5-a6d9-18c2eea786a2",
+      "name": "LLM Sintetizador do Plano",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -1008,
+        -16
+      ],
+      "credentials": {
+        "openAiApi": {
+          "_redacted": true,
+          "type": null,
+          "name": "Dominus-LLM-Router"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Entrada: nova pesquisa": {
+      "main": [
+        [
+          {
+            "node": "Valida entrada (auth+schema)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Responde 202 aceito": {
+      "main": [
+        [
+          {
+            "node": "Guardrails do plano",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valida entrada (auth+schema)": {
+      "main": [
+        [
+          {
+            "node": "Responde 202 aceito",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Valida payload + secret",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lê pesquisa por ID": {
+      "main": [
+        [
+          {
+            "node": "Persona Fatos Essenciais",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Persona Analista Tecnico",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Persona Mercado Consumidor",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Persona Verificador Cetico",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aguarda antes do garimpo": {
+      "main": [
+        [
+          {
+            "node": "Unico disparo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valida payload + secret": {
+      "main": [
+        [
+          {
+            "node": "Responde 400 rejeitado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Grava plano na pesquisa": {
+      "main": [
+        [
+          {
+            "node": "Atualiza fase: planejar→garimpar",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Aguarda antes do garimpo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardrails do plano": {
+      "main": [
+        [
+          {
+            "node": "Lê pesquisa por ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persona Fatos Essenciais": {
+      "main": [
+        [
+          {
+            "node": "Merge 4 personas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parser Fatos Essenciais": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Persona Fatos Essenciais",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persona Analista Tecnico": {
+      "main": [
+        [
+          {
+            "node": "Merge 4 personas",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Parser Análise Técnica": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Persona Analista Tecnico",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persona Mercado Consumidor": {
+      "main": [
+        [
+          {
+            "node": "Merge 4 personas",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Parser Mercado e Consumidor": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Persona Mercado Consumidor",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persona Verificador Cetico": {
+      "main": [
+        [
+          {
+            "node": "Merge 4 personas",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Parser Verificação Cética": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Persona Verificador Cetico",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge 4 personas": {
+      "main": [
+        [
+          {
+            "node": "Consolida plano 4 personas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consolida plano 4 personas": {
+      "main": [
+        [
+          {
+            "node": "Grava plano na pesquisa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM Análise Técnica": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Persona Analista Tecnico",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM Mercado e Consumidor": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Persona Mercado Consumidor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM Verificação Cética": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Persona Verificador Cetico",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unico disparo": {
+      "main": [
+        [
+          {
+            "node": "Dispara Scrapper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LLM Sintetizador do Plano": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Persona Fatos Essenciais",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "nodeGroups": [],
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "saveExecutionProgress": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all"
+  },
+  "staticData": null,
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "myn8n.dominuslabs.online",
+            "user-agent": "curl/8.5.0",
+            "content-length": "234",
+            "accept": "*/*",
+            "content-type": "application/json",
+            "x-apify-secret": "***REDACTED***",
+            "x-forwarded-for": "45.160.37.235",
+            "x-forwarded-host": "myn8n.dominuslabs.online",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "0f31aca31a73",
+            "x-real-ip": "45.160.37.235",
+            "accept-encoding": "gzip"
+          },
+          "params": {},
+          "query": {
+            "id": "999001"
+          },
+          "body": {
+            "tema": "Como funciona o processo de habilitação para moto (categoria A) no Brasil em 2026: etapas, custos e prazos",
+            "language": "pt-br",
+            "webhook_callback": "https://myn8n.dominuslabs.online/webhook/probe-callback-teste"
+          },
+          "webhookUrl": "https://myn8n.dominuslabs.online/webhook/deep-research",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "Entrada: nova pesquisa": [
+      {
+        "json": {
+          "headers": {
+            "host": "myn8n.dominuslabs.online",
+            "user-agent": "n8n",
+            "content-length": "620",
+            "accept": "application/json,text/html,application/xhtml+xml,application/xml,text/*;q=0.9, image/*;q=0.8, */*;q=0.7",
+            "accept-encoding": "gzip, compress, deflate, br",
+            "content-type": "application/json",
+            "x-apify-secret": "***REDACTED***",
+            "x-forwarded-for": "10.0.1.1",
+            "x-forwarded-host": "myn8n.dominuslabs.online",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "0f31aca31a73",
+            "x-real-ip": "10.0.1.1"
+          },
+          "params": {},
+          "query": {
+            "id": "500089"
+          },
+          "body": {
+            "tema": "CFMOTO no Brasil 2026: lançamentos inéditos revelados no São Paulo Boat Show, análise completa das motos elétricas e icônicas da marca chinesa agora disponíveis no país. Foco em CFMOTO no Brasil, como funciona o concessionário, preços, e as três novidades apresentadas no SPBS (São Paulo Boat Show). Incluir as dúvidas da PAA: Quem fabrica CFMoto, é boa marca, tem no Brasil, nacionalidade. Incluir dados de vendas da Vammo (20 mil toneladas de CO2 evitadas), e comparar com concorrentes como Honda CG 160 e CB 500.",
+            "callbackUrl": "https://myn8n.dominuslabs.online/webhook/deep-research-callback"
+          },
+          "webhookUrl": "https://myn8n.dominuslabs.online/webhook/deep-research",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": [
+    {
+      "id": "I1tPTJVmCdtv2spd",
+      "name": "Deep Research",
+      "createdAt": "2026-09-23T20:00:38.358Z",
+      "updatedAt": "2026-09-23T20:00:38.358Z"
+    },
+    {
+      "id": "WWkQSlVovFHP0UDj",
+      "name": "Moto-Na-Pratica",
+      "createdAt": "2026-09-23T17:08:30.993Z",
+      "updatedAt": "2026-09-23T17:08:30.993Z"
+    }
+  ],
+  "shared": [
+    {
+      "role": "workflow:owner",
+      "workflowId": "op3gvAdtkYjO9ydV",
+      "projectId": "0m3AYoFvtbqWOB3e",
+      "project": {
+        "id": "0m3AYoFvtbqWOB3e",
+        "name": "eliezer vargas <eliejosuevargas01@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "a8a2c9ad-2763-4a77-ba81-c27a1ac09067",
+        "createdAt": "2025-12-06T14:56:50.686Z",
+        "updatedAt": "2025-12-06T14:58:20.912Z"
+      },
+      "createdAt": "2026-09-23T19:59:48.778Z",
+      "updatedAt": "2026-09-23T19:59:48.778Z"
+    }
+  ],
+  "activeVersion": {
+    "versionId": "39d4ff4e-3d98-4b67-9cb3-e0610d156871",
+    "workflowId": "op3gvAdtkYjO9ydV",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "deep-research",
+          "responseMode": "responseNode",
+          "options": {}
+        },
+        "id": "386ce54c-a9df-4a7b-b02a-b778784f4bf1",
+        "name": "Entrada: nova pesquisa",
+        "webhookId": "52e90967-cca5-4784-90e1-4ff356962bcd",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          -2128,
+          560
+        ]
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={\n  \"status\": 202,\n  \"message\": \"Accepted\",\n  \"description\": \"The request has been received and is being processed in the background.\",\n  \"data\": {\n    \"jobId\": \"{{ $json.query.id }}\",\n    \"status\": \"processing\",\n    \"statusUrl\": \"https://myn8n.dominuslabs.online/webhook/deepresearch_status\",\n    \"createdAt\": \"{{ $now.toISO() }}\",\n    \"estimatedCompletionTime\": \"{{ $now.plus({ minutes: 5 }).toISO() }}\"\n  }\n}",
+          "options": {
+            "responseCode": 202,
+            "responseHeaders": {
+              "entries": [
+                {
+                  "name": "OK",
+                  "value": "Deep research initiated."
+                },
+                {
+                  "name": "Warning",
+                  "value": " Do NOT call this tool again. We will send the final report via webhook upon completion of the research."
+                }
+              ]
+            }
+          }
+        },
+        "id": "bbf8ab50-6d7c-4400-b841-58d3521a0ab8",
+        "name": "Responde 202 aceito",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.5,
+        "position": [
+          -1680,
+          464
+        ]
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={{ $json }}",
+          "options": {
+            "responseCode": 400,
+            "responseHeaders": {
+              "entries": []
+            }
+          }
+        },
+        "id": "b9c2e1f8-8a41-4d3b-8133-1c047d0550bc",
+        "name": "Responde 400 rejeitado",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.5,
+        "position": [
+          -1456,
+          656
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 3
+            },
+            "conditions": [
+              {
+                "id": "c6b7fb74-e73d-4ca0-87d4-193128918757",
+                "leftValue": "={{ $json.query.id }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "exists",
+                  "singleValue": true
+                }
+              },
+              {
+                "id": "57605277-7555-488a-8e14-1a421c0c820d",
+                "leftValue": "={{ $json.body.tema }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "exists",
+                  "singleValue": true
+                }
+              },
+              {
+                "id": "0212c5b7-8e60-4c7a-ada3-052a6649181c",
+                "leftValue": "={{ $json.query.id }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              },
+              {
+                "id": "781247ed-7e9b-497c-8507-e761ab213875",
+                "leftValue": "={{ $json.body.tema }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              },
+              {
+                "id": "a781601b-69d7-4913-a25b-8d2df4453001",
+                "leftValue": "={{ $json.headers[\"x-apify-secret\"] }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "exists",
+                  "singleValue": true
+                }
+              },
+              {
+                "id": "c157859a-5fd3-46cf-a666-bf1294cfad1e",
+                "leftValue": "={{ $json.headers[\"x-apify-secret\"] }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEmpty",
+                  "singleValue": true
+                }
+              },
+              {
+                "id": "8c6fc4fe-a47b-4f27-91be-ae4802e18f90",
+                "leftValue": "={{ $json.headers[\"x-apify-secret\"] }}",
+                "rightValue": "***REDACTED***",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals",
+                  "name": "filter.operator.equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "c68c6894-7e3b-46bf-8063-4a10686d0eda",
+        "name": "Valida entrada (auth+schema)",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.3,
+        "position": [
+          -1904,
+          560
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "upsert",
+          "dataTableId": {
+            "__rl": true,
+            "value": "9ltZLFGUXe11LFQk",
+            "mode": "list",
+            "cachedResultName": "Pesquisa",
+            "cachedResultUrl": "/projects/0m3AYoFvtbqWOB3e/datatables/9ltZLFGUXe11LFQk"
+          },
+          "matchType": "allConditions",
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "id_pesquisa",
+                "keyValue": "={{ $('Entrada: nova pesquisa').item.json.query.id }}"
+              }
+            ]
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "asssunto": "={{ $json.guardrailsInput }}",
+              "webhook_callback": "={{ $('Entrada: nova pesquisa').item.json.body.callbackUrl }}",
+              "id_pesquisa": "={{ $('Entrada: nova pesquisa').item.json.query.id }}",
+              "Fase": "planejar",
+              "lang": "={{ $('Entrada: nova pesquisa').item.json.body.language }}"
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "asssunto",
+                "displayName": "asssunto",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "id_pesquisa",
+                "displayName": "id_pesquisa",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "number",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "angulo",
+                "displayName": "angulo",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": true
+              },
+              {
+                "id": "gancho",
+                "displayName": "gancho",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": true
+              },
+              {
+                "id": "relatorio",
+                "displayName": "relatorio",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": true
+              },
+              {
+                "id": "justificativa_angulo",
+                "displayName": "justificativa_angulo",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": true
+              },
+              {
+                "id": "justificativa_gancho",
+                "displayName": "justificativa_gancho",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": true
+              },
+              {
+                "id": "justificativa_assunto",
+                "displayName": "justificativa_assunto",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": true
+              },
+              {
+                "id": "keywords_assunto",
+                "displayName": "keywords_assunto",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": true
+              },
+              {
+                "id": "atualizacao",
+                "displayName": "atualizacao",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "boolean",
+                "readOnly": false,
+                "removed": true
+              },
+              {
+                "id": "webhook_callback",
+                "displayName": "webhook_callback",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "Fase",
+                "displayName": "Fase",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "lang",
+                "displayName": "lang",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {}
+        },
+        "id": "1a281335-1a37-4544-b460-a59277039aea",
+        "name": "Lê pesquisa por ID",
+        "type": "n8n-nodes-base.dataTable",
+        "typeVersion": 1.1,
+        "position": [
+          -1232,
+          464
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "update",
+          "dataTableId": {
+            "__rl": true,
+            "value": "9ltZLFGUXe11LFQk",
+            "mode": "list",
+            "cachedResultName": "Pesquisa",
+            "cachedResultUrl": "/projects/0m3AYoFvtbqWOB3e/datatables/9ltZLFGUXe11LFQk"
+          },
+          "matchType": "allConditions",
+          "filters": {
+            "conditions": [
+              {
+                "keyName": "id_pesquisa",
+                "keyValue": "={{ $('Lê pesquisa por ID').first().json.id_pesquisa }}"
+              },
+              {
+                "keyName": "Fase",
+                "keyValue": "planejar"
+              }
+            ]
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "Fase": "garimpar"
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "asssunto",
+                "displayName": "asssunto",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": true
+              },
+              {
+                "id": "id_pesquisa",
+                "displayName": "id_pesquisa",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "number",
+                "readOnly": false,
+                "removed": true
+              },
+              {
+                "id": "angulo",
+                "displayName": "angulo",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": true
+              },
+              {
+                "id": "gancho",
+                "displayName": "gancho",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": true
+              },
+              {
+                "id": "relatorio",
+                "displayName": "relatorio",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": true
+              },
+              {
+                "id": "justificativa_angulo",
+                "displayName": "justificativa_angulo",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": true
+              },
+              {
+                "id": "justificativa_gancho",
+                "displayName": "justificativa_gancho",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": true
+              },
+              {
+                "id": "justificativa_assunto",
+                "displayName": "justificativa_assunto",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": true
+              },
+              {
+                "id": "keywords_assunto",
+                "displayName": "keywords_assunto",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": true
+              },
+              {
+                "id": "atualizacao",
+                "displayName": "atualizacao",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "boolean",
+                "readOnly": false,
+                "removed": true
+              },
+              {
+                "id": "webhook_callback",
+                "displayName": "webhook_callback",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": true
+              },
+              {
+                "id": "Fase",
+                "displayName": "Fase",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {}
+        },
+        "id": "c21794a6-c57c-4ef7-892b-30e170b27e9d",
+        "name": "Atualiza fase: planejar→garimpar",
+        "type": "n8n-nodes-base.dataTable",
+        "typeVersion": 1.1,
+        "executeOnce": true,
+        "position": [
+          16,
+          272
+        ]
+      },
+      {
+        "parameters": {
+          "amount": "={{ Math.random() * 3 }}"
+        },
+        "id": "fd5e5ef0-fa24-4244-bb03-6faab741d07d",
+        "name": "Aguarda antes do garimpo",
+        "webhookId": "26d01100-6434-479f-be13-92cf21f2c9c8",
+        "type": "n8n-nodes-base.wait",
+        "typeVersion": 1.1,
+        "position": [
+          16,
+          464
+        ]
+      },
+      {
+        "parameters": {
+          "url": "https://myn8n.dominuslabs.online/webhook/Scrapper",
+          "sendQuery": true,
+          "queryParameters": {
+            "parameters": [
+              {
+                "name": "id_pesquisa",
+                "value": "={{ $json.id_pesquisa }}"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "5cf9b1ba-9e66-45a6-8d9e-be688af8c157",
+        "name": "Dispara Scrapper",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.4,
+        "executeOnce": false,
+        "position": [
+          464,
+          464
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Pega os dados que chegaram no Webhook\nconst item = $input.first().json;\n\nconst errors = [];\nconst EXPECTED_SECRET = \"***REDACTED***\";\n\n// 1. Validate query.id (Must exist, not empty, and MUST be an integer)\nconst idRaw = item.query?.id;\nconst idNum = Number(idRaw);\n\nif (idRaw === undefined || idRaw === null || String(idRaw).trim() === '') {\n  errors.push(\"Missing or empty required parameter: 'query.id'.\");\n} else if (isNaN(idNum) || !Number.isInteger(idNum)) {\n  errors.push(\"Invalid parameter: 'query.id' must be a valid integer number (e.g. 123456).\");\n}\n\n// 2. Validate body.tema\nconst tema = item.body?.tema;\nif (tema === undefined || tema === null || String(tema).trim() === '') {\n  errors.push(\"Missing or empty required parameter: 'body.tema'.\");\n}\n\n// 3. Validate x-apify-secret\nconst secretHeader = item.headers ? (item.headers['x-apify-secret'] || item.headers['X-Apify-Secret']) : undefined;\n\nif (!secretHeader || String(secretHeader).trim() === '') {\n  errors.push(\"Missing required header: 'x-apify-secret'.\");\n} else if (secretHeader !== EXPECTED_SECRET) {\n  errors.push(\"Unauthorized: Invalid 'x-apify-secret' header provided.\");\n}\n\n// 4. Validate body.webhook_callback\nconst webhookCallback = item.body?.webhook_callback;\nif (webhookCallback === undefined || webhookCallback === null || String(webhookCallback).trim() === '') {\n  errors.push(\"Missing or empty required parameter: 'body.webhook_callback'.\");\n}\n\nconst isValid = errors.length === 0;\n\n// Return JSON error response\nreturn [{\n  json: {\n    status: isValid ? 200 : 400,\n    success: isValid,\n    is_valid: isValid,\n    error: isValid ? null : \"Input Validation Error\",\n    errors: errors,\n    message: isValid ? \"Validation successful.\" : errors.join(\" | \")\n  }\n}];"
+        },
+        "id": "095eb874-7600-4541-9178-68bd642eb4eb",
+        "name": "Valida payload + secret",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -1680,
+          656
+        ]
+      },
+      {
+        "parameters": {
+          "dataTableId": {
+            "__rl": true,
+            "value": "arAS2xvz1XBxyA57",
+            "mode": "list",
+            "cachedResultName": "passos",
+            "cachedResultUrl": "/projects/0m3AYoFvtbqWOB3e/datatables/arAS2xvz1XBxyA57"
+          },
+          "columns": {
+            "mappingMode": "defineBelow",
+            "value": {
+              "Processando": "={{ false }}",
+              "id_pesquisa": "={{ $json.id_pesquisa }}",
+              "passo_id": "={{ $json.passo_id }}",
+              "topico_principal": "={{ $json.topico_principal }}",
+              "status": "pendente",
+              "descricao_subtopico": "={{ $json.descricao_subtopico }}",
+              "webhook_callback": "={{ $json.webhook_callback }}",
+              "tentativas": 0
+            },
+            "matchingColumns": [],
+            "schema": [
+              {
+                "id": "id_pesquisa",
+                "displayName": "id_pesquisa",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "number",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "passo_id",
+                "displayName": "passo_id",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "topico_principal",
+                "displayName": "topico_principal",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "status",
+                "displayName": "status",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "descricao_subtopico",
+                "displayName": "descricao_subtopico",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "ultima_query",
+                "displayName": "ultima_query",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": true
+              },
+              {
+                "id": "informacao_consolidada",
+                "displayName": "informacao_consolidada",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": true
+              },
+              {
+                "id": "webhook_callback",
+                "displayName": "webhook_callback",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "string",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "tentativas",
+                "displayName": "tentativas",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "number",
+                "readOnly": false,
+                "removed": false
+              },
+              {
+                "id": "Processando",
+                "displayName": "Processando",
+                "required": false,
+                "defaultMatch": false,
+                "display": true,
+                "type": "boolean",
+                "readOnly": false,
+                "removed": false
+              }
+            ],
+            "attemptToConvertTypes": false,
+            "convertFieldsToString": false
+          },
+          "options": {}
+        },
+        "id": "acab8921-fb7f-498c-9063-6f42ac1bc29e",
+        "name": "Grava plano na pesquisa",
+        "type": "n8n-nodes-base.dataTable",
+        "typeVersion": 1.1,
+        "position": [
+          -208,
+          368
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "sanitize",
+          "text": "={{ $json.body.tema }}",
+          "guardrails": {
+            "secretKeys": {
+              "value": {
+                "permissiveness": "balanced"
+              }
+            }
+          }
+        },
+        "id": "3033ab0e-15ec-4371-a8af-0a68329c5bfb",
+        "name": "Guardrails do plano",
+        "type": "@n8n/n8n-nodes-langchain.guardrails",
+        "typeVersion": 2,
+        "position": [
+          -1456,
+          464
+        ]
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=Tema da pesquisa: {{ $json.asssunto }}\nIdioma das perguntas: {{ $json.lang || 'português do Brasil' }}\n\nGere as perguntas exclusivamente da SUA perspectiva, no idioma indicado, no formato JSON estruturado.",
+          "hasOutputParser": true,
+          "options": {
+            "systemMessage": "Você é o ESCRITOR DE FATOS ESSENCIAIS de um pipeline de deep research (metodologia STORM — perspectiva p0, cobertura fundamental do tema).\n\nSUA MISSÃO: gerar de 4 a 6 perguntas de pesquisa FACTUAIS sobre o tema: o que é, especificações oficiais, datas e lançamentos, versões/modelos, preços oficiais, números-chave, quem/quando/onde.\n\nREGRAS:\n- Cada pergunta busca UM fato ou conjunto de fatos específico e verificável na web.\n- Linguagem direta e prática; NADA de opinião, especulação ou análise subjetiva.\n- Perguntas independentes entre si (uma não depende da resposta da outra).\n- Para cada pergunta preencha: 'pergunta' (a pergunta em si), 'foco' (o dado exato que a resposta deve conter), 'prioridade' (1=essencial, 2=importante, 3=complementar).\n- Responda EXCLUSIVAMENTE no formato JSON estruturado."
+          }
+        },
+        "id": "97ff8ad6-b751-4f67-8aef-85434425122f",
+        "name": "Persona Fatos Essenciais",
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 3.1,
+        "position": [
+          -1008,
+          -240
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "jsonSchemaExample": "{\n  \"persona\": \"fatos_essenciais\",\n  \"perguntas\": [\n    {\n      \"pergunta\": \"pergunta de pesquisa específica sobre o tema\",\n      \"foco\": \"dado exato que a resposta deve conter\",\n      \"prioridade\": 1\n    }\n  ]\n}"
+        },
+        "id": "fd590024-6eb1-4261-bae5-ea35e310a909",
+        "name": "Parser Fatos Essenciais",
+        "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+        "typeVersion": 1.3,
+        "position": [
+          -880,
+          -16
+        ]
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=Tema da pesquisa: {{ $json.asssunto }}\nIdioma das perguntas: {{ $json.lang || 'português do Brasil' }}\n\nGere as perguntas exclusivamente da SUA perspectiva, no idioma indicado, no formato JSON estruturado.",
+          "hasOutputParser": true,
+          "options": {
+            "systemMessage": "Você é o ANALISTA TÉCNICO de um pipeline de deep research (metodologia STORM — perspectiva de engenharia).\n\nSUA MISSÃO: gerar de 3 a 5 perguntas de pesquisa TÉCNICAS sobre o tema: arquitetura, mecânica/engenharia, desempenho MEDIDO (não apenas declarado), comparativos técnicos contra concorrentes diretos, tecnologia embarcada, materiais, eficiência.\n\nREGRAS:\n- Cada pergunta busca UM aspecto técnico específico e verificável na web.\n- Priorize dados mensuráveis (números, testes, medições) sobre opinião.\n- Perguntas independentes entre si.\n- Para cada pergunta preencha: 'pergunta', 'foco' (dado técnico exato esperado), 'prioridade' (1=essencial, 2=importante, 3=complementar).\n- Responda EXCLUSIVAMENTE no formato JSON estruturado."
+          }
+        },
+        "id": "f22482fe-b70a-49c3-8aa8-d34c1b38e784",
+        "name": "Persona Analista Tecnico",
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 3.1,
+        "position": [
+          -1008,
+          160
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "value": "gemini-3.8-flash",
+            "mode": "list",
+            "cachedResultName": "gemini-3.8-flash"
+          },
+          "builtInTools": {},
+          "options": {}
+        },
+        "id": "797785a5-f315-4825-a8a2-820fb935a5a1",
+        "name": "LLM Análise Técnica",
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.3,
+        "position": [
+          -1008,
+          400
+        ],
+        "credentials": {
+          "openAiApi": {
+            "id": "0Fv5Iuv8P60yjpzf",
+            "name": "Dominus-LLM-Router"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsonSchemaExample": "{\n  \"persona\": \"analise_tecnica\",\n  \"perguntas\": [\n    {\n      \"pergunta\": \"pergunta de pesquisa específica sobre o tema\",\n      \"foco\": \"dado exato que a resposta deve conter\",\n      \"prioridade\": 1\n    }\n  ]\n}"
+        },
+        "id": "e2d92fa4-1920-42d6-acea-da75a3689ac2",
+        "name": "Parser Análise Técnica",
+        "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+        "typeVersion": 1.3,
+        "position": [
+          -880,
+          400
+        ]
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=Tema da pesquisa: {{ $json.asssunto }}\nIdioma das perguntas: {{ $json.lang || 'português do Brasil' }}\n\nGere as perguntas exclusivamente da SUA perspectiva, no idioma indicado, no formato JSON estruturado.",
+          "hasOutputParser": true,
+          "options": {
+            "systemMessage": "Você é o ANALISTA DE MERCADO E CONSUMIDOR de um pipeline de deep research (metodologia STORM — perspectiva do comprador real).\n\nSUA MISSÃO: gerar de 3 a 5 perguntas de pesquisa sobre MERCADO E CONSUMIDOR: preço real praticado vs oficial, disponibilidade e prazos, custo total de propriedade (seguro, impostos/IPVA, manutenção, consumo), opinião e experiência de proprietários, concorrentes diretos e posicionamento, tendências de mercado.\n\nREGRAS:\n- Cada pergunta busca UM aspecto de mercado/consumo específico e verificável na web.\n- Foque no que importa para quem vai gastar dinheiro real.\n- Perguntas independentes entre si.\n- Para cada pergunta preencha: 'pergunta', 'foco' (dado exato esperado), 'prioridade' (1=essencial, 2=importante, 3=complementar).\n- Responda EXCLUSIVAMENTE no formato JSON estruturado."
+          }
+        },
+        "id": "09c44a9b-5013-4f6f-a371-cb86a941da55",
+        "name": "Persona Mercado Consumidor",
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 3.1,
+        "position": [
+          -1008,
+          560
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "value": "gemini-3.8-flash",
+            "mode": "list",
+            "cachedResultName": "gemini-3.8-flash"
+          },
+          "builtInTools": {},
+          "options": {}
+        },
+        "id": "6d35baeb-27b9-48e5-87d3-a887d7fad8fe",
+        "name": "LLM Mercado e Consumidor",
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.3,
+        "position": [
+          -1008,
+          800
+        ],
+        "credentials": {
+          "openAiApi": {
+            "id": "0Fv5Iuv8P60yjpzf",
+            "name": "Dominus-LLM-Router"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsonSchemaExample": "{\n  \"persona\": \"mercado_consumidor\",\n  \"perguntas\": [\n    {\n      \"pergunta\": \"pergunta de pesquisa específica sobre o tema\",\n      \"foco\": \"dado exato que a resposta deve conter\",\n      \"prioridade\": 1\n    }\n  ]\n}"
+        },
+        "id": "5adb1ff2-ae73-45fb-be19-8ae637230db0",
+        "name": "Parser Mercado e Consumidor",
+        "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+        "typeVersion": 1.3,
+        "position": [
+          -880,
+          800
+        ]
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=Tema da pesquisa: {{ $json.asssunto }}\nIdioma das perguntas: {{ $json.lang || 'português do Brasil' }}\n\nGere as perguntas exclusivamente da SUA perspectiva, no idioma indicado, no formato JSON estruturado.",
+          "hasOutputParser": true,
+          "options": {
+            "systemMessage": "Você é o VERIFICADOR CÉTICO de um pipeline de deep research (metodologia STORM — perspectiva de fact-checking).\n\nSUA MISSÃO: gerar de 3 a 5 perguntas de VERIFICAÇÃO CÉTICA sobre o tema: problemas crônicos documentados, recalls e campanhas oficiais, reclamações formais (Procon, Reclame Aqui ou equivalente do país), controvérsias e polêmicas, mitos vs fatos, riscos e pontos fracos, desmentidos oficiais.\n\nREGRAS:\n- Cada pergunta busca UM risco/problema específico e verificável na web.\n- Ceticismo construtivo: só o que for documentável, não boatos.\n- Perguntas independentes entre si.\n- Para cada pergunta preencha: 'pergunta', 'foco' (evidência exata esperada), 'prioridade' (1=essencial, 2=importante, 3=complementar).\n- Responda EXCLUSIVAMENTE no formato JSON estruturado."
+          }
+        },
+        "id": "dc13403d-3e79-4982-bb89-c8d7180d373c",
+        "name": "Persona Verificador Cetico",
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "typeVersion": 3.1,
+        "position": [
+          -1008,
+          1072
+        ],
+        "onError": "continueRegularOutput"
+      },
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "value": "gemini-3.8-flash",
+            "mode": "list",
+            "cachedResultName": "gemini-3.8-flash"
+          },
+          "builtInTools": {},
+          "options": {}
+        },
+        "id": "8f0e1f6b-111f-4c05-9173-0ddda82ad6d7",
+        "name": "LLM Verificação Cética",
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.3,
+        "position": [
+          -1008,
+          1296
+        ],
+        "credentials": {
+          "openAiApi": {
+            "id": "0Fv5Iuv8P60yjpzf",
+            "name": "Dominus-LLM-Router"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsonSchemaExample": "{\n  \"persona\": \"verificacao_cetica\",\n  \"perguntas\": [\n    {\n      \"pergunta\": \"pergunta de pesquisa específica sobre o tema\",\n      \"foco\": \"dado exato que a resposta deve conter\",\n      \"prioridade\": 1\n    }\n  ]\n}"
+        },
+        "id": "9050b25f-c534-4795-b1dd-6d8823c615fd",
+        "name": "Parser Verificação Cética",
+        "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+        "typeVersion": 1.3,
+        "position": [
+          -880,
+          1296
+        ]
+      },
+      {
+        "parameters": {
+          "numberInputs": 4
+        },
+        "id": "220c93e4-ece0-4871-b0fe-eeded5d9d916",
+        "name": "Merge 4 personas",
+        "type": "n8n-nodes-base.merge",
+        "typeVersion": 3.2,
+        "position": [
+          -656,
+          336
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const PERSONAS = [\n  { node: 'Persona Fatos Essenciais',   numero: 1, topico: 'Fatos Essenciais' },\n  { node: 'Persona Analista Tecnico',   numero: 2, topico: 'Análise Técnica' },\n  { node: 'Persona Mercado Consumidor', numero: 3, topico: 'Mercado e Consumidor' },\n  { node: 'Persona Verificador Cetico', numero: 4, topico: 'Verificação Cética' },\n];\nconst CAP = 18;\n\nconst norm = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\\s+/g,' ').trim();\nconst tokens = s => new Set(norm(s).split(' ').filter(w => w.length > 2));\nconst jaccard = (a,b) => { const A=tokens(a), B=tokens(b); if(!A.size||!B.size) return 0; const inter=[...A].filter(x=>B.has(x)).length; return inter/(A.size+B.size-inter); };\n\nfunction extractPerguntas(nodeName) {\n  let out;\n  try { out = $(nodeName).first().json.output; } catch(e) { return []; }\n  if (out === undefined || out === null) return [];\n  if (typeof out === 'string') {\n    let t = out.replace(/^```(json)?|```$/gm,'').trim();\n    const m = t.match(/\\{[\\s\\S]*\\}/); if (m) t = m[0];\n    try { out = JSON.parse(t); } catch(e) { return []; }\n  }\n  const arr = out.perguntas || out.questions || [];\n  return Array.isArray(arr) ? arr : [];\n}\n\nconst pesqRaw = $('Lê pesquisa por ID').first().json;\nconst hook = $('Entrada: nova pesquisa').first().json;\nconst pesq = { id_pesquisa: pesqRaw.id_pesquisa ?? Number(hook.query.id), webhook_callback: pesqRaw.webhook_callback ?? hook.body.callbackUrl ?? hook.body.webhook_callback };\nconst seen = [];\nconst steps = [];\nconst relatorio = [];\nfor (const p of PERSONAS) {\n  let perguntas = extractPerguntas(p.node);\n  perguntas.sort((a,b) => (a.prioridade||3) - (b.prioridade||3));\n  let letter = 97; // 'a'\n  let usadas = 0;\n  for (const q of perguntas) {\n    const pergunta = String(q.pergunta || '').trim();\n    if (!pergunta) continue;\n    if (seen.some(s => jaccard(s, pergunta) > 0.75)) continue;\n    seen.push(pergunta);\n    steps.push({\n      id_pesquisa: pesq.id_pesquisa,\n      webhook_callback: pesq.webhook_callback,\n      topico_principal: `Step ${p.numero} — ${p.topico}`,\n      passo_id: `${p.numero}${String.fromCharCode(letter++)}`,\n      descricao_subtopico: pergunta + (q.foco ? ` (Foco: ${q.foco})` : '')\n    });\n    usadas++;\n    if (steps.length >= CAP) break;\n  }\n  relatorio.push(`${p.node}: ${perguntas.length} geradas, ${usadas} usadas`);\n  if (steps.length >= CAP) break;\n}\nif (steps.length === 0) {\n  throw new Error('Nenhuma persona gerou perguntas válidas. Detalhes: ' + relatorio.join(' | '));\n}\nconsole.log('Plano consolidado: ' + steps.length + ' passos. ' + relatorio.join(' | '));\nreturn steps.map(s => ({ json: s }));"
+        },
+        "id": "b0a53da4-baf6-4739-bd08-7addb74794c7",
+        "name": "Consolida plano 4 personas",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -432,
+          368
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "return [$input.first()];"
+        },
+        "id": "6d3339c8-e315-4d6e-99cb-d017958b65d4",
+        "name": "Unico disparo",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          240,
+          464
+        ]
+      },
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "value": "gemini-3.8-flash",
+            "mode": "list",
+            "cachedResultName": "gemini-3.8-flash"
+          },
+          "builtInTools": {},
+          "options": {}
+        },
+        "id": "c50c8ef5-e4e8-4fc5-a6d9-18c2eea786a2",
+        "name": "LLM Sintetizador do Plano",
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.3,
+        "position": [
+          -1008,
+          -16
+        ],
+        "credentials": {
+          "openAiApi": {
+            "id": "0Fv5Iuv8P60yjpzf",
+            "name": "Dominus-LLM-Router"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Entrada: nova pesquisa": {
+        "main": [
+          [
+            {
+              "node": "Valida entrada (auth+schema)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Responde 202 aceito": {
+        "main": [
+          [
+            {
+              "node": "Guardrails do plano",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Valida entrada (auth+schema)": {
+        "main": [
+          [
+            {
+              "node": "Responde 202 aceito",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Valida payload + secret",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Lê pesquisa por ID": {
+        "main": [
+          [
+            {
+              "node": "Persona Fatos Essenciais",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Persona Analista Tecnico",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Persona Mercado Consumidor",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Persona Verificador Cetico",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Aguarda antes do garimpo": {
+        "main": [
+          [
+            {
+              "node": "Unico disparo",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Valida payload + secret": {
+        "main": [
+          [
+            {
+              "node": "Responde 400 rejeitado",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Grava plano na pesquisa": {
+        "main": [
+          [
+            {
+              "node": "Atualiza fase: planejar→garimpar",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Aguarda antes do garimpo",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Guardrails do plano": {
+        "main": [
+          [
+            {
+              "node": "Lê pesquisa por ID",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Persona Fatos Essenciais": {
+        "main": [
+          [
+            {
+              "node": "Merge 4 personas",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Parser Fatos Essenciais": {
+        "ai_outputParser": [
+          [
+            {
+              "node": "Persona Fatos Essenciais",
+              "type": "ai_outputParser",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Persona Analista Tecnico": {
+        "main": [
+          [
+            {
+              "node": "Merge 4 personas",
+              "type": "main",
+              "index": 1
+            }
+          ]
+        ]
+      },
+      "Parser Análise Técnica": {
+        "ai_outputParser": [
+          [
+            {
+              "node": "Persona Analista Tecnico",
+              "type": "ai_outputParser",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Persona Mercado Consumidor": {
+        "main": [
+          [
+            {
+              "node": "Merge 4 personas",
+              "type": "main",
+              "index": 2
+            }
+          ]
+        ]
+      },
+      "Parser Mercado e Consumidor": {
+        "ai_outputParser": [
+          [
+            {
+              "node": "Persona Mercado Consumidor",
+              "type": "ai_outputParser",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Persona Verificador Cetico": {
+        "main": [
+          [
+            {
+              "node": "Merge 4 personas",
+              "type": "main",
+              "index": 3
+            }
+          ]
+        ]
+      },
+      "Parser Verificação Cética": {
+        "ai_outputParser": [
+          [
+            {
+              "node": "Persona Verificador Cetico",
+              "type": "ai_outputParser",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Merge 4 personas": {
+        "main": [
+          [
+            {
+              "node": "Consolida plano 4 personas",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Consolida plano 4 personas": {
+        "main": [
+          [
+            {
+              "node": "Grava plano na pesquisa",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "LLM Análise Técnica": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Persona Analista Tecnico",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "LLM Mercado e Consumidor": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Persona Mercado Consumidor",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "LLM Verificação Cética": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Persona Verificador Cetico",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Unico disparo": {
+        "main": [
+          [
+            {
+              "node": "Dispara Scrapper",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "LLM Sintetizador do Plano": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "Persona Fatos Essenciais",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "eliezer vargas",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "createdAt": "2026-09-27T02:23:19.607Z",
+    "updatedAt": "2026-09-27T02:23:19.607Z",
+    "workflowPublishHistory": [
+      {
+        "id": 3639,
+        "workflowId": "op3gvAdtkYjO9ydV",
+        "versionId": "39d4ff4e-3d98-4b67-9cb3-e0610d156871",
+        "event": "deactivated",
+        "userId": "a8a2c9ad-2763-4a77-ba81-c27a1ac09067",
+        "createdAt": "2026-09-27T02:23:20.013Z"
+      },
+      {
+        "id": 3640,
+        "workflowId": "op3gvAdtkYjO9ydV",
+        "versionId": "39d4ff4e-3d98-4b67-9cb3-e0610d156871",
+        "event": "activated",
+        "userId": "a8a2c9ad-2763-4a77-ba81-c27a1ac09067",
+        "createdAt": "2026-09-27T02:23:20.046Z"
+      },
+      {
+        "id": 3641,
+        "workflowId": "op3gvAdtkYjO9ydV",
+        "versionId": "39d4ff4e-3d98-4b67-9cb3-e0610d156871",
+        "event": "deactivated",
+        "userId": "a8a2c9ad-2763-4a77-ba81-c27a1ac09067",
+        "createdAt": "2026-09-27T02:23:20.303Z"
+      },
+      {
+        "id": 3642,
+        "workflowId": "op3gvAdtkYjO9ydV",
+        "versionId": "39d4ff4e-3d98-4b67-9cb3-e0610d156871",
+        "event": "activated",
+        "userId": "a8a2c9ad-2763-4a77-ba81-c27a1ac09067",
+        "createdAt": "2026-09-27T02:23:20.345Z"
+      }
+    ]
+  }
+}

@@ -1,0 +1,243 @@
+{
+  "id": "4AIZQ23Xr9bdkOKt",
+  "name": "pesquisa fatos sobre falta de sites etc",
+  "description": null,
+  "active": true,
+  "activeVersionId": "57a747fc-4e01-424a-a102-adaba13662e9",
+  "createdAt": "2026-06-24T19:01:06.013Z",
+  "updatedAt": "2026-06-24T19:04:30.596Z",
+  "isArchived": false,
+  "versionId": "57a747fc-4e01-424a-a102-adaba13662e9",
+  "versionCounter": 10,
+  "sourceWorkflowId": null,
+  "triggerCount": 0,
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "c055762a-8fe7-4141-a639-df2372f30060",
+      "typeVersion": 1.1,
+      "name": "When Executed by Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        272,
+        352
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "google_ai_mode",
+        "q": "={{ $json.query }}\n\napenas responda, sem adicionar exmplicações",
+        "additionalFields": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-serpapi.serpApi",
+      "typeVersion": 1,
+      "position": [
+        448,
+        352
+      ],
+      "id": "25087d79-6210-40ee-b3de-7a867b811168",
+      "name": "Google_ai_mode search",
+      "credentials": {
+        "serpApi": {
+          "_redacted": true,
+          "type": null,
+          "name": "SerpApi vargaseliezer112"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d799ec68-c679-4b55-b5be-94a681f37f50",
+              "name": "reconstructed_markdown",
+              "value": "={{ $json.reconstructed_markdown.split('### References')[0] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        656,
+        352
+      ],
+      "id": "27836e17-cd26-4081-9309-a26be7664aa6",
+      "name": "Edit Fields1"
+    }
+  ],
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Google_ai_mode search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google_ai_mode search": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "nodeGroups": [],
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "pinData": {
+    "When Executed by Another Workflow": [
+      {
+        "json": {
+          "query": "setor de eventos e festas, com foco em criação de sites para empresas desse nicho"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "meta": null,
+  "tags": [],
+  "shared": [
+    {
+      "role": "workflow:owner",
+      "workflowId": "4AIZQ23Xr9bdkOKt",
+      "projectId": "0m3AYoFvtbqWOB3e",
+      "project": {
+        "id": "0m3AYoFvtbqWOB3e",
+        "name": "eliezer vargas <eliejosuevargas01@gmail.com>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "customTelemetryTags": [],
+        "creatorId": "a8a2c9ad-2763-4a77-ba81-c27a1ac09067",
+        "createdAt": "2025-12-06T14:56:50.686Z",
+        "updatedAt": "2025-12-06T14:58:20.912Z"
+      },
+      "createdAt": "2026-06-24T19:01:06.013Z",
+      "updatedAt": "2026-06-24T19:01:06.013Z"
+    }
+  ],
+  "activeVersion": {
+    "versionId": "57a747fc-4e01-424a-a102-adaba13662e9",
+    "workflowId": "4AIZQ23Xr9bdkOKt",
+    "nodes": [
+      {
+        "parameters": {
+          "inputSource": "passthrough"
+        },
+        "id": "c055762a-8fe7-4141-a639-df2372f30060",
+        "typeVersion": 1.1,
+        "name": "When Executed by Another Workflow",
+        "type": "n8n-nodes-base.executeWorkflowTrigger",
+        "position": [
+          272,
+          352
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "google_ai_mode",
+          "q": "={{ $json.query }}\n\napenas responda, sem adicionar exmplicações",
+          "additionalFields": {},
+          "requestOptions": {}
+        },
+        "type": "n8n-nodes-serpapi.serpApi",
+        "typeVersion": 1,
+        "position": [
+          448,
+          352
+        ],
+        "id": "25087d79-6210-40ee-b3de-7a867b811168",
+        "name": "Google_ai_mode search",
+        "credentials": {
+          "serpApi": {
+            "id": "Cfuma4LuDGWbyHv1",
+            "name": "SerpApi vargaseliezer112"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "assignments": {
+            "assignments": [
+              {
+                "id": "d799ec68-c679-4b55-b5be-94a681f37f50",
+                "name": "reconstructed_markdown",
+                "value": "={{ $json.reconstructed_markdown.split('### References')[0] }}",
+                "type": "string"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.set",
+        "typeVersion": 3.4,
+        "position": [
+          656,
+          352
+        ],
+        "id": "27836e17-cd26-4081-9309-a26be7664aa6",
+        "name": "Edit Fields1"
+      }
+    ],
+    "connections": {
+      "When Executed by Another Workflow": {
+        "main": [
+          [
+            {
+              "node": "Google_ai_mode search",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Google_ai_mode search": {
+        "main": [
+          [
+            {
+              "node": "Edit Fields1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "nodeGroups": [],
+    "authors": "eliezer vargas",
+    "name": "Version 57a747fc",
+    "description": "",
+    "autosaved": false,
+    "createdAt": "2026-06-24T19:04:30.599Z",
+    "updatedAt": "2026-06-24T19:04:32.227Z",
+    "workflowPublishHistory": [
+      {
+        "id": 578,
+        "workflowId": "4AIZQ23Xr9bdkOKt",
+        "versionId": "57a747fc-4e01-424a-a102-adaba13662e9",
+        "event": "activated",
+        "userId": "a8a2c9ad-2763-4a77-ba81-c27a1ac09067",
+        "createdAt": "2026-06-24T19:04:32.215Z"
+      }
+    ]
+  }
+}
