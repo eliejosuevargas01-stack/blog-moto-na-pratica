@@ -93,6 +93,7 @@ describe("Hardening & Security Test Suite", () => {
   describe("Item 3: GET /api/posts Draft Leakage Prevention Contract", () => {
     const routeContent = fs.existsSync(routePath) ? fs.readFileSync(routePath, "utf-8") : "";
 
+    // Helper que replica a lógica de resolução de status do endpoint
     function resolveStatusFilter(urlStr: string, isAuth: boolean): Record<string, any> {
       const url = new URL(urlStr);
       let statusFilter: any = { status: "publicado" };
@@ -159,7 +160,7 @@ describe("Hardening & Security Test Suite", () => {
     });
 
     it("deve exibir placeholder seguro para documentação de API", () => {
-      expect(adminContent).toContain("x-api-key: <API_SECRET_KEY>");
+      expect(adminContent).toContain("x-api-key: &lt;API_SECRET_KEY&gt;");
       expect(adminContent).toContain("N8N_WEBHOOK_URL");
     });
   });
@@ -191,7 +192,7 @@ describe("Hardening & Security Test Suite", () => {
       const [calledUrl, calledInit] = fetchSpy.mock.calls[0];
       expect(calledUrl).toBe("https://n8n.example.com/webhook/test");
       expect(calledInit?.method).toBe("POST");
-      expect((calledInit?.headers as any)["x-api-key"]).toBe("test-api-secret-key-2026");
+      expect((calledInit?.headers as any)[\"x-api-key\"]).toBe("test-api-secret-key-2026");
       expect(JSON.parse(calledInit?.body as string)).toEqual(payload);
     });
 
