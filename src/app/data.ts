@@ -348,7 +348,7 @@ export const STATIC_INSTITUTIONAL_PAGES: Record<string, InstitutionalPage> = {
       <p>O <strong>Moto na Prática</strong> é um portal jornalístico independente dedicado à cobertura técnica, informativa e cultural do motociclismo. Nossa missão prioritária é fornecer ao leitor informações autênticas, rigorosas e livres de conflitos de interesse.</p>
       <p>Não aceitamos acordos comerciais que condicionem análises, imponham censura prévia, exijam aprovação de pauta ou obriguem vereditos positivos. Se um produto ou motocicleta apresentar falhas mecânicas, fragilidade construtiva ou consumo incompatível com as especificações declaradas pela montadora, isso será registrado de forma explícita e fundamentada.</p>
 
-      <h2>2. Metodologia de Testes e Medições</h2>
+      <h2>2. Nossa Metodologia de Pesquisa</h2>
       <p>Todos os testes de consumo de combustível são realizados com abastecimento no bocal sob metodologia tanque-a-tanque na mesma bomba e com a mesma inclinação da moto. Não nos pautamos unicamente por computadores de bordo eletrônicos.</p>
       <p>Nossos testes de rodagem combinam trajetos urbanos pesados, rodovias de serra e vias de trânsito rápido com passageiro e carga para simular o uso real do proprietário brasileiro.</p>
 

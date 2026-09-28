@@ -25,25 +25,25 @@ const TARGET_AUDIENCES = [
     title: "Motociclistas do Dia a Dia",
     tag: "Commuters Urbanos",
     desc: "Pilotos que utilizam a moto diariamente para trabalho e deslocamento urbano. Focados em economia de combustível, pneus duráveis, segurança no trânsito e manutenção preventiva.",
-    percentage: "42% da audiência",
+    percentage: "",
   },
   {
     title: "Viajantes & Mototuristas",
     tag: "Estrada & Longa Distância",
     desc: "Apaixonados por viagens de moto nos fins de semana e férias. Consumidores exigentes de baús, vestuário impermeável, intercomunicadores, GPS e revisões completas pré-estrada.",
-    percentage: "28% da audiência",
+    percentage: "",
   },
   {
     title: "Compradores de Primeira Moto",
     tag: "Novos Habilitados",
     desc: "Público em fase de decisão de compra, pesquisando comparativos entre modelos de entrada (125cc a 300cc), custos de seguro, financiamento e capacetes com melhor custo-benefício.",
-    percentage: "18% da audiência",
+    percentage: "",
   },
   {
     title: "Entusiastas & Mecânica DIY",
     tag: "Performance & Garagem",
     desc: "Leitores com interesse técnico profundo que realizam suas próprias manutenções na garagem, acompanham competições como MotoGP e valorizam peças de reposição de primeira linha.",
-    percentage: "12% da audiência",
+    percentage: "",
   },
 ];
 
@@ -98,7 +98,7 @@ export default function AnunciePage() {
           </h1>
 
           <p className="text-[15px] md:text-[16px] text-muted-foreground max-w-3xl leading-relaxed" style={BODY}>
-            O <strong>Moto na Prática</strong> é uma das plataformas informativas mais confiáveis sobre o universo de duas rodas no Brasil. Nossa comunidade é formada por pessoas que compram, pilotam, equipam e mantêm suas motos todos os dias.
+            O <strong>Moto na Prática</strong> é uma plataforma focada em informação clara sobre o universo de duas rodas no Brasil. Nossa comunidade é formada por pessoas que compram, pilotam, equipam e mantêm suas motos todos os dias.
           </p>
         </div>
       </div>

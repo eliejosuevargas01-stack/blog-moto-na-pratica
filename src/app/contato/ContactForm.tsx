@@ -37,8 +37,6 @@ export default function ContactForm() {
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
 
   const validate = (): boolean => {
     const newErrors: FormErrors = {};
@@ -80,21 +78,11 @@ export default function ContactForm() {
   };
 
 
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    alert("No momento nosso sistema de formulário está passando por atualizações. Por favor, tente novamente mais tarde.");
   };
 
-  const handleReset = () => {
-    setFormData({
-      fullName: "",
-      email: "",
-      subject: "",
-      message: "",
-    });
-    setErrors({});
-    setSubmitted(false);
-  };
 
     return (
     <form onSubmit={handleSubmit} noValidate className="bg-card border border-border p-6 md:p-8 space-y-6">

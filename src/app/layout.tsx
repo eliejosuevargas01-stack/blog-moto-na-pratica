@@ -66,15 +66,17 @@ export default async function RootLayout({
 
 
 
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || "https://motonapratica.online";
   const newsMediaSchema = {
     "@context": "https://schema.org",
     "@type": "NewsMediaOrganization",
     "name": "Moto na Prática",
     "alternateName": "Portal Moto na Prática",
-    "url": "https://motonapratica.online",
+    "url": siteUrl,
     "logo": {
       "@type": "ImageObject",
-      "url": "https://motonapratica.online/favicon.png",
+      "url": `${siteUrl}/favicon.png`,
       "width": 512,
       "height": 512
     },
@@ -84,15 +86,11 @@ export default async function RootLayout({
       "@type": "Person",
       "name": "Eliezer"
     },
-    "ethicsPolicy": "https://motonapratica.online/politica-editorial",
-    "publishingPrinciples": "https://motonapratica.online/politica-editorial",
-    "correctionsPolicy": "https://motonapratica.online/politica-editorial#correcoes",
-    "diversityPolicy": "https://motonapratica.online/politica-editorial#diversidade",
-    "verificationFactCheckingPolicy": "https://motonapratica.online/politica-editorial#checagem",
-    "sameAs": [
-      "https://instagram.com/motonapratica",
-      "https://youtube.com/@motonapratica"
-    ]
+    "ethicsPolicy": `${siteUrl}/politica-editorial`,
+    "publishingPrinciples": `${siteUrl}/politica-editorial`,
+    "correctionsPolicy": `${siteUrl}/politica-editorial#correcoes`,
+    "diversityPolicy": `${siteUrl}/politica-editorial#diversidade`,
+    "verificationFactCheckingPolicy": `${siteUrl}/politica-editorial#checagem`
   };
 
   return (
@@ -216,7 +214,7 @@ export default async function RootLayout({
                 </li>
                 <li>
                   <Link href="/equipe" className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-primary transition-colors">
-                    <ChevronRight size={11} className="text-primary shrink-0" /> Equipe Editorial
+                    <ChevronRight size={11} className="text-primary shrink-0" /> Quem faz o portal
                   </Link>
                 </li>
                 <li>

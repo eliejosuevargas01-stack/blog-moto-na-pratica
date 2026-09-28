@@ -68,10 +68,10 @@ export default async function Sobre() {
     heroImage: "https://images.unsplash.com/photo-1625812184391-0359bf2344b9?w=1400&h=600&fit=crop&auto=format",
     heroFocalPoint: "center",
     stats: [
-      { value: "100% INDEPENDENTE", label: "Testes sem patrocínio velado", iconName: "ShieldCheck" },
-      { value: "CONSUMO NA BOMBA", label: "Medição real tanque a tanque", iconName: "Fuel" },
-      { value: "+8.400 KM", label: "Teste FZ25 Longa Duração", iconName: "Gauge" },
-      { value: "RIGOR E-E-A-T", label: "Jornalismo & Oficina Prática", iconName: "Wrench" }
+      { value: "100% INDEPENDENTE", label: "Pesquisa e Independência", iconName: "ShieldCheck" },
+      { value: "DADOS DOCUMENTADOS", label: "Análise baseada em documentação e especificações de fábrica", iconName: "Fuel" },
+      { value: "PESQUISA CONSTANTE", label: "Busca constante por informação útil", iconName: "Gauge" },
+      { value: "RIGOR E-E-A-T", label: "Informação Clara e Útil", iconName: "Wrench" }
     ],
     bioTitle: "Manifesto & História: Da Prática Real ao Portal Informativo",
     bioContentHtml: `<p class="mb-4 text-[15px] leading-relaxed text-muted-foreground">O <strong>Moto na Prática</strong> nasceu da vivência real diária sobre duas rodas. Em janeiro de 2026, o fundador <strong>Eliezer</strong> iniciou o projeto a partir de sua rotina de deslocamento no Vale do Itajaí (Gaspar e litoral de Santa Catarina) a bordo da sua <strong>Yamaha Fazer 250 (FZ25) Solid Grey 2026</strong> recém-adquirida.</p>

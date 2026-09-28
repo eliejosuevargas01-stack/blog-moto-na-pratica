@@ -56,7 +56,7 @@ export default function UsoIAPage() {
                 Auxílio na Pesquisa e Organização
               </h3>
               <p className="text-[14px] text-muted-foreground leading-relaxed" style={BODY}>
-                Utilizamos IA para compilar e organizar grandes volumes de dados públicos, como especificações técnicas históricas, catálogos de peças e manuais de serviço, agilizando o trabalho investigativo da nossa redação.
+                Utilizamos IA para compilar e organizar grandes volumes de dados públicos, como especificações técnicas históricas, catálogos de peças e manuais de serviço, agilizando nosso processo investigativo.
               </p>
             </div>
 
@@ -94,7 +94,7 @@ export default function UsoIAPage() {
                 <ul className="space-y-2 text-foreground">
                   <li className="flex items-start gap-2">
                      <span className="text-primary font-bold mt-0.5">•</span>
-                     <span><strong>Não substitui fontes reais:</strong> Todo conteúdo factual gerado ou estruturado com auxílio de IA deve ser fundamentado em fontes primárias verificáveis.</span>
+                     <span><strong>Não substitui fontes reais:</strong> Priorizamos fontes primárias quando disponíveis e usamos fontes verificáveis adequadas ao tipo de informação.</span>
                   </li>
                   <li className="flex items-start gap-2">
                      <span className="text-primary font-bold mt-0.5">•</span>
@@ -102,7 +102,7 @@ export default function UsoIAPage() {
                   </li>
                   <li className="flex items-start gap-2">
                      <span className="text-primary font-bold mt-0.5">•</span>
-                     <span><strong>Responsabilidade pela correção:</strong> Se a IA cometer um erro ao processar dados, a responsabilidade final é da redação. Erros factuais serão prontamente retificados conforme nossa <Link href="/politica-de-correcoes" className="text-primary hover:underline">Política de Correções</Link>.</span>
+                     <span><strong>Responsabilidade pela correção:</strong> Se a IA cometer um erro ao processar dados, a responsabilidade é do Moto na Prática. Erros factuais serão prontamente retificados conforme nossa <Link href="/politica-de-correcoes" className="text-primary hover:underline">Política de Correções</Link>.</span>
                   </li>
                 </ul>
              </div>
