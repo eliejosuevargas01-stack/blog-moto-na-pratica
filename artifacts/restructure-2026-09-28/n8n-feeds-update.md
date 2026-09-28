@@ -62,9 +62,29 @@ RSS (3x) → [Merge Feeds RSS MotoGP (append, 3 inputs)] → [Normaliza Feeds RS
 - Normalizador agora roda **exatamente 1 vez** sobre o array combinado — dedupe global entre feeds funciona
 - Re-GET confirmou: modes `append`, índices corretos, workflow ativo
 
+## Refatoração do despacho do Deep Research (2026-09-28 15:55 UTC)
+
+**Antes:** o Diretor chamava o Deep Research via AI tool (`Call 'Moto na Pratica'`, httpRequestTool) — o SKIP dependia da conformidade do LLM.
+
+**Agora:** a saída estruturada do agente aciona o Deep Research deterministicamente:
+
+```
+[Set cria um id unico] → [Agente Diretor SEO] → [If: decisao == PROCEED] → (true) [Code: Monta Payload] → [HTTP POST /webhook/deep-research?id={id_pesquisa}]
+                                                        └─ (false) termina — SKIP é determinístico
+```
+
+Mudanças (verificadas remotamente):
+- Removidos os nodes tool `Call 'Moto na Pratica'` e `Call 'Moto na Pratica'2` (ambos pipelines)
+- Criados: `Se PROCEED, dispara pesquisa` (If), `Monta Payload Deep Research` (Code), `Dispara Deep Research` (HTTP POST com credencial `MNP - Apify Secret`, `?id={{ $('cria um id unico').item.json.id_pesquisa }}`, body `{tema, callbackUrl}`) — espelhados no pipeline 2
+- `Monta Payload` compõe o `tema` com artigo_vencedor + primary_query + secondary_queries + editorial_type + público + ângulo + perguntas factuais; faz throw defensivo se `decisao != PROCEED` vazar do If
+- Prompts dos dois agentes atualizados: STEP 4 agora é "Final Output (DISPATCH IS AUTOMATIC — DO NOT CALL ANY RESEARCH TOOL)"
+- `Structured Output Parser5` (pipeline 2) ganhou `decisao: PROCEED|SKIP` no schema
+- Tools mantidas: apenas `Call 'Posts Ja Escritos'(2)` (anti-duplicação, continua como ai_tool do agente)
+
 ## Resultado
 
 - Pipeline 1: **3 → 9 fontes** (Motosport, Google News SerpApi, Google Trends + 6 feeds RSS)
 - Pipeline 2: **1 → 4 fontes** (Motosport + 3 feeds RSS MotoGP)
 - Diretor é chamado **uma única vez** por ciclo (após o Merge final), com todas as manchetes consolidadas
+- **SKIP agora é enforcement de plataforma** (If node), não instrução de prompt
 - Próxima execução real: 06:10 (schedule diário) — não foi disparada execução manual para não gerar ciclo de pesquisa fora de hora.
