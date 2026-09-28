@@ -58,6 +58,8 @@ describe('Portal de Motos: Páginas Estáticas Institucionais, SEO, Navegação 
         checkAbsence(allContent, 'Todos os testes de motocicletas seguem');
         checkAbsence(allContent, 'Nossos testes de rodagem');
         checkAbsence(allContent, 'experiência prática da redação');
+        checkAbsence(allContent, 'Conheça os jornalistas, pilotos de teste');
+        checkAbsence(allContent, 'repórteres técnicos');
 
         // Check article integration
         const postContent = load('src/app/post/[slug]/page.tsx');

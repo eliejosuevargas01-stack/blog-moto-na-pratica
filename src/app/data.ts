@@ -362,8 +362,8 @@ export const STATIC_INSTITUTIONAL_PAGES: Record<string, InstitutionalPage> = {
   "equipe": {
     slug: "equipe",
     title: "A Identidade Editorial",
-    seoTitle: "Equipe da Redação & Especialistas · Moto na Prática",
-    seoDescription: "Conheça os jornalistas, pilotos de teste e técnicos que compõem a redação do Moto na Prática.",
+    seoTitle: "Quem Faz o Portal · Moto na Prática",
+    seoDescription: "Conheça o responsável pelo projeto, a identidade editorial e os princípios de transparência do Moto na Prática.",
     bodyHtml: `
       <h2>Quem Faz o Moto na Prática</h2>
 
@@ -377,7 +377,7 @@ export const STATIC_INSTITUTIONAL_PAGES: Record<string, InstitutionalPage> = {
       <div class="my-6 p-6 bg-card border border-border">
         <h3 class="text-xl font-bold mb-1 text-foreground">Redação Técnica & Colaboradores</h3>
         <p class="text-sm text-primary font-semibold mb-3">Mecânica, Motorsport & Viagens</p>
-        <p class="text-muted-foreground text-sm">Nossos repórteres técnicos e consultores mecânicos cobrem os lançamentos de mercado, regulamentos esportivos de MotoGP e Superbike, além de rotas de mototurismo pelo Brasil e América do Sul.</p>
+
       </div>
 
       <h2>Canal Direto com a Redação</h2>
