@@ -346,7 +346,7 @@ describe("Portal de Motos: Testes Semânticos da Nova Homepage & MotorsportWidge
         expect(formatDate("data-invalida", "pt")).toBe("data-invalida");
       });
 
-      it("getConsumptionLabel deve extrair ou calcular consumo realista de combustível", () => {
+      it("getConsumptionLabel deve extrair consumo explícito de combustível e não calcular inferências", () => {
         // Post com consumo explícito no texto
         const postWithConsumption = {
           content: "Após aferição detalhada em 5 tanques, atingimos a média de 34,5 km/l em trecho misto.",
@@ -382,13 +382,13 @@ describe("Portal de Motos: Testes Semânticos da Nova Homepage & MotorsportWidge
       expect(pageContent).toContain("t.ticker.read");
     });
 
-    it("deve conter a Vitrine de Testes & Reviews com grid responsivo de 3 colunas e selo de consumo", () => {
-      expect(pageContent).toContain('t.homePortal?.reviewsTitle || "Testes & Avaliações da Redação"');
+    it("deve conter a Vitrine de Análises & Reviews com grid responsivo de 3 colunas e selo de consumo", () => {
+      expect(pageContent).toContain('t.homePortal?.reviewsTitle || "Análises & Reviews"');
       expect(pageContent).toContain("t.homePortal?.reviewsSubtitle");
       expect(pageContent).toContain('href="/reviews"');
-      expect(pageContent).toContain("Ver todos os testes");
+      expect(pageContent).toContain("Ver todas as análises");
       expect(pageContent).toContain("grid grid-cols-1 md:grid-cols-3 gap-6");
-      // expect(pageContent).toContain("TESTE DE LONGA DURAÇÃO / AVALIAÇÃO PRÁTICA");
+      expect(pageContent).not.toContain("TESTE DE LONGA DURAÇÃO / AVALIAÇÃO PRÁTICA");
       expect(pageContent).toContain("getConsumptionLabel(post)");
       expect(pageContent).toContain("Ler Análise");
     });

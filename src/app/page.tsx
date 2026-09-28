@@ -410,7 +410,7 @@ export default async function Home({ searchParams }: HomeProps) {
                 style={TEKO}
                 className="text-[32px] md:text-[38px] font-bold uppercase tracking-wide leading-none text-foreground"
               >
-                {t.homePortal?.reviewsTitle || "Testes & Avaliações da Redação"}
+                {t.homePortal?.reviewsTitle || "Análises & Reviews"}
               </h2>
             </div>
             <p className="text-[14px] text-muted-foreground max-w-[650px]">
@@ -422,7 +422,7 @@ export default async function Home({ searchParams }: HomeProps) {
             href="/reviews"
             className="mt-3 md:mt-0 text-[13px] font-bold uppercase tracking-wider text-primary hover:underline flex items-center gap-1 shrink-0"
           >
-            Ver todos os testes <ArrowRight size={14} />
+            Ver todas as análises <ArrowRight size={14} />
           </Link>
         </div>
 

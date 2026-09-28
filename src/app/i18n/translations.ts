@@ -1,6 +1,6 @@
 export const TRANSLATIONS = {
   pt: {
-    topBar: "Blog independente · experiência real na estrada",
+    topBar: "Blog independente · portal informativo",
     nav: {
       home: "Home",
       reviews: "Reviews",
@@ -67,7 +67,7 @@ export const TRANSLATIONS = {
     },
     categories: {
       reviewsTitle: "Reviews & Testes",
-      reviewsDesc: "Avaliações sinceras de motos, acessórios e peças testados na prática.",
+      reviewsDesc: "Avaliações de motos, acessórios e peças.",
       maintenanceTitle: "Manutenção Prática",
       maintenanceDesc: "Guias passo a passo de manutenção preventiva, cuidados e economia.",
       routesTitle: "Rotas & Viagens",
@@ -99,20 +99,20 @@ export const TRANSLATIONS = {
       motorsportTitle: "Motorsport & MotoGP",
       nextRace: "Próxima Corrida",
       standings: "Classificação de Pilotos",
-      reviewsTitle: "Testes & Avaliações da Redação",
-      reviewsSubtitle: "Análises aprofundadas com medição real de consumo na bomba e veredito prático.",
+      reviewsTitle: "Análises & Reviews",
+      reviewsSubtitle: "Análises aprofundadas sobre motos, mercado e uso cotidiano.",
       workshopTitle: "Guia Prático da Oficina",
       workshopSubtitle: "Procedimentos passo a passo de manutenção preventiva, cuidados e segurança.",
       multimediaTitle: "Mural Multimídia & Áudio",
       multimediaSubtitle: "Reportagens completas com narração em áudio para ouvir onde estiver.",
       listenArticle: "Ouvir Reportagem",
-      testedFuel: "Consumo Aferido",
+      testedFuel: "Consumo Informado",
       points: "pts",
       viewCalendar: "Ver Calendário Completo",
     }
   },
   en: {
-    topBar: "Independent blog · real road experience",
+    topBar: "Independent blog · informative portal",
     nav: {
       home: "Home",
       reviews: "Reviews",
@@ -211,20 +211,20 @@ export const TRANSLATIONS = {
       motorsportTitle: "Motorsport & MotoGP",
       nextRace: "Next Race",
       standings: "Rider Standings",
-      reviewsTitle: "Reviews & Road Tests",
+      reviewsTitle: "Analysis & Reviews",
       reviewsSubtitle: "In-depth evaluations with real fuel economy measurement and practical verdicts.",
       workshopTitle: "Practical Workshop Guide",
       workshopSubtitle: "Step-by-step preventive maintenance, care and safety procedures.",
       multimediaTitle: "Multimedia & Audio Hub",
       multimediaSubtitle: "Complete stories with audio narration to listen anywhere.",
       listenArticle: "Listen to Story",
-      testedFuel: "Tested Consumption",
+      testedFuel: "Reported Consumption",
       points: "pts",
       viewCalendar: "View Full Calendar",
     }
   },
   es: {
-    topBar: "Blog independiente · experiencia real en la carretera",
+    topBar: "Blog independiente · portal informativo",
     nav: {
       home: "Inicio",
       reviews: "Reseñas",
@@ -323,14 +323,14 @@ export const TRANSLATIONS = {
       motorsportTitle: "Motorsport y MotoGP",
       nextRace: "Próxima Carrera",
       standings: "Clasificación de Pilotos",
-      reviewsTitle: "Pruebas y Evaluaciones",
-      reviewsSubtitle: "Análisis a fondo con medición real de consumo en bomba y veredicto práctico.",
+      reviewsTitle: "Análisis y Reviews",
+      reviewsSubtitle: "Análisis a fondo sobre motos, mercado y uso cotidiano.",
       workshopTitle: "Guía Práctica del Taller",
       workshopSubtitle: "Procedimientos paso a paso de mantenimiento preventivo, cuidados y seguridad.",
       multimediaTitle: "Mural Multimedia y Audio",
       multimediaSubtitle: "Reportajes completos con narración en audio para escuchar donde estés.",
       listenArticle: "Escuchar Reportaje",
-      testedFuel: "Consumo Medido",
+      testedFuel: "Consumo Informado",
       points: "pts",
       viewCalendar: "Ver Calendario Completo",
     }
