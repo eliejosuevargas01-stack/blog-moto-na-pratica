@@ -24,13 +24,11 @@ function formatDate(dateValue: any, lang: string): string {
   return d.toLocaleDateString(locale, { day: "2-digit", month: "short", year: "numeric" });
 }
 
-function getConsumptionLabel(post: any): string {
+function getConsumptionLabel(post: any): string | null {
   const content = `${post?.content || ""} ${post?.excerpt || ""}`;
   const match = content.match(/(\d{1,2}(?:[.,]\d)?\s*km\/l)/i);
-  if (match) return `Consumo aferido: ${match[1]}`;
-  if (post?.slug?.includes("fazer") || post?.slug?.includes("fz25")) return "Consumo aferido: 31,5 km/l";
-  if (post?.slug?.includes("160") || post?.slug?.includes("titan")) return "Consumo aferido: 42,3 km/l";
-  return "Consumo aferido: 31,5 km/l";
+  if (match) return `${match[1]}`;
+  return null;
 }
 
 interface HomeProps {
@@ -402,7 +400,7 @@ export default async function Home({ searchParams }: HomeProps) {
         <MotorsportWidget nextRace={nextRace} ranking={topRiders} lang={safeLang} />
       </section>
 
-      {/* 4. VITRINE EDITORIAL: TESTES & AVALIAÇÕES DA REDAÇÃO */}
+      {/* 4. VITRINE EDITORIAL: ANÁLISES & REVIEWS */}
       <section className="max-w-[1200px] mx-auto px-4 md:px-6 py-10">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 pb-4 border-b border-border">
           <div>
@@ -412,19 +410,19 @@ export default async function Home({ searchParams }: HomeProps) {
                 style={TEKO}
                 className="text-[32px] md:text-[38px] font-bold uppercase tracking-wide leading-none text-foreground"
               >
-                {t.homePortal?.reviewsTitle || "Testes & Avaliações da Redação"}
+                {t.homePortal?.reviewsTitle || "Análises & Reviews"}
               </h2>
             </div>
             <p className="text-[14px] text-muted-foreground max-w-[650px]">
               {t.homePortal?.reviewsSubtitle ||
-                "Análises aprofundadas com medição real de consumo na bomba e veredito prático."}
+                "Análises aprofundadas sobre motos, mercado e uso cotidiano."}
             </p>
           </div>
           <Link
             href="/reviews"
             className="mt-3 md:mt-0 text-[13px] font-bold uppercase tracking-wider text-primary hover:underline flex items-center gap-1 shrink-0"
           >
-            Ver todos os testes <ArrowRight size={14} />
+            Ver todas as análises <ArrowRight size={14} />
           </Link>
         </div>
 
@@ -447,12 +445,12 @@ export default async function Home({ searchParams }: HomeProps) {
                       style={{ objectPosition: post.imgFocalPoint || "center" }}
                       unoptimized={post.img?.includes("/uploads/")}
                     />
-                    <span className="absolute top-2.5 left-2.5 text-[9px] font-extrabold uppercase tracking-widest px-2 py-0.5 bg-black/80 text-white border border-white/20 rounded-xs backdrop-blur-xs">
-                      TESTE DE LONGA DURAÇÃO / AVALIAÇÃO PRÁTICA
-                    </span>
+
+{consumption && (
                     <span className="absolute bottom-2.5 right-2.5 text-[10px] font-bold uppercase tracking-wider px-2 py-1 bg-primary text-white rounded-xs shadow-md">
                       {consumption}
                     </span>
+                    )}
                   </div>
                 </Link>
                 <div className="p-5 flex flex-col flex-1 justify-between">

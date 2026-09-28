@@ -23,13 +23,11 @@ function formatDate(dateValue: any, lang: string): string {
   return d.toLocaleDateString(locale, { day: "2-digit", month: "short", year: "numeric" });
 }
 
-function getConsumptionLabel(post: any): string {
+function getConsumptionLabel(post: any): string | null {
   const content = `${post?.content || ""} ${post?.excerpt || ""}`;
   const match = content.match(/(\d{1,2}(?:[.,]\d)?\s*km\/l)/i);
-  if (match) return `Consumo aferido: ${match[1]}`;
-  if (post?.slug?.includes("fazer") || post?.slug?.includes("fz25")) return "Consumo aferido: 31,5 km/l";
-  if (post?.slug?.includes("160") || post?.slug?.includes("titan")) return "Consumo aferido: 42,3 km/l";
-  return "Consumo aferido: 31,5 km/l";
+  if (match) return `${match[1]}`;
+  return null;
 }
 
 function parseDate(dateValue?: Date | string | null): Date | null {
@@ -348,26 +346,26 @@ describe("Portal de Motos: Testes Semânticos da Nova Homepage & MotorsportWidge
         expect(formatDate("data-invalida", "pt")).toBe("data-invalida");
       });
 
-      it("getConsumptionLabel deve extrair ou calcular consumo realista de combustível", () => {
+      it("getConsumptionLabel deve extrair consumo explícito de combustível e não calcular inferências", () => {
         // Post com consumo explícito no texto
         const postWithConsumption = {
           content: "Após aferição detalhada em 5 tanques, atingimos a média de 34,5 km/l em trecho misto.",
           excerpt: "",
           slug: "teste-consumo",
         };
-        expect(getConsumptionLabel(postWithConsumption)).toBe("Consumo aferido: 34,5 km/l");
+        expect(getConsumptionLabel(postWithConsumption)).toBe("34,5 km/l");
 
         // Post de Fazer 250 / FZ25 sem menção direta
         const postFazer = { content: "Relato de viagem", excerpt: "", slug: "minha-fazer-250-na-estrada" };
-        expect(getConsumptionLabel(postFazer)).toBe("Consumo aferido: 31,5 km/l");
+        expect(getConsumptionLabel(postFazer)).toBeNull();
 
         // Post de CG 160 / Titan
         const postTitan = { content: "Uso urbano intenso", excerpt: "", slug: "honda-titan-160-cidade" };
-        expect(getConsumptionLabel(postTitan)).toBe("Consumo aferido: 42,3 km/l");
+        expect(getConsumptionLabel(postTitan)).toBeNull();
 
         // Post genérico
         const postGeneric = { content: "Acessórios e capacetes", excerpt: "", slug: "capacetes-mais-silenciosos" };
-        expect(getConsumptionLabel(postGeneric)).toBe("Consumo aferido: 31,5 km/l");
+        expect(getConsumptionLabel(postGeneric)).toBeNull();
       });
     });
   });
@@ -384,13 +382,13 @@ describe("Portal de Motos: Testes Semânticos da Nova Homepage & MotorsportWidge
       expect(pageContent).toContain("t.ticker.read");
     });
 
-    it("deve conter a Vitrine de Testes & Reviews com grid responsivo de 3 colunas e selo de consumo", () => {
-      expect(pageContent).toContain('t.homePortal?.reviewsTitle || "Testes & Avaliações da Redação"');
+    it("deve conter a Vitrine de Análises & Reviews com grid responsivo de 3 colunas e selo de consumo", () => {
+      expect(pageContent).toContain('t.homePortal?.reviewsTitle || "Análises & Reviews"');
       expect(pageContent).toContain("t.homePortal?.reviewsSubtitle");
       expect(pageContent).toContain('href="/reviews"');
-      expect(pageContent).toContain("Ver todos os testes");
+      expect(pageContent).toContain("Ver todas as análises");
       expect(pageContent).toContain("grid grid-cols-1 md:grid-cols-3 gap-6");
-      expect(pageContent).toContain("TESTE DE LONGA DURAÇÃO / AVALIAÇÃO PRÁTICA");
+      expect(pageContent).not.toContain("TESTE DE LONGA DURAÇÃO / AVALIAÇÃO PRÁTICA");
       expect(pageContent).toContain("getConsumptionLabel(post)");
       expect(pageContent).toContain("Ler Análise");
     });
