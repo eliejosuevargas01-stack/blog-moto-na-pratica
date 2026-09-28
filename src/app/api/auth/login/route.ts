@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../../lib/db";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-
-const JWT_SECRET = process.env.JWT_SECRET || "motonapratica-default-jwt-secret-key-123456";
+import { signUserToken } from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
@@ -30,12 +28,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "E-mail ou senha incorretos." }, { status: 400 });
     }
 
-    // Create JWT token
-    const token = jwt.sign(
-      { userId: user.id, name: user.name, email: user.email },
-      JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+    // Create JWT user token
+    const token = await signUserToken({
+      userId: user.id,
+      name: user.name,
+      email: user.email
+    });
 
     // Create response
     const response = NextResponse.json({

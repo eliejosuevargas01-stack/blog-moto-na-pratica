@@ -1,161 +1,169 @@
 "use client";
 
-import React, { useState, useEffect, Fragment } from "react";
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { TEKO, BODY } from "../data";
+import { 
+  Plus, Trash2, Save, Upload, LogOut, FileText, Layout, ArrowLeft, 
+  Eye, Edit, Wrench, Sliders, Bell, Mail, ArrowUp, ArrowDown, Users, Heart, Share2, Copy, Check, Lock, GripVertical,
+  Globe, ChevronDown, ChevronUp, Languages, ExternalLink, CornerDownRight, Image as ImageIcon, Search, X
+} from "lucide-react";
+import { plugins } from "../../plugins";
 import { 
   savePostAction, 
   deletePostAction, 
   savePageAction, 
   deletePageAction, 
   logoutAction,
+  triggerN8nWebhook,
+  triggerImprovePostAction,
+  triggerImprovePostWithAIAction,
+  triggerGenerateImagesAction,
+  triggerCreateAudioAction,
   getNotificationsAction,
   getSubscribersAction,
   markNotificationAsReadAction,
-  markAllNotificationsAsReadAction,
-  triggerImprovePostWithAIAction,
-  triggerGenerateImagesAction,
-  triggerCreateAudioAction
+  markAllNotificationsAsReadAction
 } from "../actions";
-import { TEKO, BODY } from "../data";
-import { 
-  Plus, Trash2, Save, Upload, LogOut, FileText, Layout, ArrowLeft, 
-  Eye, Edit, Wrench, Sliders, Bell, Mail, ArrowUp, ArrowDown, Users, Heart, Share2, Copy, Check, Lock, GripVertical,
-  Globe, ChevronDown, ChevronUp, Languages, ExternalLink, CornerDownRight, Image as ImageIcon, Search, X,
-  Sparkles, ImagePlus, Volume2
-} from "lucide-react";
-import { plugins } from "../../plugins";
 
-interface PopupModalData {
-  isOpen: boolean;
-  type: "success" | "error";
-  title: string;
-  message: string;
-  details?: {
-    action?: string;
-    endpoint?: string;
-    timestamp?: string;
-  };
+interface AdminDashboardProps {
+  initialPosts: any[];
+  initialPages: any[];
 }
 
 function AudioDurationBadge({ url }: { url: string }) {
-  const [durationStr, setDurationStr] = useState<string | null>(null);
+  const [duration, setDuration] = useState<string>("Calculando...");
 
   useEffect(() => {
     if (!url) return;
     const audio = new Audio(url);
-    audio.onloadedmetadata = () => {
-      if (audio.duration && !isNaN(audio.duration)) {
-        const mins = Math.floor(audio.duration / 60);
-        const secs = Math.floor(audio.duration % 60);
-        setDurationStr(`${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`);
-      }
+    const handleLoadedMetadata = () => {
+      const minutes = Math.floor(audio.duration / 60);
+      const seconds = Math.floor(audio.duration % 60);
+      setDuration(`${minutes}:${seconds < 10 ? "0" : ""}${seconds}`);
+    };
+    audio.addEventListener("loadedmetadata", handleLoadedMetadata);
+    audio.load();
+    return () => {
+      audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
     };
   }, [url]);
 
-  if (!durationStr) return <span className="text-[10px] font-mono text-muted-foreground">⏱️ --:--</span>;
   return (
-    <span className="text-[10px] font-mono font-bold text-amber-400 bg-amber-950/60 border border-amber-800/60 px-2 py-0.5 rounded flex items-center gap-1">
-      <Volume2 size={11} /> ⏱️ {durationStr}
+    <span className="text-[10px] font-mono text-primary/90 bg-primary/10 px-1.5 py-0.5 rounded-xs border border-primary/20">
+      ⏱️ {duration}
     </span>
   );
 }
 
 interface StyledActionModalProps {
-  modal: PopupModalData | null;
+  modal: {
+    isOpen: boolean;
+    title: string;
+    description: string;
+    actionType: "update" | "img" | "audio";
+    postData: any;
+  } | null;
   onClose: () => void;
+  onConfirm: () => Promise<void>;
+  loading: boolean;
 }
 
-function StyledActionModal({ modal, onClose }: StyledActionModalProps) {
+function StyledActionModal({ modal, onClose, onConfirm, loading }: StyledActionModalProps) {
   if (!modal || !modal.isOpen) return null;
 
-  const isSuccess = modal.type === "success";
+  const isUpdate = modal.actionType === "update";
+  const isImg = modal.actionType === "img";
+  const isAudio = modal.actionType === "audio";
+
+  const getBorderColor = () => {
+    if (isUpdate) return "border-blue-500/50";
+    if (isImg) return "border-purple-500/50";
+    return "border-emerald-500/50";
+  };
+
+  const getBadgeStyle = () => {
+    if (isUpdate) return "bg-blue-500/10 text-blue-400 border-blue-500/30";
+    if (isImg) return "bg-purple-500/10 text-purple-400 border-purple-500/30";
+    return "bg-emerald-500/10 text-emerald-400 border-emerald-500/30";
+  };
+
+  const getActionButtonStyle = () => {
+    if (isUpdate) return "bg-blue-600 hover:bg-blue-500 text-white shadow-blue-500/20";
+    if (isImg) return "bg-purple-600 hover:bg-purple-500 text-white shadow-purple-500/20";
+    return "bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-500/20";
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div 
-        className={`relative w-full max-w-lg bg-card border rounded-lg p-6 shadow-2xl overflow-hidden transition-all duration-300 ${
-          isSuccess 
-            ? "border-emerald-500/40 shadow-emerald-500/20 bg-gradient-to-b from-emerald-950/50 via-[#181818] to-[#141414]" 
-            : "border-rose-500/40 shadow-rose-500/20 bg-gradient-to-b from-rose-950/50 via-[#181818] to-[#141414]"
-        }`}
-        style={BODY}
-      >
-        {/* TOP GLOW BAR */}
-        <div className={`absolute top-0 left-0 right-0 h-1.5 ${isSuccess ? "bg-emerald-500" : "bg-rose-500"}`} />
-
-        {/* CLOSE BUTTON */}
-        <button
-          onClick={onClose}
-          type="button"
-          className="absolute top-4 right-4 p-1.5 rounded-full text-muted-foreground hover:text-foreground bg-secondary/80 hover:bg-secondary transition-colors"
-        >
-          <X size={16} />
-        </button>
-
-        {/* HEADER */}
-        <div className="flex items-start gap-4 mb-4">
-          <div className={`p-3 rounded-full shrink-0 ${
-            isSuccess 
-              ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" 
-              : "bg-rose-500/20 text-rose-400 border border-rose-500/30"
-          }`}>
-            {isSuccess ? <Check size={28} className="animate-bounce" /> : <X size={28} className="animate-pulse" />}
-          </div>
-
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-sm border ${
-                isSuccess 
-                  ? "bg-emerald-950 text-emerald-300 border-emerald-800" 
-                  : "bg-rose-950 text-rose-300 border-rose-800"
-              }`}>
-                {isSuccess ? "Sucesso" : "Falha na Ação"}
-              </span>
-              {modal.details?.timestamp && (
-                <span className="text-[11px] text-muted-foreground font-mono">{modal.details.timestamp}</span>
-              )}
-            </div>
-            <h3 style={TEKO} className="text-[26px] uppercase tracking-wide font-semibold leading-tight text-foreground">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+      <div className={`bg-[#141414] border ${getBorderColor()} rounded-sm max-w-lg w-full p-6 space-y-6 shadow-2xl relative overflow-hidden transition-all duration-200`}>
+        <div className="flex items-start justify-between border-b border-border/60 pb-4">
+          <div className="space-y-1">
+            <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 border rounded-xs ${getBadgeStyle()}`}>
+              Automação Server-Side
+            </span>
+            <h3 style={TEKO} className="text-[26px] uppercase tracking-wide text-foreground mt-1">
               {modal.title}
             </h3>
           </div>
+          <button 
+            type="button" 
+            onClick={onClose}
+            disabled={loading}
+            className="text-muted-foreground hover:text-foreground text-[18px] p-1 transition-colors"
+          >
+            ✕
+          </button>
         </div>
 
-        {/* MESSAGE */}
-        <p className="text-[14px] text-muted-foreground leading-relaxed mb-5 bg-[#1A1A1A] p-4 rounded-sm border border-border/50">
-          {modal.message}
-        </p>
-
-        {/* DETAILS BOX IF PRESENT */}
-        {modal.details && (modal.details.action || modal.details.endpoint) && (
-          <div className="mb-6 p-3 bg-[#111111] border border-border/40 rounded-sm text-[12px] space-y-1.5 font-mono">
-            {modal.details.action && (
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Ação da Query:</span>
-                <span className="text-primary font-bold">action={modal.details.action}</span>
-              </div>
-            )}
-            {modal.details.endpoint && (
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Destino:</span>
-                <span className="text-foreground text-[11px] truncate max-w-[240px]">{modal.details.endpoint}</span>
-              </div>
-            )}
+        <div className="space-y-4 text-[13px] text-muted-foreground leading-relaxed">
+          <p>{modal.description}</p>
+          
+          <div className="bg-[#1A1A1A] p-4 border border-border/40 rounded-sm space-y-2">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-foreground">Post Selecionado:</div>
+            <div className="text-foreground font-semibold text-[14px]">{modal.postData?.title}</div>
+            <div className="text-[11px] text-muted-foreground font-mono flex items-center gap-2">
+              <span>ID: {modal.postData?.id}</span>
+              {modal.postData?.translationGroupId && (
+                <span className="text-primary font-bold">| Grupo de Tradução: #{modal.postData.translationGroupId}</span>
+              )}
+            </div>
           </div>
-        )}
 
-        {/* FOOTER BUTTON */}
-        <div className="flex justify-end">
+          <div className="text-[12px] bg-amber-500/10 border border-amber-500/30 p-3 rounded-sm text-amber-300 space-y-1">
+            <div className="font-bold uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+              <span>⚠️</span> Atenção aos Custos e Rate Limit
+            </div>
+            <p className="text-[11px] text-amber-200/90 leading-normal">
+              Esta ação dispara um webhook no servidor (n8n) que consome créditos de IA e processamento em lote. Aguarde a conclusão antes de disparar novamente.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-3 pt-2 border-t border-border/40">
           <button
-            onClick={onClose}
             type="button"
-            className={`w-full sm:w-auto px-6 py-2.5 rounded-sm text-[13px] font-bold uppercase tracking-wider transition-all shadow-md ${
-              isSuccess
-                ? "bg-emerald-600 hover:bg-emerald-500 text-white"
-                : "bg-rose-600 hover:bg-rose-500 text-white"
-            }`}
+            onClick={onClose}
+            disabled={loading}
+            className="px-4 py-2 border border-border text-muted-foreground hover:text-foreground text-[12px] font-bold uppercase tracking-wider rounded-sm transition-colors"
           >
-            Entendido / Fechar
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={loading}
+            className={`px-5 py-2 text-[12px] font-bold uppercase tracking-wider rounded-sm shadow-md transition-all flex items-center gap-2 ${getActionButtonStyle()} ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
+          >
+            {loading ? (
+              <>
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Processando...
+              </>
+            ) : (
+              "Confirmar Disparo"
+            )}
           </button>
         </div>
       </div>
@@ -163,115 +171,93 @@ function StyledActionModal({ modal, onClose }: StyledActionModalProps) {
   );
 }
 
-
 interface FocalPointPickerProps {
   imageUrl: string;
-  value: string;
-  onChange: (val: string) => void;
+  value?: string;
+  onChange: (focalPoint: string) => void;
 }
 
-function FocalPointPicker({ imageUrl, value, onChange }: FocalPointPickerProps) {
-  let posX = 50;
-  let posY = 50;
+function FocalPointPicker({ imageUrl, value = "50% 50%", onChange }: FocalPointPickerProps) {
+  const [focal, setFocal] = useState(value);
 
-  if (value) {
-    if (value === "center") {
-      posX = 50;
-      posY = 50;
-    } else if (value === "top") {
-      posX = 50;
-      posY = 0;
-    } else if (value === "bottom") {
-      posX = 50;
-      posY = 100;
-    } else if (value === "left") {
-      posX = 0;
-      posY = 50;
-    } else if (value === "right") {
-      posX = 100;
-      posY = 50;
-    } else if (value.includes("%")) {
-      const parts = value.trim().split(/\s+/);
-      if (parts.length >= 2) {
-        posX = parseFloat(parts[0]);
-        posY = parseFloat(parts[1]);
-      } else if (parts.length === 1) {
-        posX = parseFloat(parts[0]);
-        posY = 50;
-      }
-    }
-  }
+  useEffect(() => {
+    setFocal(value || "50% 50%");
+  }, [value]);
 
-  if (isNaN(posX)) posX = 50;
-  if (isNaN(posY)) posY = 50;
-
-  const handleImageClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = Math.max(0, Math.min(100, Math.round(((e.clientX - rect.left) / rect.width) * 100)));
     const y = Math.max(0, Math.min(100, Math.round(((e.clientY - rect.top) / rect.height) * 100)));
-    onChange(`${x}% ${y}%`);
+    const newFocal = `${x}% ${y}%`;
+    setFocal(newFocal);
+    onChange(newFocal);
   };
 
-  if (!imageUrl) {
-    return (
-      <div className="w-full h-32 border border-dashed border-border flex items-center justify-center text-[13px] text-muted-foreground bg-[#1A1A1A] rounded-sm">
-        Insira uma URL de imagem válida para definir o ponto focal
-      </div>
-    );
-  }
+  const [xPos, yPos] = focal.split(" ").map(p => parseFloat(p) || 50);
+
+  const presets = [
+    { label: "Topo", val: "50% 15%" },
+    { label: "Centro", val: "50% 50%" },
+    { label: "Base", val: "50% 85%" },
+    { label: "Esquerda", val: "15% 50%" },
+    { label: "Direita", val: "85% 50%" },
+  ];
 
   return (
-    <div className="space-y-2">
-      <div className="text-[11px] text-muted-foreground flex items-center justify-between">
-        <span>Clique na imagem abaixo para definir o ponto focal (X: {posX}%, Y: {posY}%)</span>
-        <button
-          type="button"
-          onClick={() => onChange("50% 50%")}
-          className="text-primary hover:underline text-[10px] uppercase font-bold"
-        >
-          Resetar ao Centro
-        </button>
+    <div className="space-y-3 bg-[#1A1A1A] p-4 border border-border/40 rounded-sm">
+      <div className="flex items-center justify-between">
+        <label className="text-[11px] text-muted-foreground uppercase tracking-widest font-bold block">
+          Ponto Focal da Imagem (Enquadramento Dinâmico)
+        </label>
+        <span className="text-[11px] font-mono text-primary font-bold bg-primary/10 px-2 py-0.5 border border-primary/20 rounded-xs">
+          {focal}
+        </span>
       </div>
 
+      <p className="text-[11px] text-muted-foreground">
+        Clique na imagem abaixo para definir o ponto de foco visual que não será cortado no mobile ou em cards:
+      </p>
+
       <div 
-        onClick={handleImageClick}
-        className="relative w-full h-48 border border-border overflow-hidden bg-[#222222] rounded-sm cursor-crosshair group select-none"
+        onClick={handleContainerClick}
+        className="relative w-full h-[160px] bg-black rounded-sm border border-border/80 overflow-hidden cursor-crosshair select-none group"
       >
-        <img
-          src={imageUrl}
-          alt="Ponto Focal Editor"
-          className="w-full h-full object-cover pointer-events-none opacity-90 transition-opacity group-hover:opacity-100"
-          style={{ objectPosition: `${posX}% ${posY}%` }}
+        <img 
+          src={imageUrl} 
+          alt="Visualizador Ponto Focal" 
+          className="w-full h-full object-cover pointer-events-none opacity-80 group-hover:opacity-100 transition-opacity"
+          style={{ objectPosition: focal }}
         />
-
-        {/* 3x3 Grid Overlay (Régua de terços) */}
-        <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 pointer-events-none border border-white/5 opacity-40 group-hover:opacity-80 transition-opacity">
-          <div className="border-r border-b border-dashed border-white/20"></div>
-          <div className="border-r border-b border-dashed border-white/20"></div>
-          <div className="border-b border-dashed border-white/20"></div>
-          <div className="border-r border-b border-dashed border-white/20"></div>
-          <div className="border-r border-b border-dashed border-white/20"></div>
-          <div className="border-b border-dashed border-white/20"></div>
-          <div className="border-r border-dashed border-white/20"></div>
-          <div className="border-r border-dashed border-white/20"></div>
-          <div></div>
-        </div>
-
-        <div className="absolute bottom-2 right-2 bg-black/60 px-1.5 py-0.5 rounded text-[10px] text-white/80 font-mono pointer-events-none">
-          {posX}% {posY}%
-        </div>
-
-        {/* Target Bullseye Marker */}
+        
+        {/* Retículo do Ponto Focal */}
         <div 
-          className="absolute w-8 h-8 -ml-4 -mt-4 pointer-events-none flex items-center justify-center transition-all duration-150"
-          style={{ left: `${posX}%`, top: `${posY}%` }}
+          className="absolute w-6 h-6 border-2 border-primary rounded-full -translate-x-1/2 -translate-y-1/2 shadow-lg shadow-black/80 pointer-events-none flex items-center justify-center bg-black/30 backdrop-blur-xs"
+          style={{ left: `${xPos}%`, top: `${yPos}%` }}
         >
-          <div className="w-6 h-6 border-2 border-primary rounded-full flex items-center justify-center animate-pulse">
-            <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
-          </div>
-          <div className="absolute w-8 h-0.5 bg-primary/40"></div>
-          <div className="absolute h-8 w-0.5 bg-primary/40"></div>
+          <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
         </div>
+      </div>
+
+      {/* Atalhos Rápidos */}
+      <div className="flex flex-wrap gap-1.5 pt-1">
+        <span className="text-[10px] text-muted-foreground uppercase tracking-wider self-center mr-1">Atalhos:</span>
+        {presets.map(p => (
+          <button
+            key={p.val}
+            type="button"
+            onClick={() => {
+              setFocal(p.val);
+              onChange(p.val);
+            }}
+            className={`text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-xs border transition-colors ${
+              focal === p.val 
+                ? "bg-primary text-white border-primary" 
+                : "bg-secondary text-muted-foreground border-border hover:text-foreground"
+            }`}
+          >
+            {p.label}
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -279,234 +265,108 @@ function FocalPointPicker({ imageUrl, value, onChange }: FocalPointPickerProps) 
 
 function stripHtml(html?: any): string {
   if (!html || typeof html !== "string") return "";
-  return html.replace(/<[^>]*>/g, "");
+  return html.replace(/<[^>]*>?/gm, "").trim();
 }
 
 function formatDate(dateInput?: any): string {
-  if (!dateInput) return "";
+  if (!dateInput) return "Data não informada";
   try {
     const d = new Date(dateInput);
-    if (isNaN(d.getTime())) return "";
-    return d.toLocaleDateString("pt-BR");
+    if (isNaN(d.getTime())) return String(dateInput);
+    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
   } catch (e) {
-    return "";
+    return String(dateInput);
   }
 }
 
 const DEFAULT_FALLBACK_PAGES = [
   {
-    id: "fallback-home",
-    slug: "home",
-    title: "Página Inicial",
-    isStatic: true,
-    content: {
-      heroTitle: "Fazer 250 Solid Grey 2026: 6 meses de uso real",
-      heroSubtitle: "Peguei a chave em janeiro e desde então rodei mais de 8.000 km. Aqui vai tudo que aprendi — o que é ótimo, o que incomoda e por que ainda não me arrependo.",
-      heroImage: "https://images.unsplash.com/photo-1571646036117-8015cc02547c?w=1400&h=780&fit=crop&auto=format",
-      heroFocalPoint: "center",
-      breakingText: "Michelin Pilot Street 2 na Fazer — diferença real ou papo de vendedor?",
-      breakingSlug: "michelin-pilot-street-2-fazer",
-      bannerTitle: "Yamaha FZ25 · Solid Grey 2026",
-      bannerSubtitle: "3.500 km rodados · Motor 249cc · Minha companheira diária",
-      bannerImage: "https://images.unsplash.com/photo-1571646059462-99317ec8d1bf?w=1400&h=500&fit=crop&auto=format",
-      bannerFocalPoint: "center"
-    },
-    seoTitle: "Moto na Prática - Blog de Motos, Dicas e Reviews",
-    seoDescription: "Blog de motociclista sobre a Yamaha Fazer 250 Solid Grey 2026. Reviews honestas de equipamentos, dicas de manutenção e relatos de rotas reais."
-  },
-  {
-    id: "fallback-sobre",
     slug: "sobre",
-    title: "Sobre o Blog",
+    title: "Sobre o Moto na Prática",
     isStatic: true,
-    content: {
-      heroTitle: "O blog e o motociclista",
-      heroDescription: "Sem patrocínio, sem jabá. Só experiência real de quem usa moto todo dia.",
-      heroImage: "https://images.unsplash.com/photo-1625812184391-0359bf2344b9?w=1400&h=500&fit=crop&auto=format",
-      heroFocalPoint: "center",
-      stats: [
-        { value: "3.500 km", label: "Rodados na FZ25", iconName: "Gauge" },
-        { value: "Jan 2026", label: "Início com a moto", iconName: "Calendar" },
-        { value: "Gaspar - SC", label: "Base de operações", iconName: "MapPin" },
-        { value: "5", label: "Manutenções feitas em casa", iconName: "Wrench" }
-      ],
-      bioTitle: "Quem escreve aqui",
-      bioContentHtml: `<p class="mb-4">Me chamo Eliezer, moro em Gaspar - SC. Comecei a andar de moto e a partir daí não parei mais.</p>\n<p class="mb-4">Em janeiro de 2025 dei o salto para a Fazer 250 Solid Grey, a versão nova. Foi a maior compra que já fiz relacionada a moto e, com ela, veio a vontade de registrar tudo — as dúvidas, os erros, as descobertas.</p>\n<p class="mb-4">O <span class="text-foreground font-semibold">Moto na Prática</span> nasceu disso. Não sou mecânico, não sou piloto profissional, não tenho patrocínio. Sou apenas alguém que usa moto todo dia e quer compartilhar o que aprende.</p>\n<p class="mb-4">Aqui você vai encontrar reviews de coisas que comprei com o meu dinheiro, manutenções que fiz na garagem, rotas que percorri e dicas que aprendi na raça. Nada de conteúdo pago ou postagem encomendada.</p>`,
-      bioQuote: "Se você está pensando em comprar uma moto, já tem uma ou só curte o assunto — esse blog é pra você.",
-      riderImage: "https://images.unsplash.com/photo-1542351387-dde430deaaa7?w=800&h=900&fit=crop&auto=format",
-      riderFocalPoint: "center",
-      motoTitle: "Minha moto",
-      motoSpecsTitle: "Yamaha FZ25 Solid Grey 2026",
-      motoImage: "https://images.unsplash.com/photo-1571646059462-99317ec8d1bf?w=1200&h=700&fit=crop&auto=format",
-      motoFocalPoint: "center",
-      motoSpecs: [
-        { name: "Motor", value: "249cc, monocilíndrico, SOHC" },
-        { name: "Potência", value: "20,9 cv @ 8.000 rpm" },
-        { name: "Torque", value: "2,1 kgf.m @ 6.500 rpm" },
-        { name: "Tanque", value: "13 litros" },
-        { name: "Peso", value: "154 kg (abastecida)" },
-        { name: "Cor", value: "Solid Grey (exclusiva 2026)" }
-      ]
-    },
-    seoTitle: "Sobre o Eliezer e a Fazer 250 - Moto na Prática",
-    seoDescription: "Conheça o Eliezer, criador do Moto na Prática, e veja a ficha técnica detalhada da Yamaha FZ25 Solid Grey 2026 do blog."
+    content: "O Moto na Prática nasceu da paixão genuína por duas rodas e da constatação de uma carência: a falta de análises realmente independentes e sem viés comercial."
   },
   {
-    id: "fallback-reviews",
-    slug: "reviews",
-    title: "Reviews",
+    slug: "politica-editorial",
+    title: "Política Editorial",
     isStatic: true,
-    content: {
-      description: "Reviews honestos de peças, acessórios e motos feitos por quem usa no dia a dia, sem patrocínio.",
-      heroImg: "https://images.unsplash.com/photo-1571646036117-8015cc02547c?w=1200&h=680&fit=crop&auto=format",
-      iconName: "Star"
-    },
-    seoTitle: "Reviews de Motos e Equipamentos - Moto na Prática",
-    seoDescription: "Opiniões sinceras e testes reais de longa duração com motos, pneus, peças e vestuário motociclístico."
+    content: "Nossa linha editorial preza pela independência rigorosa, transparência de patrocínios e avaliações mecânicas sem concessões."
   },
   {
-    id: "fallback-manutencao",
-    slug: "manutencao",
-    title: "Manutenção",
+    slug: "contato",
+    title: "Contato & Redação",
     isStatic: true,
-    content: {
-      description: "Dicas passo a passo de manutenção preventiva, troca de componentes e cuidados essenciais com a moto.",
-      heroImg: "https://images.unsplash.com/photo-1625811508773-db54e54ac0d3?w=1200&h=680&fit=crop&auto=format",
-      iconName: "Wrench"
-    },
-    seoTitle: "Dicas de Manutenção de Motocicleta - Moto na Prática",
-    seoDescription: "Guia completo de como cuidar e fazer a manutenção preventiva na sua moto em casa e gastando pouco."
+    content: "Dúvidas, sugestões de pautas ou feedbacks? Entre em contato com nossos editores e pilotos de teste."
   },
   {
-    id: "fallback-rotas",
-    slug: "rotas",
-    title: "Rotas",
+    slug: "anuncie",
+    title: "Mídia Kit & Publicidade",
     isStatic: true,
-    content: {
-      description: "Relatos de viagens, rotas para motociclistas, condições de estrada e pontos turísticos imperdíveis.",
-      heroImg: "https://images.unsplash.com/photo-1761000989410-3fa81f1b94cb?w=1200&h=680&fit=crop&auto=format",
-      iconName: "Navigation"
-    },
-    seoTitle: "Rotas de Moto e Viagens - Moto na Prática",
-    seoDescription: "As melhores estradas para rodar de moto, roteiros turísticos, motoviagem e relatos de rotas pelo Brasil."
+    content: "Conecte sua marca de motopeças, vestuário ou serviços a uma audiência qualificada e engajada de motociclistas."
   },
   {
-    id: "fallback-equipamentos",
-    slug: "equipamentos",
-    title: "Equipamentos",
+    slug: "termos-de-uso",
+    title: "Termos de Uso",
     isStatic: true,
-    content: {
-      description: "Avaliações detalhadas de jaquetas, capacetes, luvas e tudo que você precisa para rodar com segurança.",
-      heroImg: "https://images.unsplash.com/photo-1625812184391-0359bf2344b9?w=1200&h=680&fit=crop&auto=format",
-      iconName: "ShieldCheck"
-    },
-    seoTitle: "Equipamentos de Segurança para Motociclista - Moto na Prática",
-    seoDescription: "Reviews sinceros de capacetes, jaquetas, luvas, botas e proteção para o piloto no dia a dia ou viagens."
+    content: "Regulamento de utilização da plataforma, direitos autorais e limites de responsabilidade de tutoriais mecânicos."
+  },
+  {
+    slug: "politica-de-privacidade",
+    title: "Política de Privacidade",
+    isStatic: true,
+    content: "Saiba como tratamos e protegemos seus dados pessoais de acordo com a Lei Geral de Proteção de Dados (LGPD)."
+  },
+  {
+    slug: "equipe",
+    title: "Equipe Editorial & Ficha Técnica",
+    isStatic: true,
+    content: "Conheça os fundadores, pilotos e consultores mecânicos que produzem os testes e artigos do portal."
   }
 ];
 
-interface ErrorBoundaryState {
-  hasError: boolean;
-  error: Error | null;
-}
-
-class AdminErrorBoundary extends React.Component<{ children: React.ReactNode }, ErrorBoundaryState> {
-  constructor(props: { children: React.ReactNode }) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-
-  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error("Erro capturado no AdminDashboard:", error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="min-h-screen bg-[#0E0E0E] text-foreground flex flex-col items-center justify-center p-6 text-center">
-          <div className="bg-[#181818] border border-border p-8 rounded-sm max-w-md w-full space-y-4 shadow-2xl">
-            <div className="w-12 h-12 rounded-full bg-primary/20 text-primary flex items-center justify-center mx-auto text-xl font-bold">
-              ⚠️
-            </div>
-            <h2 style={{ fontFamily: "var(--font-teko, sans-serif)" }} className="text-2xl uppercase tracking-wide">
-              Ocorreu um erro no painel
-            </h2>
-            <p className="text-xs text-muted-foreground font-mono bg-[#111111] p-3 rounded text-left overflow-x-auto border border-border/40">
-              {this.state.error?.message || "Erro desconhecido de execução."}
-            </p>
-            <button
-              onClick={() => {
-                this.setState({ hasError: false, error: null });
-                window.location.reload();
-              }}
-              className="w-full bg-primary hover:bg-[#E05300] text-white text-xs font-bold uppercase tracking-wider py-2.5 rounded-sm transition-colors"
-            >
-              Recarregar Painel
-            </button>
-          </div>
-        </div>
-      );
-    }
-
-    return this.props.children;
-  }
-}
-
-interface AdminDashboardProps {
-  initialPosts: any[];
-  initialPages: any[];
-}
-
 function AdminDashboardContent({ initialPosts, initialPages }: AdminDashboardProps) {
-  const [posts, setPosts] = useState(initialPosts);
-  const [pages, setPages] = useState(initialPages.length > 0 ? initialPages : DEFAULT_FALLBACK_PAGES);
-  const [activeTab, setActiveTab] = useState<"posts" | "pages" | "settings" | "notifications">("posts");
+  const [activeTab, setActiveTab] = useState<"posts" | "pages" | "settings" | "notifications" | "subscribers">("posts");
+  const [posts, setPosts] = useState<any[]>(initialPosts || []);
+  const [pages, setPages] = useState<any[]>(initialPages || []);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  // Filtros de listagem de posts
+  const [selectedLang, setSelectedLang] = useState<string>("all");
+  const [selectedTag, setSelectedTag] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+
+  // Notificações e Assinantes
   const [notifications, setNotifications] = useState<any[]>([]);
   const [subscribers, setSubscribers] = useState<any[]>([]);
-  const [n8nWebhookUrl, setN8nWebhookUrl] = useState<string>(() => {
-    const configPage = initialPages.find(p => p.slug === "config");
-    if (configPage && configPage.content) {
-      const content = typeof configPage.content === "string" ? JSON.parse(configPage.content) : configPage.content;
-      return content.n8nWebhookUrl || "";
+
+  // Carregar Notificações e Assinantes
+  const fetchAuxiliaryData = async () => {
+    try {
+      const [notifRes, subRes] = await Promise.all([
+        getNotificationsAction(),
+        getSubscribersAction()
+      ]);
+      if (notifRes.success && notifRes.notifications) {
+        setNotifications(notifRes.notifications);
+      }
+      if (subRes.success && subRes.subscribers) {
+        setSubscribers(subRes.subscribers);
+      }
+    } catch (e) {
+      console.warn("Erro ao buscar dados auxiliares:", e);
     }
-    return "";
-  });
+  };
 
   useEffect(() => {
-    // Carregar notificações e inscritos
-    getNotificationsAction().then(res => {
-      if (res.success && res.notifications) setNotifications(res.notifications);
-    });
-    getSubscribersAction().then(res => {
-      if (res.success && res.subscribers) setSubscribers(res.subscribers);
-    });
+    fetchAuxiliaryData();
+  }, []);
 
-    // Abrir edição automaticamente se houver parâmetro ?edit=id na URL
-    if (typeof window !== "undefined" && initialPosts.length > 0) {
-      const params = new URLSearchParams(window.location.search);
-      const editId = params.get("edit");
-      if (editId) {
-        const targetPost = initialPosts.find(p => p.id === editId);
-        if (targetPost) {
-          startEditPost(targetPost);
-        }
-      }
-    }
-  }, [initialPosts]);
-
-
+  // Plugins Ativos
   const [activePlugins, setActivePlugins] = useState<Record<string, boolean>>(() => {
     const configPage = initialPages.find(p => p.slug === "config");
     const activeMap: Record<string, boolean> = {};
     
-    // Set defaults from registry
     plugins.forEach(p => {
       activeMap[p.id] = p.defaultActive;
     });
@@ -525,9 +385,6 @@ function AdminDashboardContent({ initialPosts, initialPages }: AdminDashboardPro
         Object.keys(contentObj.activePlugins).forEach(key => {
           activeMap[key] = !!contentObj.activePlugins[key];
         });
-      } else if (typeof contentObj.autoReadTime === "boolean") {
-        // Fallback for legacy database settings
-        activeMap["autoReadTime"] = contentObj.autoReadTime;
       }
     }
     return activeMap;
@@ -571,7 +428,7 @@ function AdminDashboardContent({ initialPosts, initialPages }: AdminDashboardPro
           return [...prev, updatedConfigPage];
         }
       });
-      setMessage({ type: "success", text: `Recurso atualizado com sucesso!` });
+      setMessage({ type: "success", text: "Recurso atualizado com sucesso!" });
     } else {
       setMessage({ type: "error", text: "Erro ao salvar configuração: " + res.error });
     }
@@ -607,551 +464,45 @@ function AdminDashboardContent({ initialPosts, initialPages }: AdminDashboardPro
     setIsGalleryModalOpen(false);
   };
 
-  const handleDeleteGalleryImage = async (imgUrl: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!confirm("Deseja realmente excluir esta imagem da galeria?")) return;
-
-    try {
-      await fetch("/api/upload", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: imgUrl })
-      });
-      setGalleryImages(prev => prev.filter(url => url !== imgUrl));
-    } catch (err) {
-      console.error("Erro ao excluir imagem da galeria:", err);
-    }
-  };
-
-  const handlePurgeUnusedImages = async () => {
-    if (!confirm("Deseja verificar o servidor e excluir todas as imagens da pasta /uploads que NÃO estejam em uso nos posts ou páginas?")) return;
-
-    setGalleryLoading(true);
-    try {
-      const res = await fetch("/api/upload", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "purge_unused" })
-      });
-      const data = await res.json();
-      alert(data.message || "Limpeza de imagens não utilizadas concluída!");
-      const gRes = await fetch("/api/upload");
-      const gData = await gRes.json();
-      if (gData.images && Array.isArray(gData.images)) {
-        setGalleryImages(gData.images);
-      }
-    } catch (err) {
-      console.error("Erro ao purgar imagens:", err);
-      alert("Erro ao realizar a limpeza das imagens.");
-    } finally {
-      setGalleryLoading(false);
-    }
-  };
-
-  const handlePurgeAllImages = async () => {
-    if (!confirm("⚠️ ATENÇÃO: Tem certeza que deseja apagar TODAS as imagens salvas no servidor? Esta ação não pode ser desfeita.")) return;
-
-    setGalleryLoading(true);
-    try {
-      const res = await fetch("/api/upload", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "purge_all" })
-      });
-      const data = await res.json();
-      alert(data.message || "Galeria zerada com sucesso!");
-      setGalleryImages([]);
-    } catch (err) {
-      console.error("Erro ao zerar galeria:", err);
-      alert("Erro ao zerar galeria.");
-    } finally {
-      setGalleryLoading(false);
-    }
-  };
-
   // --- CONTROLE DE POSTS ---
-  const [editingPost, setEditingPost] = useState<any | null>(null); // null significa listagem, {} significa novo post
-  const [postFilterLang, setPostFilterLang] = useState<"all" | "pt" | "en" | "es">("all");
-  const [expandedPostIds, setExpandedPostIds] = useState<Record<string, boolean>>({});
-
-  const toggleExpandPost = (postId: string) => {
-    setExpandedPostIds(prev => ({
-      ...prev,
-      [postId]: !prev[postId]
-    }));
-  };
-
+  const [editingPost, setEditingPost] = useState<any | null>(null);
   const [postForm, setPostForm] = useState({
-    id: "",
     title: "",
     slug: "",
-    tag: "Review",
+    tag: "Reviews",
     category: "Reviews",
     excerpt: "",
     readTime: "5 min",
     img: "",
-    imgFocalPoint: "center",
+    imgFocalPoint: "50% 50%",
     audioUrl: "",
-    blocks: [
-      { text: "", image: "", focalPoint: "center" },
-      { text: "", image: "", focalPoint: "center" },
-      { text: "", image: "", focalPoint: "center" }
-    ],
+    status: "publicado",
+    lang: "pt",
+    translationGroupId: null as number | null,
     seoTitle: "",
     seoDescription: "",
     seoKeywords: "",
-    lang: "pt"
+    blocks: [] as Array<{ text: string; image?: string; focalPoint?: string; alt?: string }>,
   });
 
-  const [selectedAudioLang, setSelectedAudioLang] = useState<string>("pt");
-  const [audioUrlsByLang, setAudioUrlsByLang] = useState<{ pt: string; en: string; es: string }>({
-    pt: "",
-    en: "",
-    es: ""
-  });
+  const [activeModal, setActiveModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    actionType: "update" | "img" | "audio";
+    postData: any;
+  } | null>(null);
 
-  // --- POPUP MODAL ESTILIZADO DE AÇÕES E WEBHOOKS ---
-  const [actionModal, setActionModal] = useState<PopupModalData | null>(null);
-
-  // --- IA E AUTOMAÇÃO N8N ---
-  const [aiLoadingImprove, setAiLoadingImprove] = useState(false);
-  const [aiLoadingImg, setAiLoadingImg] = useState(false);
-  const [aiLoadingAudio, setAiLoadingAudio] = useState(false);
-
-  const handleImproveWithAI = async () => {
-    if (!postForm.title) {
-      setActionModal({
-        isOpen: true,
-        type: "error",
-        title: "Título Necessário",
-        message: "Por favor, preencha pelo menos o título do post antes de solicitar o aprimoramento por IA.",
-        details: { action: "update" }
-      });
-      return;
-    }
-    setAiLoadingImprove(true);
-
-    const groupId = editingPost?.translationGroupId || (editingPost?.id ? String(editingPost.id) : `group-${Date.now()}`);
-
-    const res = await triggerImprovePostWithAIAction({
-      translationGroupId: groupId,
-      id: postForm.id || editingPost?.id,
-      title: postForm.title,
-      excerpt: postForm.excerpt,
-      slug: postForm.slug,
-      lang: postForm.lang,
-      tag: postForm.tag,
-      category: postForm.category,
-    });
-
-    if (res.error) {
-      setActionModal({
-        isOpen: true,
-        type: "error",
-        title: "Falha na Ação de IA",
-        message: `Não foi possível enviar a requisição para o Webhook de IA: ${res.error}`,
-        details: {
-          action: "update",
-          endpoint: "NEXT_PUBLIC_N8N_WEBHOOK_URL",
-          timestamp: new Date().toLocaleTimeString("pt-BR")
-        }
-      });
-    } else {
-      setActionModal({
-        isOpen: true,
-        type: "success",
-        title: "Ação Executada com Sucesso!",
-        message: "✨ A requisição para melhorar o post (action=update) foi enviada com sucesso para o Webhook de IA! O processamento foi iniciado com êxito.",
-        details: {
-          action: "update",
-          endpoint: "NEXT_PUBLIC_N8N_WEBHOOK_URL",
-          timestamp: new Date().toLocaleTimeString("pt-BR")
-        }
-      });
-    }
-    setAiLoadingImprove(false);
-  };
-
-  const handleGenerateImagesWithAI = async () => {
-    if (!postForm.title) {
-      setActionModal({
-        isOpen: true,
-        type: "error",
-        title: "Título Necessário",
-        message: "Por favor, preencha o título do post antes de solicitar a geração de imagens.",
-        details: { action: "img" }
-      });
-      return;
-    }
-    setAiLoadingImg(true);
-
-    const groupId = editingPost?.translationGroupId || (editingPost?.id ? String(editingPost.id) : `group-${Date.now()}`);
-
-    const res = await triggerGenerateImagesAction({
-      translationGroupId: groupId,
-      id: postForm.id || editingPost?.id,
-      title: postForm.title,
-      excerpt: postForm.excerpt,
-      slug: postForm.slug,
-      lang: postForm.lang,
-      tag: postForm.tag,
-      category: postForm.category,
-      readTime: postForm.readTime,
-      img: postForm.img,
-      imgFocalPoint: postForm.imgFocalPoint,
-      audioUrl: postForm.audioUrl,
-      seoTitle: postForm.seoTitle,
-      seoDescription: postForm.seoDescription,
-      seoKeywords: postForm.seoKeywords,
-      blocks: postForm.blocks,
-    });
-
-    if (res.error) {
-      setActionModal({
-        isOpen: true,
-        type: "error",
-        title: "Falha ao Gerar Imagens",
-        message: `Ocorreu um erro ao enviar a requisição para geração de imagens: ${res.error}`,
-        details: {
-          action: "img",
-          endpoint: "NEXT_PUBLIC_N8N_WEBHOOK_URL",
-          timestamp: new Date().toLocaleTimeString("pt-BR")
-        }
-      });
-    } else {
-      setActionModal({
-        isOpen: true,
-        type: "success",
-        title: "Geração de Imagens Executada!",
-        message: "🖼️ A requisição para o Webhook (action=img) foi enviada com êxito! Todos os blocos foram parseados e limpos de tags HTML.",
-        details: {
-          action: "img",
-          endpoint: "NEXT_PUBLIC_N8N_WEBHOOK_URL",
-          timestamp: new Date().toLocaleTimeString("pt-BR")
-        }
-      });
-    }
-    setAiLoadingImg(false);
-  };
-
-  const handleCreateAudioWithAI = async () => {
-    if (!postForm.title) {
-      setActionModal({
-        isOpen: true,
-        type: "error",
-        title: "Título Necessário",
-        message: "Por favor, preencha o título do post antes de solicitar a narração de áudio.",
-        details: { action: "audio" }
-      });
-      return;
-    }
-    setAiLoadingAudio(true);
-
-    const groupId = editingPost?.translationGroupId || (editingPost?.id ? String(editingPost.id) : `group-${Date.now()}`);
-
-    const res = await triggerCreateAudioAction({
-      translationGroupId: groupId,
-      id: postForm.id || editingPost?.id,
-      title: postForm.title,
-      excerpt: postForm.excerpt,
-      slug: postForm.slug,
-      lang: postForm.lang,
-      tag: postForm.tag,
-      category: postForm.category,
-      readTime: postForm.readTime,
-      img: postForm.img,
-      imgFocalPoint: postForm.imgFocalPoint,
-      seoTitle: postForm.seoTitle,
-      seoDescription: postForm.seoDescription,
-      seoKeywords: postForm.seoKeywords,
-      blocks: postForm.blocks,
-    });
-
-    if (res.error) {
-      setActionModal({
-        isOpen: true,
-        type: "error",
-        title: "Falha ao Criar Narração",
-        message: `Ocorreu um erro ao enviar a requisição para síntese de áudio: ${res.error}`,
-        details: {
-          action: "audio",
-          endpoint: "NEXT_PUBLIC_N8N_WEBHOOK_URL",
-          timestamp: new Date().toLocaleTimeString("pt-BR")
-        }
-      });
-    } else {
-      setActionModal({
-        isOpen: true,
-        type: "success",
-        title: "Criar Narração Executado!",
-        message: "🎧 A requisição para o Webhook (action=audio) foi enviada com êxito! O payload com blocos de texto e auditoria foi transmitido para a síntese de narração em áudio.",
-        details: {
-          action: "audio",
-          endpoint: "NEXT_PUBLIC_N8N_WEBHOOK_URL",
-          timestamp: new Date().toLocaleTimeString("pt-BR")
-        }
-      });
-    }
-    setAiLoadingAudio(false);
-  };
-
-  // --- CONTROLE DE PÁGINAS ---
-  const [selectedPageSlug, setSelectedPageSlug] = useState<string>("");
-  const [editingPage, setEditingPage] = useState<any | null>(null);
-
-  // --- FUNÇÕES DE ARQUIVO ---
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, callback: (url: string) => void) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setLoading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData
-      });
-      const data = await res.json();
-      if (res.ok && data.url) {
-        callback(data.url);
-        setMessage({ type: "success", text: "Arquivo enviado com sucesso!" });
-      } else {
-        console.error("Erro retornado pelo servidor no upload:", data);
-        setMessage({ type: "error", text: data.error || `Erro no upload (HTTP ${res.status}).` });
-      }
-    } catch (err: any) {
-      console.error("Exceção ao enviar arquivo:", err);
-      setMessage({ type: "error", text: `Erro de conexão ao enviar arquivo: ${err?.message || err}` });
-    } finally {
-      e.target.value = "";
-      setLoading(false);
-    }
-  };
-
-  // --- AÇÕES DE POSTS ---
-  const startNewPost = () => {
-    setPostForm({
-      id: "",
-      title: "",
-      slug: "",
-      tag: "Review",
-      category: "Reviews",
-      excerpt: "",
-      readTime: "5 min",
-      img: "",
-      imgFocalPoint: "center",
-      audioUrl: "",
-      blocks: [
-        { text: "", image: "", focalPoint: "center" },
-        { text: "", image: "", focalPoint: "center" },
-        { text: "", image: "", focalPoint: "center" }
-      ],
-      seoTitle: "",
-      seoDescription: "",
-      seoKeywords: "",
-      lang: "pt"
-    });
-    setSelectedAudioLang("pt");
-    setAudioUrlsByLang({ pt: "", en: "", es: "" });
-    setEditingPost({});
-    setMessage(null);
-  };
-
-  const startEditPost = (post: any) => {
-    let parsedBlocks = [];
-    if (Array.isArray(post.blocks)) {
-      parsedBlocks = post.blocks;
-    } else {
-      try {
-        parsedBlocks = JSON.parse(post.blocks);
-      } catch (e) {
-        parsedBlocks = [];
-      }
-    }
-
-    // Garantir pelo menos 3 blocos
-    while (parsedBlocks.length < 3) {
-      parsedBlocks.push({ text: "", image: "", focalPoint: "center" });
-    }
-
-    const currentLang = post.lang || "pt";
-    setSelectedAudioLang(currentLang);
-
-    // Buscar posts do mesmo grupo de tradução para capturar áudios existentes de cada idioma
-    const groupPosts = initialPosts.filter((p: any) => post.translationGroupId && p.translationGroupId === post.translationGroupId);
-    const ptPost = groupPosts.find((p: any) => p.lang === "pt") || (post.lang === "pt" ? post : null);
-    const enPost = groupPosts.find((p: any) => p.lang === "en") || (post.lang === "en" ? post : null);
-    const esPost = groupPosts.find((p: any) => p.lang === "es") || (post.lang === "es" ? post : null);
-
-    setAudioUrlsByLang({
-      pt: ptPost?.audioUrl || (post.lang === "pt" ? post.audioUrl || "" : ""),
-      en: enPost?.audioUrl || (post.lang === "en" ? post.audioUrl || "" : ""),
-      es: esPost?.audioUrl || (post.lang === "es" ? post.audioUrl || "" : ""),
-    });
-
-    setPostForm({
-      id: post.id,
-      title: post.title,
-      slug: post.slug,
-      tag: post.tag,
-      category: post.category || "Reviews",
-      excerpt: post.excerpt,
-      readTime: post.readTime,
-      img: post.img,
-      imgFocalPoint: post.imgFocalPoint || "center",
-      audioUrl: post.audioUrl || "",
-      blocks: parsedBlocks,
-      seoTitle: post.seoTitle || "",
-      seoDescription: post.seoDescription || "",
-      seoKeywords: post.seoKeywords || "",
-      lang: currentLang
-    });
-    setEditingPost(post);
-    setMessage(null);
-  };
-
-  const handlePostBlockChange = (index: number, field: string, value: string) => {
-    const updatedBlocks = [...postForm.blocks];
-    updatedBlocks[index] = { ...updatedBlocks[index], [field]: value };
-    setPostForm({ ...postForm, blocks: updatedBlocks });
-  };
-function BlockLinkMapper({
-  text,
-  blockIndex,
-}: {
-  text: string;
-  blockIndex: number;
-}) {
-  const [links, setLinks] = useState<{ text: string; href: string }[]>([]);
-  const [tick, setTick] = useState(0);
-  const [selectedSlugs, setSelectedSlugs] = useState<string[]>([]);
-
-  useEffect(() => {
-    let mounted = true;
-    const id = setTimeout(() => {
-      try {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(text || "", "text/html");
-        const nodeList = Array.from(doc.querySelectorAll("a"));
-        const parsed = nodeList.map((a) => ({ text: a.textContent || "", href: a.getAttribute("href") || "" }));
-        if (mounted) {
-          setLinks(parsed);
-          const init = parsed.map((pl) => {
-            const match = posts.find((p) => `/post/${p.slug}` === pl.href || p.slug === pl.href);
-            return match ? match.slug : "";
-          });
-          setSelectedSlugs(init);
-        }
-      } catch (e) {
-        const re = /<a\b[^>]*href=["']([^"']+)["'][^>]*>(.*?)<\/a>/gi;
-        const parsed: { text: string; href: string }[] = [];
-        let m: RegExpExecArray | null;
-        while ((m = re.exec(text || "")) !== null) {
-          parsed.push({ href: m[1], text: m[2].replace(/<[^>]*>/g, "") });
-        }
-        if (mounted) {
-          setLinks(parsed);
-          const init = parsed.map((pl) => {
-            const match = posts.find((p) => `/post/${p.slug}` === pl.href || p.slug === pl.href);
-            return match ? match.slug : "";
-          });
-          setSelectedSlugs(init);
-        }
-      }
-    }, 300);
-    return () => {
-      mounted = false;
-      clearTimeout(id);
-    };
-  }, [text, tick]);
-
-  if (!links || links.length === 0) return null;
-
-  const handleSelectChange = (linkIdx: number, val: string) => {
-    try {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(text || "", "text/html");
-      const nodeList = Array.from(doc.querySelectorAll("a"));
-      const target = nodeList[linkIdx];
-      if (!target) return;
-      if (!val) {
-        // mantém original
-      } else {
-        target.setAttribute("href", `/post/${val}`);
-      }
-      const newHtml = doc.body.innerHTML;
-      handlePostBlockChange(blockIndex, "text", newHtml);
-      setSelectedSlugs((prev) => {
-        const copy = [...prev];
-        copy[linkIdx] = val;
-        return copy;
-      });
-      setTick((t) => t + 1);
-    } catch (e) {
-      // noop
-    }
-  };
-
-  return (
-    <div className="mt-3 bg-[#0F0F0F] border border-border/30 p-3 rounded-sm">
-      <div className="text-[12px] text-muted-foreground uppercase font-bold mb-2">Links encontrados neste bloco</div>
-      <div className="space-y-3">
-        {links.map((l, i) => (
-          <div key={i} className="grid grid-cols-[1fr_220px] gap-3 items-center">
-            <div>
-              <div className="text-[13px] text-foreground font-semibold break-words">{l.text || "(sem texto)"}</div>
-              <div className="text-[12px] text-muted-foreground font-mono break-words">{l.href}</div>
-            </div>
-            <div className="flex justify-end">
-              <select
-                value={selectedSlugs[i] || ""}
-                onChange={(e) => handleSelectChange(i, e.target.value)}
-                className="w-full bg-[#111111] border border-border rounded-sm text-[12px] text-foreground px-3 py-2"
-              >
-                <option value="">Manter link padrão/original</option>
-                {posts.map((p) => (
-                  <option key={p.id} value={p.slug}>{stripHtml(p.title)}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-  const addBlock = () => {
-    setPostForm({
-      ...postForm,
-      blocks: [...postForm.blocks, { text: "", image: "", focalPoint: "center" }]
-    });
-  };
-
-  const removeBlock = (index: number) => {
-    if (postForm.blocks.length <= 3) {
-      alert("O post deve conter pelo menos 3 blocos de conteúdo.");
-      return;
-    }
-    const updatedBlocks = [...postForm.blocks];
-    updatedBlocks.splice(index, 1);
-    setPostForm({ ...postForm, blocks: updatedBlocks });
-  };
-
-  // --- REORDENAÇÃO DE BLOCOS DE POSTS (SUBIR, DESCER & DRAG AND DROP) ---
   const [draggedBlockIndex, setDraggedBlockIndex] = useState<number | null>(null);
   const [draggableBlockIdx, setDraggableBlockIdx] = useState<number | null>(null);
 
   const movePostBlock = (index: number, direction: "up" | "down") => {
     const targetIndex = direction === "up" ? index - 1 : index + 1;
     if (targetIndex < 0 || targetIndex >= postForm.blocks.length) return;
-    const updatedBlocks = [...postForm.blocks];
-    const temp = updatedBlocks[index];
-    updatedBlocks[index] = updatedBlocks[targetIndex];
-    updatedBlocks[targetIndex] = temp;
-    setPostForm({ ...postForm, blocks: updatedBlocks });
+    const newBlocks = [...postForm.blocks];
+    const [moved] = newBlocks.splice(index, 1);
+    newBlocks.splice(targetIndex, 0, moved);
+    setPostForm({ ...postForm, blocks: newBlocks });
   };
 
   const handleBlockDragStart = (e: React.DragEvent, index: number) => {
@@ -1161,31 +512,102 @@ function BlockLinkMapper({
 
   const handleBlockDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
   };
 
   const handleBlockDrop = (e: React.DragEvent, targetIndex: number) => {
     e.preventDefault();
     if (draggedBlockIndex === null || draggedBlockIndex === targetIndex) return;
-
-    const updatedBlocks = [...postForm.blocks];
-    const [removed] = updatedBlocks.splice(draggedBlockIndex, 1);
-    updatedBlocks.splice(targetIndex, 0, removed);
-
-    setPostForm({ ...postForm, blocks: updatedBlocks });
+    const newBlocks = [...postForm.blocks];
+    const [dragged] = newBlocks.splice(draggedBlockIndex, 1);
+    newBlocks.splice(targetIndex, 0, dragged);
+    setPostForm({ ...postForm, blocks: newBlocks });
     setDraggedBlockIndex(null);
   };
 
+  const handleAddPostBlock = () => {
+    setPostForm({
+      ...postForm,
+      blocks: [...postForm.blocks, { text: "", image: "", focalPoint: "center", alt: "" }]
+    });
+  };
 
-  const generateSlugFromTitle = (titleStr: string) => {
-    const cleanTitle = stripHtml(titleStr);
-    return cleanTitle
+  const handleRemovePostBlock = (index: number) => {
+    const newBlocks = postForm.blocks.filter((_, idx) => idx !== index);
+    setPostForm({ ...postForm, blocks: newBlocks });
+  };
+
+  const handlePostBlockChange = (index: number, field: string, value: string) => {
+    const newBlocks = [...postForm.blocks];
+    newBlocks[index] = { ...newBlocks[index], [field]: value };
+    setPostForm({ ...postForm, blocks: newBlocks });
+  };
+
+  const handleEditPost = (post: any) => {
+    setEditingPost(post);
+    let parsedBlocks = [];
+    if (post.blocks) {
+      if (Array.isArray(post.blocks)) {
+        parsedBlocks = post.blocks;
+      } else if (typeof post.blocks === "string") {
+        try {
+          parsedBlocks = JSON.parse(post.blocks);
+        } catch (e) {
+          parsedBlocks = [];
+        }
+      }
+    }
+
+    setPostForm({
+      title: post.title || "",
+      slug: post.slug || "",
+      tag: post.tag || "Reviews",
+      category: post.category || "Reviews",
+      excerpt: post.excerpt || "",
+      readTime: post.readTime || "5 min",
+      img: post.img || "",
+      imgFocalPoint: post.imgFocalPoint || "50% 50%",
+      audioUrl: post.audioUrl || "",
+      status: post.status || "publicado",
+      lang: post.lang || "pt",
+      translationGroupId: post.translationGroupId || null,
+      seoTitle: post.seoTitle || "",
+      seoDescription: post.seoDescription || "",
+      seoKeywords: post.seoKeywords || "",
+      blocks: parsedBlocks,
+    });
+  };
+
+  const handleCancelPostEdit = () => {
+    setEditingPost(null);
+    setPostForm({
+      title: "",
+      slug: "",
+      tag: "Reviews",
+      category: "Reviews",
+      excerpt: "",
+      readTime: "5 min",
+      img: "",
+      imgFocalPoint: "50% 50%",
+      audioUrl: "",
+      status: "publicado",
+      lang: "pt",
+      translationGroupId: null,
+      seoTitle: "",
+      seoDescription: "",
+      seoKeywords: "",
+      blocks: [],
+    });
+  };
+
+  const generateSlugFromTitle = (title: string): string => {
+    return title
       .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z0-9\s-]/g, "")
       .trim()
-      .replace(/\s+/g, "-");
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-");
   };
 
   const handleSavePost = async (e: React.FormEvent) => {
@@ -1194,8 +616,8 @@ function BlockLinkMapper({
     setMessage(null);
 
     const slug = postForm.slug.trim() || generateSlugFromTitle(postForm.title);
-    let postData = { ...postForm, slug, audioUrlsByLang };
-    // Run hooks from registry plugins
+    let postData = { ...postForm, slug };
+
     plugins.forEach(plugin => {
       const isActive = !!activePlugins[plugin.id];
       if (plugin.onBeforeSavePost) {
@@ -1203,2073 +625,875 @@ function BlockLinkMapper({
       }
     });
 
-    const res = await savePostAction(postData);
-    if (res.error) {
-      setMessage({ type: "error", text: res.error });
-    } else {
+    const payload = {
+      ...(editingPost ? { id: editingPost.id } : {}),
+      ...postData
+    };
+
+    const res = await savePostAction(payload);
+    if (!res.error) {
       setMessage({ type: "success", text: "Post salvo com sucesso!" });
-      // Atualizar lista local
-      const refreshRes = await fetch("/api/posts-refresh"); // podemos atualizar puxando a página de novo
+      handleCancelPostEdit();
       router.refresh();
-      setTimeout(() => {
-        setEditingPost(null);
-        window.location.reload();
-      }, 1000);
+    } else {
+      setMessage({ type: "error", text: "Erro ao salvar post: " + res.error });
     }
     setLoading(false);
   };
 
-  const handleDeletePost = async (id: string) => {
-    if (!confirm("Deseja realmente excluir este post? Esta ação não pode ser desfeita.")) return;
+  const handleDeletePost = async (id: number | string) => {
+    if (!window.confirm("Tem certeza que deseja excluir este post? Todas as traduções vinculadas também serão excluídas.")) return;
     setLoading(true);
+    setMessage(null);
+
     const res = await deletePostAction(id);
-    if (res.error) {
-      alert(res.error);
+    if (!res.error) {
+      setPosts(prev => prev.filter(p => p.id !== id && p.translationGroupId !== id));
+      setMessage({ type: "success", text: "Post excluído com sucesso!" });
     } else {
-      alert("Post excluído com sucesso!");
-      window.location.reload();
+      setMessage({ type: "error", text: "Erro ao excluir post: " + res.error });
     }
     setLoading(false);
   };
 
-  // --- AÇÕES DE PÁGINAS ---
-  const handleSelectPage = (slug: string) => {
-    setSelectedPageSlug(slug);
-    if (!slug) {
-      setEditingPage(null);
-      return;
-    }
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, callback: (url: string) => void) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    const page = pages.find(p => p.slug === slug);
-    if (page) {
-      let content = page.content;
-      if (typeof content === "string") {
-        try {
-          content = JSON.parse(content);
-        } catch (e) {
-          content = {};
-        }
+    setLoading(true);
+    setMessage(null);
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (res.ok && data.url) {
+        callback(data.url);
+        setMessage({ type: "success", text: "Upload realizado com sucesso!" });
+      } else {
+        setMessage({ type: "error", text: "Erro no upload: " + (data.error || "Falha desconhecida") });
       }
-      setEditingPage({
-        id: page.id,
-        slug: page.slug,
-        title: page.title,
-        isStatic: page.isStatic,
-        content: content,
-        seoTitle: page.seoTitle || "",
-        seoDescription: page.seoDescription || ""
-      });
-    } else {
-      // Nova página customizada
-      setEditingPage({
-        id: "",
-        slug: slug === "new" ? "" : slug,
-        title: "",
-        isStatic: false,
-        content: { bodyHtml: "" },
-        seoTitle: "",
-        seoDescription: ""
-      });
-    }
-    setMessage(null);
-  };
-
-  const handleSavePage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage(null);
-
-    const res = await savePageAction(editingPage);
-    if (res.error) {
-      setMessage({ type: "error", text: res.error });
-    } else {
-      setMessage({ type: "success", text: "Página salva com sucesso!" });
-      router.refresh();
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
-    }
-    setLoading(false);
-  };
-
-  const handleDeletePage = async (id: string) => {
-    if (!confirm("Deseja realmente excluir esta página customizada?")) return;
-    setLoading(true);
-    const res = await deletePageAction(id);
-    if (res.error) {
-      alert(res.error);
-    } else {
-      alert("Página excluída!");
-      window.location.reload();
+    } catch (err) {
+      setMessage({ type: "error", text: "Erro ao conectar com servidor para upload." });
     }
     setLoading(false);
   };
 
   return (
-    <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-12" style={BODY}>
-      
-      {/* HEADER DO PAINEL */}
-      <div className="flex items-center justify-between border-b border-border pb-6 mb-10">
-        <div>
-          <h1 style={TEKO} className="text-[44px] font-semibold uppercase leading-none tracking-wide text-foreground">
-            <span className="text-primary">Palien</span> CMS
-          </h1>
-          <p className="text-[12px] text-muted-foreground uppercase tracking-widest mt-1.5">Gerencie posts, imagens e páginas</p>
-        </div>
-        <button
-          onClick={() => logoutAction()}
-          className="flex items-center gap-1.5 bg-secondary hover:bg-red-950/30 hover:text-primary text-[12px] font-bold uppercase tracking-wider px-4 py-2 border border-border transition-colors text-muted-foreground"
-        >
-          <LogOut size={14} /> Sair
-        </button>
-      </div>
+    <div className="min-h-screen bg-background text-foreground" style={BODY}>
+      {/* Top Header */}
+      <header className="border-b border-border bg-[#141414] sticky top-0 z-40">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href="/" className="flex items-center gap-2 text-muted-foreground hover:text-foreground text-[12px] font-bold uppercase tracking-wider transition-colors">
+              <ArrowLeft size={16} /> Voltar ao Portal
+            </Link>
+            <span className="text-border">|</span>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <h1 style={TEKO} className="text-[24px] uppercase tracking-wide text-foreground">
+                Painel Administrativo
+              </h1>
+            </div>
+          </div>
 
-      {/* MENSAGEM GLOBAL */}
-      {message && (
-        <div className={`p-4 rounded-sm mb-8 text-[13px] border ${
-          message.type === "success" 
-            ? "bg-green-950/20 border-green-800/40 text-green-400" 
-            : "bg-primary/10 border-primary/20 text-primary"
-        }`}>
-          {message.text}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => logoutAction()}
+              className="flex items-center gap-2 text-muted-foreground hover:text-red-400 text-[12px] font-bold uppercase tracking-wider px-3 py-1.5 border border-border/80 hover:border-red-500/40 rounded-sm transition-all"
+            >
+              <LogOut size={14} /> Sair
+            </button>
+          </div>
         </div>
-      )}
+      </header>
 
-      {/* ABAS SELETORAS (SE NÃO ESTIVER EDITANDO NADA) */}
-      {!editingPost && !editingPage && (
-        <div className="flex border-b border-border mb-8">
+      {/* Tabs Bar */}
+      <div className="border-b border-border bg-[#181818]">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-6 flex gap-6 overflow-x-auto">
           <button
             onClick={() => setActiveTab("posts")}
-            style={TEKO}
-            className={`px-6 py-2.5 text-[20px] font-medium uppercase tracking-wider border-b-2 transition-colors ${
-              activeTab === "posts" 
-                ? "border-primary text-primary" 
+            className={`py-4 text-[13px] font-bold uppercase tracking-wider border-b-2 flex items-center gap-2 transition-colors whitespace-nowrap ${
+              activeTab === "posts"
+                ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
-            <span className="flex items-center gap-2"><FileText size={16} /> Gerar Posts</span>
+            <FileText size={16} /> Posts & Notícias ({posts.length})
           </button>
           <button
             onClick={() => setActiveTab("pages")}
-            style={TEKO}
-            className={`px-6 py-2.5 text-[20px] font-medium uppercase tracking-wider border-b-2 transition-colors ${
-              activeTab === "pages" 
-                ? "border-primary text-primary" 
+            className={`py-4 text-[13px] font-bold uppercase tracking-wider border-b-2 flex items-center gap-2 transition-colors whitespace-nowrap ${
+              activeTab === "pages"
+                ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
-            <span className="flex items-center gap-2"><Layout size={16} /> Editar Páginas</span>
+            <Layout size={16} /> Páginas Institucionais ({pages.length})
           </button>
           <button
             onClick={() => setActiveTab("notifications")}
-            style={TEKO}
-            className={`px-6 py-2.5 text-[20px] font-medium uppercase tracking-wider border-b-2 transition-colors ${
-              activeTab === "notifications" 
-                ? "border-primary text-primary" 
+            className={`py-4 text-[13px] font-bold uppercase tracking-wider border-b-2 flex items-center gap-2 transition-colors whitespace-nowrap ${
+              activeTab === "notifications"
+                ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
-            <span className="flex items-center gap-2 relative">
-              <Bell size={16} /> Notificações & Métricas
-              {notifications.filter(n => !n.read).length > 0 && (
-                <span className="w-2 h-2 bg-primary rounded-full animate-ping" />
-              )}
-            </span>
+            <Bell size={16} /> Notificações ({notifications.length})
+          </button>
+          <button
+            onClick={() => setActiveTab("subscribers")}
+            className={`py-4 text-[13px] font-bold uppercase tracking-wider border-b-2 flex items-center gap-2 transition-colors whitespace-nowrap ${
+              activeTab === "subscribers"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Mail size={16} /> Newsletter ({subscribers.length})
           </button>
           <button
             onClick={() => setActiveTab("settings")}
-            style={TEKO}
-            className={`px-6 py-2.5 text-[20px] font-medium uppercase tracking-wider border-b-2 transition-colors ${
-              activeTab === "settings" 
-                ? "border-primary text-primary" 
+            className={`py-4 text-[13px] font-bold uppercase tracking-wider border-b-2 flex items-center gap-2 transition-colors whitespace-nowrap ${
+              activeTab === "settings"
+                ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
-            <span className="flex items-center gap-2"><Sliders size={16} /> Funções</span>
+            <Sliders size={16} /> Funções & Configurações
           </button>
         </div>
-      )}
+      </div>
 
-
-      {/* --- ABA 1: GERENCIAR POSTS --- */}
-      {activeTab === "posts" && !editingPost && (
-        <div>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-            <div>
-              <h2 style={TEKO} className="text-[26px] uppercase tracking-wide">Gerenciar Artigos</h2>
-              <p className="text-[12px] text-muted-foreground">Exibindo artigos em Português. Expanda a ação de cada post para ver e editar as versões em Inglês e Espanhol.</p>
-            </div>
-            <button
-              onClick={startNewPost}
-              className="flex items-center gap-2 bg-primary hover:bg-[#E05300] text-white text-[13px] font-bold uppercase tracking-wider px-4 py-2.5 rounded-sm transition-colors w-fit"
-            >
-              <Plus size={15} /> Novo Artigo
-            </button>
+      {/* Main Container */}
+      <main className="max-w-[1400px] mx-auto px-4 md:px-6 py-8">
+        {message && (
+          <div className={`p-4 mb-6 rounded-sm text-[13px] font-semibold border ${
+            message.type === "success" 
+              ? "bg-emerald-950/40 text-emerald-300 border-emerald-800/60" 
+              : "bg-red-950/40 text-red-300 border-red-800/60"
+          }`}>
+            {message.text}
           </div>
+        )}
 
-          <div className="bg-card border border-border rounded-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-[13px]">
-                <thead>
-                  <tr className="border-b border-border bg-[#1A1A1A] text-muted-foreground uppercase tracking-wider">
-                    <th className="p-4 font-semibold">Idioma</th>
-                    <th className="p-4 font-semibold">Título Principal (PT)</th>
-                    <th className="p-4 font-semibold">Categoria</th>
-                    <th className="p-4 font-semibold">Data</th>
-                    <th className="p-4 font-semibold text-right">Ações & Traduções</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {posts
-                    .filter(post => (post.lang || "pt") === "pt")
-                    .map((post) => {
-                      // Identificar posts correspondentes em outros idiomas (grupo de tradução ou slug base)
-                      const sisterPosts = posts.filter(p => {
-                        if (p.id === post.id) return false;
-                        if (post.translationGroupId && p.translationGroupId) {
-                          return p.translationGroupId === post.translationGroupId;
-                        }
-                        const cleanPtBase = post.slug.replace(/-(pt|en|es)$/i, "").replace(/-(avaliacao|review|analisis|resumen)$/i, "");
-                        const cleanPBase = p.slug.replace(/-(pt|en|es)$/i, "").replace(/-(avaliacao|review|analisis|resumen)$/i, "");
-                        return cleanPtBase === cleanPBase;
-                      });
-
-                      const isExpanded = !!expandedPostIds[post.id];
-                      const sisterLangs = Array.from(new Set(sisterPosts.map(s => (s.lang || "en").toUpperCase())));
-
-                      return (
-                        <React.Fragment key={post.id}>
-                          <tr className={`hover:bg-white/[0.02] transition-colors ${isExpanded ? "bg-white/[0.03]" : ""}`}>
-                            <td className="p-4">
-                              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border rounded-sm bg-emerald-950/70 border-emerald-800/80 text-emerald-400">
-                                PT 🇵🇹
-                              </span>
-                            </td>
-                            <td className="p-4 font-medium text-foreground">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span>{stripHtml(post.title)}</span>
-                                {(post.status === "em_edicao" || sisterPosts.some(s => s.status === "em_edicao")) && (
-                                  <span className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 border rounded-sm bg-amber-950/90 border-amber-500/80 text-amber-300 animate-pulse shadow-sm" title="Post em edição no banco de dados para identificação pela IA">
-                                    ✏️ Em Edição (IA)
-                                  </span>
-                                )}
-                              </div>
-                              <div className="text-[11px] text-muted-foreground font-mono">/post/{post.slug}</div>
-                            </td>
-                            <td className="p-4 text-muted-foreground">{post.tag}</td>
-                            <td className="p-4 text-muted-foreground">
-                              {formatDate(post.date)}
-                            </td>
-                            <td className="p-4 text-right space-x-2 whitespace-nowrap">
-                              {/* SÍMBOLO GLOBAL PARA EXPANDIR VERSÕES EM OUTROS IDIOMAS */}
-                              {sisterPosts.length > 0 ? (
-                                <button
-                                  onClick={() => toggleExpandPost(post.id)}
-                                  className={`inline-flex items-center justify-center p-2 rounded-sm border transition-all ${
-                                    isExpanded 
-                                      ? "bg-blue-600 border-blue-500 text-white shadow-sm" 
-                                      : "bg-[#1C1C1C] hover:bg-blue-950 hover:border-blue-700/60 text-blue-400 border-border"
-                                  }`}
-                                  title={`Ver versões em outros idiomas (${sisterLangs.join(", ")})`}
-                                >
-                                  <Globe size={15} />
-                                </button>
-                              ) : (
-                                <button
-                                  disabled
-                                  className="inline-flex items-center justify-center p-2 rounded-sm border border-border/30 bg-[#141414] text-muted-foreground/30 cursor-not-allowed"
-                                  title="Sem traduções vinculadas"
-                                >
-                                  <Globe size={15} />
-                                </button>
-                              )}
-
-                              {/* BOTÕES PADRÃO DE AÇÃO DO POST PRINCIPAL (PT) */}
-                              <button
-                                onClick={() => startEditPost(post)}
-                                className="inline-flex items-center gap-1 bg-secondary hover:bg-primary/20 hover:text-primary border border-border p-2 rounded-sm text-muted-foreground transition-colors"
-                                title="Editar post principal em Português"
-                              >
-                                <Edit size={14} />
-                              </button>
-                              <button
-                                onClick={() => handleDeletePost(post.id)}
-                                className="inline-flex items-center gap-1 bg-secondary hover:bg-primary hover:text-white border border-border p-2 rounded-sm text-muted-foreground transition-colors"
-                                title="Excluir post principal em Português"
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            </td>
-                          </tr>
-
-                          {/* SUB-LINHA EXPANDIDA (VERSÕES FILHAS EM OUTROS IDIOMAS PUXADAS PARA A DIREITA) */}
-                          {isExpanded && (
-                            <tr className="bg-[#121212] border-b border-border">
-                              <td colSpan={5} className="py-3 pr-4 pl-12 sm:pl-16">
-                                <div className="space-y-2 border-l-2 border-blue-600/60 pl-4 py-1">
-                                  <div className="text-[11px] font-bold text-blue-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                                    <Languages size={13} /> Versões Traduzidas Vinculadas (Filhos)
-                                  </div>
-
-                                  {sisterPosts.map(sister => {
-                                    const langCode = sister.lang || "en";
-                                    const langBadgeClass =
-                                      langCode === "en"
-                                        ? "bg-blue-950/90 border-blue-800 text-blue-300"
-                                        : "bg-amber-950/90 border-amber-800 text-amber-300";
-                                    const langFlag = langCode === "en" ? "🇬🇧 EN" : "🇪🇸 ES";
-                                    const urlPath = langCode === "en" ? `/en/post/${sister.slug}` : `/es/post/${sister.slug}`;
-
-                                    return (
-                                      <div 
-                                        key={sister.id} 
-                                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#1B1B1B] border border-border/70 p-3 rounded-sm hover:border-blue-900/60 transition-colors shadow-sm ml-2"
-                                      >
-                                        <div className="flex items-start sm:items-center gap-2.5">
-                                          <CornerDownRight size={15} className="text-blue-500 shrink-0 mt-0.5 sm:mt-0" />
-                                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border rounded-sm ${langBadgeClass}`}>
-                                            {langFlag}
-                                          </span>
-                                          <div>
-                                            <div className="text-[13px] font-medium text-foreground">{stripHtml(sister.title)}</div>
-                                            <div className="text-[11px] text-muted-foreground font-mono">{urlPath}</div>
-                                          </div>
-                                        </div>
-
-                                        <div className="flex items-center gap-2 self-end sm:self-auto">
-                                          <span className="text-[11px] text-muted-foreground mr-1">
-                                            {formatDate(sister.date)}
-                                          </span>
-                                          
-                                          {/* BOTÃO PARA EDITAR EM NOVA ABA */}
-                                          <a
-                                            href={`/admin?edit=${sister.id}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="inline-flex items-center gap-1.5 bg-blue-950/80 hover:bg-blue-900 text-blue-300 border border-blue-700/60 px-3 py-1.5 rounded-sm text-[12px] font-bold transition-all shadow-sm"
-                                            title={`Editar versão em ${langCode.toUpperCase()} em uma nova aba`}
-                                          >
-                                            <Edit size={13} />
-                                            <span>Editar {langCode.toUpperCase()}</span>
-                                            <ExternalLink size={12} className="opacity-70" />
-                                          </a>
-
-                                          {/* BOTÃO PARA EXCLUIR */}
-                                          <button
-                                            onClick={() => handleDeletePost(sister.id)}
-                                            className="inline-flex items-center gap-1 bg-secondary hover:bg-primary hover:text-white border border-border p-1.5 rounded-sm text-muted-foreground transition-colors"
-                                            title={`Excluir versão em ${langCode.toUpperCase()}`}
-                                          >
-                                            <Trash2 size={13} />
-                                          </button>
-                                        </div>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </td>
-                            </tr>
-                          )}
-                        </React.Fragment>
-                      );
-                    })}
-                  {posts.filter(post => (post.lang || "pt") === "pt").length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="p-8 text-center text-muted-foreground">
-                        Nenhum post em Português encontrado. Clique em "Novo Artigo" para começar!
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* --- EDITAR/CRIAR POST --- */}
-      {editingPost && (
-        <form onSubmit={handleSavePost} className="space-y-8 bg-card border border-border p-8 rounded-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-5 mb-5">
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setEditingPost(null)}
-                className="p-1.5 bg-secondary border border-border text-muted-foreground hover:text-foreground rounded-sm transition-colors"
-              >
-                <ArrowLeft size={16} />
-              </button>
-              <h2 style={TEKO} className="text-[26px] uppercase tracking-wide">
-                {postForm.id ? "Editar Artigo" : "Novo Artigo"}
-              </h2>
-            </div>
-
-            {/* BOTÕES DE IA (EXCLUSIVOS DO EDITOR DE POSTS) */}
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                disabled={aiLoadingImprove}
-                onClick={handleImproveWithAI}
-                className="flex items-center gap-2 bg-purple-950 hover:bg-purple-900 border border-purple-700/60 text-purple-200 text-[12px] font-bold uppercase tracking-wider px-4 py-2 rounded-sm transition-all shadow-sm disabled:opacity-50"
-                title="Envia requisição (action=update) com translationGroupId, título e resumo para o Webhook"
-              >
-                <Sparkles size={14} className={aiLoadingImprove ? "animate-spin" : ""} />
-                <span>{aiLoadingImprove ? "Enviando..." : "Melhorar com IA"}</span>
-              </button>
-
-              <button
-                type="button"
-                disabled={aiLoadingImg}
-                onClick={handleGenerateImagesWithAI}
-                className="flex items-center gap-2 bg-cyan-950 hover:bg-cyan-900 border border-cyan-700/60 text-cyan-200 text-[12px] font-bold uppercase tracking-wider px-4 py-2 rounded-sm transition-all shadow-sm disabled:opacity-50"
-                title="Envia requisição (action=img) com translationGroupId e todos os blocos parseados sem HTML"
-              >
-                <ImagePlus size={14} className={aiLoadingImg ? "animate-spin" : ""} />
-                <span>{aiLoadingImg ? "Enviando..." : "Gerar Imagens"}</span>
-              </button>
-
-              <button
-                type="button"
-                disabled={aiLoadingAudio}
-                onClick={handleCreateAudioWithAI}
-                className="flex items-center gap-2 bg-amber-950 hover:bg-amber-900 border border-amber-700/60 text-amber-200 text-[12px] font-bold uppercase tracking-wider px-4 py-2 rounded-sm transition-all shadow-sm disabled:opacity-50"
-                title="Envia requisição (action=audio) com payload completo de blocos e auditoria para narração de voz"
-              >
-                <Volume2 size={14} className={aiLoadingAudio ? "animate-spin" : ""} />
-                <span>{aiLoadingAudio ? "Enviando..." : "Criar Narração"}</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-1.5 md:col-span-2">
-              <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold">Título do Post</label>
-              <input
-                required
-                type="text"
-                value={postForm.title}
-                onChange={(e) => setPostForm({ ...postForm, title: e.target.value })}
-                placeholder="Ex: Fazer 250 Solid Grey 2026: 6 meses de uso real"
-                className="w-full bg-[#222222] border border-border rounded-sm text-[14px] text-foreground px-4 py-2.5 outline-none focus:border-primary/50"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold">Idioma do Artigo</label>
-              <select
-                value={postForm.lang}
-                onChange={(e) => setPostForm({ ...postForm, lang: e.target.value })}
-                className="w-full bg-[#222222] border border-border rounded-sm text-[14px] text-foreground px-4 py-2.5 outline-none focus:border-primary/50 font-semibold"
-              >
-                <option value="pt">🇵🇹 Português (pt)</option>
-                <option value="en">🇬🇧 English (en)</option>
-                <option value="es">🇪🇸 Español (es)</option>
-              </select>
-            </div>
-
-            <div className="space-y-1.5 md:col-span-2">
-              <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold">Slug URL (Opcional - Gerado Automático)</label>
-              <input
-                type="text"
-                value={postForm.slug}
-                onChange={(e) => setPostForm({ ...postForm, slug: e.target.value })}
-                placeholder="Ex: fazer-250-solid-grey-2026"
-                className="w-full bg-[#222222] border border-border rounded-sm text-[14px] text-foreground px-4 py-2.5 outline-none focus:border-primary/50"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold">Tag Principal (Categoria URL)</label>
-              <select
-                value={postForm.tag}
-                onChange={(e) => setPostForm({ ...postForm, tag: e.target.value, category: e.target.value + "s" })}
-                className="w-full bg-[#222222] border border-border rounded-sm text-[14px] text-foreground px-4 py-2.5 outline-none focus:border-primary/50"
-              >
-                <option value="Review">Review</option>
-                <option value="Manutenção">Manutenção</option>
-                <option value="Rotas">Rotas</option>
-                <option value="Equipamentos">Equipamentos</option>
-              </select>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold">Tempo de Leitura</label>
-              {activePlugins["autoReadTime"] ? (
-                <div className="w-full bg-[#1A1A1A] border border-border rounded-sm text-[14px] text-muted-foreground px-4 py-2.5 select-none font-medium">
-                  {(() => {
-                    const plugin = plugins.find(p => p.id === "autoReadTime");
-                    if (plugin && plugin.onBeforeSavePost) {
-                      const tempPost = plugin.onBeforeSavePost(postForm, true);
-                      return tempPost.readTime;
-                    }
-                    return "Calculando...";
-                  })()} <span className="text-[11px] text-primary ml-1.5 uppercase font-bold">(Calculado Automaticamente)</span>
+        {/* --- ABA 1: POSTS --- */}
+        {activeTab === "posts" && (
+          <div className="space-y-8">
+            {/* Formulário de Criação/Edição */}
+            <div className="bg-card border border-border p-6 rounded-sm shadow-sm space-y-6">
+              <div className="flex items-center justify-between border-b border-border pb-4">
+                <div className="flex items-center gap-3">
+                  <span className="w-1.5 h-6 bg-primary" />
+                  <h2 style={TEKO} className="text-[24px] uppercase tracking-wide text-foreground">
+                    {editingPost ? "Editar Post" : "Criar Novo Post"}
+                  </h2>
                 </div>
-              ) : (
-                <input
-                  required
-                  type="text"
-                  value={postForm.readTime}
-                  onChange={(e) => setPostForm({ ...postForm, readTime: e.target.value })}
-                  placeholder="Ex: 8 min"
-                  className="w-full bg-[#222222] border border-border rounded-sm text-[14px] text-foreground px-4 py-2.5 outline-none focus:border-primary/50"
-                />
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold">Resumo / Excerpt</label>
-            <textarea
-              required
-              rows={2}
-              value={postForm.excerpt}
-              onChange={(e) => setPostForm({ ...postForm, excerpt: e.target.value })}
-              placeholder="Uma descrição curta que aparece na página inicial e nos resultados do Google."
-              className="w-full bg-[#222222] border border-border rounded-sm text-[14px] text-foreground px-4 py-2.5 outline-none focus:border-primary/50"
-            />
-          </div>
-
-          {/* HERO IMAGE + FOCAL POINT */}
-          <div className="border border-border p-5 bg-[#181818] rounded-sm space-y-4">
-            <h3 style={TEKO} className="text-[19px] uppercase tracking-wide border-b border-border pb-2 text-foreground">
-              Imagem de Destaque / Hero
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="md:col-span-2 space-y-3">
-                <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold">Upload Local</label>
-                <div className="flex flex-wrap items-center gap-3">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileUpload(e, (url) => setPostForm({ ...postForm, img: url }))}
-                    className="hidden"
-                    id="hero-file-upload"
-                  />
-                  <label
-                    htmlFor="hero-file-upload"
-                    className="flex items-center gap-2 bg-secondary border border-border text-muted-foreground hover:text-foreground text-[12px] font-bold uppercase tracking-wider px-4 py-2.5 cursor-pointer transition-colors"
-                  >
-                    <Upload size={14} /> Selecionar Arquivo
-                  </label>
-
+                {editingPost && (
                   <button
                     type="button"
-                    onClick={() => openGalleryModal((url) => setPostForm(prev => ({ ...prev, img: url })))}
-                    className="flex items-center gap-2 bg-blue-950 hover:bg-blue-900 border border-blue-700/60 text-blue-300 text-[12px] font-bold uppercase tracking-wider px-4 py-2.5 rounded-sm transition-all shadow-sm"
+                    onClick={handleCancelPostEdit}
+                    className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground"
                   >
-                    <ImageIcon size={14} /> Escolher da Galeria
+                    Cancelar Edição
                   </button>
-
-                  <span className="text-[12px] text-muted-foreground truncate max-w-[200px]">
-                    {postForm.img ? "Imagem definida" : "Nenhuma imagem"}
-                  </span>
-                </div>
-
-                <div className="space-y-1.5 mt-2.5">
-                  <label className="text-[12px] text-muted-foreground uppercase tracking-wider block">Ou insira a URL da Imagem Externa</label>
-                  <input
-                    type="text"
-                    value={postForm.img}
-                    onChange={(e) => setPostForm({ ...postForm, img: e.target.value })}
-                    placeholder="https://exemplo.com/imagem.jpg"
-                    className="w-full bg-[#222222] border border-border rounded-sm text-[13px] text-foreground px-4 py-2"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold">Ponto Focal da Imagem (Ajuste Visual)</label>
-                <FocalPointPicker
-                  imageUrl={postForm.img}
-                  value={postForm.imgFocalPoint}
-                  onChange={(val) => setPostForm({ ...postForm, imgFocalPoint: val })}
-                />
-              </div>
-
-              {/* ÁUDIO DE NARRAÇÃO DO POST */}
-              <div className="border-t border-border/40 pt-5 mt-5 space-y-3 col-span-1 md:col-span-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold">
-                    🎙️ Áudio de Narração por Idioma (MP3, WAV, OGG, M4A)
-                  </label>
-                  {audioUrlsByLang[selectedAudioLang as keyof typeof audioUrlsByLang] && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const updated = { ...audioUrlsByLang, [selectedAudioLang]: "" };
-                        setAudioUrlsByLang(updated);
-                        if (selectedAudioLang === postForm.lang) {
-                          setPostForm({ ...postForm, audioUrl: "" });
-                        }
-                      }}
-                      className="text-[11px] text-red-400 hover:underline uppercase font-bold"
-                    >
-                      Remover Áudio ({selectedAudioLang.toUpperCase()})
-                    </button>
-                  )}
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr_auto] gap-3 items-center">
-                  <select
-                    value={selectedAudioLang}
-                    onChange={(e) => setSelectedAudioLang(e.target.value)}
-                    className="bg-[#222222] border border-border rounded-sm text-[12px] font-bold text-foreground px-3 py-2 uppercase tracking-wider focus:outline-none focus:border-primary cursor-pointer"
-                  >
-                    <option value="pt">🇵🇹 PT</option>
-                    <option value="en">🇬🇧 EN</option>
-                    <option value="es">🇪🇸 ES</option>
-                  </select>
-                  <input
-                    type="text"
-                    value={audioUrlsByLang[selectedAudioLang as keyof typeof audioUrlsByLang] || ""}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      const updated = { ...audioUrlsByLang, [selectedAudioLang]: val };
-                      setAudioUrlsByLang(updated);
-                      if (selectedAudioLang === postForm.lang) {
-                        setPostForm({ ...postForm, audioUrl: val });
-                      }
-                    }}
-                    placeholder={`Link do áudio para a versão em ${selectedAudioLang === "pt" ? "Português" : selectedAudioLang === "en" ? "Inglês" : "Espanhol"}...`}
-                    className="w-full bg-[#222222] border border-border rounded-sm text-[13px] text-foreground px-4 py-2 font-mono"
-                  />
-                  <label className="bg-secondary hover:bg-white/[0.04] text-muted-foreground hover:text-foreground text-[12px] font-bold uppercase tracking-wider px-4 py-2 border border-border rounded-sm cursor-pointer flex items-center justify-center gap-2 transition-all whitespace-nowrap">
-                    <Upload size={14} /> Upload ({selectedAudioLang.toUpperCase()})
-                    <input
-                      type="file"
-                      accept="audio/*,.mp3,.wav,.ogg,.m4a,.webm"
-                      className="hidden"
-                      onChange={(e) => handleFileUpload(e, (url) => {
-                        const updated = { ...audioUrlsByLang, [selectedAudioLang]: url };
-                        setAudioUrlsByLang(updated);
-                        if (selectedAudioLang === postForm.lang) {
-                          setPostForm({ ...postForm, audioUrl: url });
-                        }
-                      })}
-                    />
-                  </label>
-                </div>
-                {audioUrlsByLang[selectedAudioLang as keyof typeof audioUrlsByLang] ? (
-                  <div className="p-3 bg-[#111111] border border-primary/30 rounded flex items-center gap-3">
-                    <span className="text-xs text-primary font-mono truncate">
-                      ▶ Áudio Ativo ({selectedAudioLang.toUpperCase()}): {audioUrlsByLang[selectedAudioLang as keyof typeof audioUrlsByLang]}
-                    </span>
-                  </div>
-                ) : (
-                  <p className="text-[11px] text-muted-foreground italic">
-                    Nenhum áudio configurado para a versão ({selectedAudioLang.toUpperCase()}).
-                  </p>
                 )}
               </div>
-            </div>
-          </div>
 
-          {/* DYNAMIC CONTENT BLOCKS */}
-          <div className="space-y-6">
-            <div className="flex items-center justify-between border-b border-border pb-3">
-              <h3 style={TEKO} className="text-[22px] uppercase tracking-wide text-foreground">
-                Blocos de Conteúdo
-              </h3>
-              <button
-                type="button"
-                onClick={addBlock}
-                className="flex items-center gap-1.5 bg-secondary hover:bg-white/[0.04] text-[12px] font-bold uppercase tracking-wider px-3.5 py-2 border border-border rounded-sm text-muted-foreground hover:text-foreground transition-all"
-              >
-                <Plus size={13} /> Adicionar Bloco
-              </button>
-            </div>
-
-            <div className="space-y-6">
-              {postForm.blocks.map((block, idx) => (
-                <div
-                  key={idx}
-                  draggable={draggableBlockIdx === idx}
-                  onDragStart={(e) => handleBlockDragStart(e, idx)}
-                  onDragOver={(e) => handleBlockDragOver(e, idx)}
-                  onDrop={(e) => handleBlockDrop(e, idx)}
-                  onDragEnd={() => {
-                    setDraggableBlockIdx(null);
-                    setDraggedBlockIndex(null);
-                  }}
-                  className={`border p-6 bg-[#161616] rounded-sm space-y-4 relative transition-all ${
-                    draggedBlockIndex === idx ? "border-primary opacity-50 bg-primary/10" : "border-border hover:border-border/80"
-                  }`}
-                >
-                  <div className="flex items-center justify-between border-b border-border/60 pb-2">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="p-1 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-primary transition-colors"
-                        title="Clique e arraste para mudar a posição deste bloco"
-                        onMouseDown={() => setDraggableBlockIdx(idx)}
-                        onMouseUp={() => setDraggableBlockIdx(null)}
-                      >
-                        <GripVertical size={18} />
-                      </div>
-                      <span style={TEKO} className="text-[17px] font-semibold text-primary uppercase">
-                        Bloco {idx + 1}
-                      </span>
-                      <span className="text-[11px] text-muted-foreground hidden sm:inline">
-                        (Arraste o ícone à esquerda para reposicionar)
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        disabled={idx === 0}
-                        onClick={() => movePostBlock(idx, "up")}
-                        className="px-2 py-1 bg-secondary border border-border text-[11px] uppercase font-bold text-muted-foreground hover:text-foreground hover:border-primary/50 disabled:opacity-30 rounded-sm flex items-center gap-1"
-                        title="Mover bloco para cima"
-                      >
-                        <ArrowUp size={12} /> Subir
-                      </button>
-
-                      <button
-                        type="button"
-                        disabled={idx === postForm.blocks.length - 1}
-                        onClick={() => movePostBlock(idx, "down")}
-                        className="px-2 py-1 bg-secondary border border-border text-[11px] uppercase font-bold text-muted-foreground hover:text-foreground hover:border-primary/50 disabled:opacity-30 rounded-sm flex items-center gap-1"
-                        title="Mover bloco para baixo"
-                      >
-                        <ArrowDown size={12} /> Descer
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => removeBlock(idx)}
-                        className="text-muted-foreground hover:text-primary transition-colors p-1 ml-2"
-                        title="Deletar Bloco"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
+              <form onSubmit={handleSavePost} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold">Título do Post *</label>
+                    <input
+                      type="text"
+                      required
+                      value={postForm.title}
+                      onChange={(e) => setPostForm({ ...postForm, title: e.target.value })}
+                      placeholder="Ex: Análise Completa Yamaha FZ25 2026"
+                      className="w-full bg-[#181818] border border-border rounded-sm text-[14px] text-foreground px-4 py-2.5 outline-none focus:border-primary/50"
+                    />
                   </div>
 
+                  <div className="space-y-2">
+                    <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold">URL Amigável (Slug)</label>
+                    <input
+                      type="text"
+                      value={postForm.slug}
+                      onChange={(e) => setPostForm({ ...postForm, slug: e.target.value })}
+                      placeholder="Deixe em branco para gerar do título"
+                      className="w-full bg-[#181818] border border-border rounded-sm text-[14px] text-foreground px-4 py-2.5 font-mono outline-none focus:border-primary/50"
+                    />
+                  </div>
+                </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2 space-y-2">
-                      <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold">
-                        Conteúdo HTML
-                      </label>
-                      <textarea
-                        required
-                        rows={6}
-                        value={block.text}
-                        onChange={(e) => handlePostBlockChange(idx, "text", e.target.value)}
-                        placeholder="Cole aqui o HTML do bloco: <h2>, <p>, <figure>, <a> etc."
-                        className="w-full bg-[#222222] border border-border rounded-sm text-[13px] text-foreground p-3 outline-none focus:border-primary/50"
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold">Categoria *</label>
+                    <select
+                      value={postForm.tag}
+                      onChange={(e) => setPostForm({ ...postForm, tag: e.target.value, category: e.target.value })}
+                      className="w-full bg-[#181818] border border-border rounded-sm text-[14px] text-foreground px-3 py-2.5 outline-none focus:border-primary/50"
+                    >
+                      <option value="Reviews">Reviews</option>
+                      <option value="Manutenção">Manutenção</option>
+                      <option value="Rotas">Rotas</option>
+                      <option value="Equipamentos">Equipamentos</option>
+                      <option value="Eventos">Eventos</option>
+                      <option value="MotoGP">MotoGP</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold">Idioma *</label>
+                    <select
+                      value={postForm.lang}
+                      onChange={(e) => setPostForm({ ...postForm, lang: e.target.value })}
+                      className="w-full bg-[#181818] border border-border rounded-sm text-[14px] text-foreground px-3 py-2.5 outline-none focus:border-primary/50"
+                    >
+                      <option value="pt">Português (PT)</option>
+                      <option value="en">Inglês (EN)</option>
+                      <option value="es">Espanhol (ES)</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold">Tempo de Leitura</label>
+                    {activePlugins["autoReadTime"] ? (
+                      <div className="w-full bg-[#1A1A1A] border border-border rounded-sm text-[14px] text-muted-foreground px-4 py-2.5 select-none font-medium">
+                        {(() => {
+                          const plugin = plugins.find(p => p.id === "autoReadTime");
+                          if (plugin && plugin.onBeforeSavePost) {
+                            const tempPost = plugin.onBeforeSavePost(postForm, true);
+                            return tempPost.readTime;
+                          }
+                          return "Calculando...";
+                        })()} <span className="text-[11px] text-primary ml-1.5 uppercase font-bold">(Calculado Automaticamente)</span>
+                      </div>
+                    ) : (
+                      <input
+                        type="text"
+                        value={postForm.readTime}
+                        onChange={(e) => setPostForm({ ...postForm, readTime: e.target.value })}
+                        placeholder="Ex: 5 min"
+                        className="w-full bg-[#181818] border border-border rounded-sm text-[14px] text-foreground px-4 py-2.5 outline-none focus:border-primary/50"
                       />
-                      {/* Seletor dinâmico de links encontrado neste bloco */}
-                      <BlockLinkMapper text={block.text} blockIndex={idx} />
-                    </div>
+                    )}
+                  </div>
 
-                    <div className="space-y-3 bg-[#202020] p-4 border border-border/40 rounded-sm">
-                      <label className="text-[11px] text-muted-foreground uppercase tracking-widest block font-bold">Imagem do Bloco (Opcional)</label>
-                      
-                      <div className="flex flex-wrap items-center gap-2">
+                  <div className="space-y-2">
+                    <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold">Status *</label>
+                    <select
+                      value={postForm.status}
+                      onChange={(e) => setPostForm({ ...postForm, status: e.target.value })}
+                      className="w-full bg-[#181818] border border-border rounded-sm text-[14px] text-foreground px-3 py-2.5 outline-none focus:border-primary/50"
+                    >
+                      <option value="publicado">Publicado</option>
+                      <option value="em_edicao">Em Edição</option>
+                      <option value="rascunho">Rascunho</option>
+                      <option value="arquivado">Arquivado</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold">Resumo / Gancho do Post *</label>
+                  <textarea
+                    rows={2}
+                    required
+                    value={postForm.excerpt}
+                    onChange={(e) => setPostForm({ ...postForm, excerpt: e.target.value })}
+                    placeholder="Breve descrição ou lead do artigo para cards e redes sociais"
+                    className="w-full bg-[#181818] border border-border rounded-sm text-[14px] text-foreground p-3 outline-none focus:border-primary/50 resize-y"
+                  />
+                </div>
+
+                {/* Imagem de Capa e Focal Point */}
+                <div className="space-y-4 border-t border-border pt-4">
+                  <h3 style={TEKO} className="text-[20px] uppercase tracking-wide text-foreground">Imagem de Capa (Hero)</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-3">
+                      <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold">URL da Imagem</label>
+                      <input
+                        type="url"
+                        value={postForm.img}
+                        onChange={(e) => setPostForm({ ...postForm, img: e.target.value })}
+                        placeholder="https://images.unsplash.com/... ou URL /uploads/..."
+                        className="w-full bg-[#181818] border border-border rounded-sm text-[13px] text-foreground px-4 py-2 font-mono outline-none focus:border-primary/50"
+                      />
+
+                      <div className="flex flex-wrap items-center gap-3 pt-2">
+                        <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold w-full">Upload Local</label>
                         <input
                           type="file"
                           accept="image/*"
-                          onChange={(e) => handleFileUpload(e, (url) => handlePostBlockChange(idx, "image", url))}
+                          onChange={(e) => handleFileUpload(e, (url) => setPostForm({ ...postForm, img: url }))}
                           className="hidden"
-                          id={`block-file-upload-${idx}`}
+                          id="hero-file-upload"
                         />
                         <label
-                          htmlFor={`block-file-upload-${idx}`}
-                          className="flex items-center gap-1 bg-[#2a2a2a] hover:bg-[#353535] text-[11px] font-bold uppercase tracking-wider px-3 py-2 cursor-pointer transition-colors border border-border"
+                          htmlFor="hero-file-upload"
+                          className="flex items-center gap-2 bg-secondary border border-border text-muted-foreground hover:text-foreground text-[12px] font-bold uppercase tracking-wider px-4 py-2.5 cursor-pointer transition-colors"
                         >
-                          <Upload size={12} /> Upload
+                          <Upload size={14} /> Selecionar Arquivo
                         </label>
+
                         <button
                           type="button"
-                          onClick={() => openGalleryModal((url) => handlePostBlockChange(idx, "image", url))}
-                          className="flex items-center gap-1 bg-blue-950 hover:bg-blue-900 border border-blue-700/60 text-blue-300 text-[11px] font-bold uppercase tracking-wider px-2.5 py-2 rounded-sm transition-all shadow-sm"
-                          title="Escolher imagem da galeria"
+                          onClick={() => openGalleryModal((url) => setPostForm(prev => ({ ...prev, img: url })))}
+                          className="flex items-center gap-2 bg-blue-950 hover:bg-blue-900 border border-blue-700/60 text-blue-300 text-[12px] font-bold uppercase tracking-wider px-4 py-2.5 rounded-sm transition-all shadow-sm"
                         >
-                          <ImageIcon size={12} /> Galeria
+                          <ImageIcon size={14} /> Escolher da Galeria
                         </button>
-                        <input
-                          type="text"
-                          value={block.image}
-                          onChange={(e) => handlePostBlockChange(idx, "image", e.target.value)}
-                          placeholder="Ou insira a URL da imagem"
-                          className="flex-1 bg-[#1a1a1a] border border-border rounded-sm text-[11px] text-foreground px-2 py-2"
-                        />
-                      </div>
 
-                      {block.image && (
-                        <div className="space-y-2 mt-2">
-                          <label className="text-[11px] text-muted-foreground block">Ponto Focal do Bloco (Ajuste Visual)</label>
-                          <FocalPointPicker
-                            imageUrl={block.image}
-                            value={block.focalPoint}
-                            onChange={(val) => handlePostBlockChange(idx, "focalPoint", val)}
-                          />
-                        </div>
+                        <span className="text-[12px] text-muted-foreground truncate max-w-[200px]">
+                          {postForm.img ? "Imagem definida" : "Nenhuma imagem"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div>
+                      {postForm.img && (
+                        <FocalPointPicker
+                          imageUrl={postForm.img}
+                          value={postForm.imgFocalPoint}
+                          onChange={(val) => setPostForm({ ...postForm, imgFocalPoint: val })}
+                        />
                       )}
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
 
-          {/* METADADOS DE SEO */}
-          <div className="border border-border p-5 bg-[#181818] rounded-sm space-y-4">
-            <h3 style={TEKO} className="text-[19px] uppercase tracking-wide border-b border-border pb-2 text-foreground">
-              Configurações de SEO Específicas
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-1.5">
-                <label className="text-[12px] text-muted-foreground uppercase tracking-wider block">Meta Title Customizado</label>
-                <input
-                  type="text"
-                  value={postForm.seoTitle}
-                  onChange={(e) => setPostForm({ ...postForm, seoTitle: e.target.value })}
-                  placeholder="Se deixar vazio, usará o título do post."
-                  className="w-full bg-[#222222] border border-border rounded-sm text-[13px] text-foreground px-4 py-2"
-                />
-              </div>
+                {/* Blocos de Conteúdo */}
+                <div className="space-y-4 border-t border-border pt-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 style={TEKO} className="text-[20px] uppercase tracking-wide text-foreground">Blocos do Artigo ({postForm.blocks.length})</h3>
+                      <p className="text-[12px] text-muted-foreground">Adicione parágrafos, subtítulos (H2/H3), imagens de seção e formatação rica em HTML.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAddPostBlock}
+                      className="flex items-center gap-1.5 bg-secondary hover:bg-white/[0.04] text-foreground text-[12px] font-bold uppercase tracking-wider px-3 py-1.5 border border-border rounded-sm transition-colors"
+                    >
+                      <Plus size={14} /> Adicionar Bloco
+                    </button>
+                  </div>
 
-              <div className="space-y-1.5">
-                <label className="text-[12px] text-muted-foreground uppercase tracking-wider block">Meta Palavras-chave (Keywords)</label>
-                <input
-                  type="text"
-                  value={postForm.seoKeywords}
-                  onChange={(e) => setPostForm({ ...postForm, seoKeywords: e.target.value })}
-                  placeholder="moto, fazer, 250, review"
-                  className="w-full bg-[#222222] border border-border rounded-sm text-[13px] text-foreground px-4 py-2"
-                />
-              </div>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-[12px] text-muted-foreground uppercase tracking-wider block">Meta Description Customizado</label>
-              <textarea
-                rows={2}
-                value={postForm.seoDescription}
-                onChange={(e) => setPostForm({ ...postForm, seoDescription: e.target.value })}
-                placeholder="Se deixar vazio, usará o resumo do post."
-                className="w-full bg-[#222222] border border-border rounded-sm text-[13px] text-foreground px-4 py-2"
-              />
-            </div>
-          </div>
+                  <div className="space-y-4">
+                    {postForm.blocks.map((block, idx) => (
+                      <div
+                        key={idx}
+                        draggable={draggableBlockIdx === idx}
+                        onDragStart={(e) => handleBlockDragStart(e, idx)}
+                        onDragOver={(e) => handleBlockDragOver(e, idx)}
+                        onDrop={(e) => handleBlockDrop(e, idx)}
+                        onDragEnd={() => {
+                          setDraggableBlockIdx(null);
+                          setDraggedBlockIndex(null);
+                        }}
+                        className={`border p-6 bg-[#161616] rounded-sm space-y-4 relative transition-all ${
+                          draggedBlockIndex === idx ? "border-primary opacity-50 bg-primary/10" : "border-border hover:border-border/80"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between border-b border-border/60 pb-2">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className="p-1 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-primary transition-colors"
+                              title="Clique e arraste para mudar a posição deste bloco"
+                              onMouseDown={() => setDraggableBlockIdx(idx)}
+                              onMouseUp={() => setDraggableBlockIdx(null)}
+                            >
+                              <GripVertical size={18} />
+                            </div>
+                            <span style={TEKO} className="text-[17px] font-semibold text-primary uppercase">
+                              Bloco #{idx + 1}
+                            </span>
+                          </div>
 
-          {/* BOTÕES SALVAR/VOLTAR & AÇÕES DE IA */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-border">
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                disabled={aiLoadingImprove}
-                onClick={handleImproveWithAI}
-                className="flex items-center gap-2 bg-purple-950 hover:bg-purple-900 border border-purple-700/60 text-purple-200 text-[12px] font-bold uppercase tracking-wider px-4 py-2.5 rounded-sm transition-all shadow-sm disabled:opacity-50"
-                title="Envia requisição (action=update) com translationGroupId, título e resumo para o Webhook"
-              >
-                <Sparkles size={14} className={aiLoadingImprove ? "animate-spin" : ""} />
-                <span>{aiLoadingImprove ? "Enviando..." : "Melhorar com IA"}</span>
-              </button>
-
-              <button
-                type="button"
-                disabled={aiLoadingImg}
-                onClick={handleGenerateImagesWithAI}
-                className="flex items-center gap-2 bg-cyan-950 hover:bg-cyan-900 border border-cyan-700/60 text-cyan-200 text-[12px] font-bold uppercase tracking-wider px-4 py-2.5 rounded-sm transition-all shadow-sm disabled:opacity-50"
-                title="Envia requisição (action=img) com translationGroupId e todos os blocos parseados sem HTML"
-              >
-                <ImagePlus size={14} className={aiLoadingImg ? "animate-spin" : ""} />
-                <span>{aiLoadingImg ? "Enviando..." : "Gerar Imagens"}</span>
-              </button>
-
-              <button
-                type="button"
-                disabled={aiLoadingAudio}
-                onClick={handleCreateAudioWithAI}
-                className="flex items-center gap-2 bg-amber-950 hover:bg-amber-900 border border-amber-700/60 text-amber-200 text-[12px] font-bold uppercase tracking-wider px-4 py-2.5 rounded-sm transition-all shadow-sm disabled:opacity-50"
-                title="Envia requisição (action=audio) com payload completo de blocos e auditoria para narração de voz"
-              >
-                <Volume2 size={14} className={aiLoadingAudio ? "animate-spin" : ""} />
-                <span>{aiLoadingAudio ? "Enviando..." : "Criar Narração"}</span>
-              </button>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setEditingPost(null)}
-                className="bg-secondary hover:bg-white/[0.03] text-muted-foreground hover:text-foreground text-[13px] font-bold uppercase tracking-wider px-5 py-3 border border-border rounded-sm transition-all"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex items-center gap-2 bg-primary hover:bg-[#E05300] text-white text-[13px] font-bold uppercase tracking-wider px-6 py-3 rounded-sm transition-colors disabled:bg-primary/50"
-              >
-                <Save size={14} /> {loading ? "Salvando..." : "Salvar Post"}
-              </button>
-            </div>
-          </div>
-        </form>
-      )}
-
-      {/* --- ABA 2: EDITAR PÁGINAS --- */}
-      {activeTab === "pages" && !editingPage && (
-        <div className="space-y-8 bg-card border border-border p-8 rounded-sm">
-          <div className="flex items-center justify-between border-b border-border pb-5 mb-5">
-            <div>
-              <h2 style={TEKO} className="text-[26px] uppercase tracking-wide">Estrutura de Páginas</h2>
-              <p className="text-[12px] text-muted-foreground">Escolha a página que deseja atualizar</p>
-            </div>
-            <button
-              onClick={() => handleSelectPage("new")}
-              className="flex items-center gap-2 bg-primary hover:bg-[#E05300] text-white text-[13px] font-bold uppercase tracking-wider px-4 py-2.5 rounded-sm transition-colors"
-            >
-              <Plus size={15} /> Criar Nova Página Customizada
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold">Selecionar Página Existente</label>
-              <select
-                value={selectedPageSlug}
-                onChange={(e) => handleSelectPage(e.target.value)}
-                className="w-full bg-[#222222] border border-border rounded-sm text-[14px] text-foreground px-4 py-2.5 outline-none focus:border-primary/50"
-              >
-                <option value="">-- Escolha uma página --</option>
-                {pages.map((p) => (
-                  <option key={p.id} value={p.slug}>
-                    {p.title} {p.isStatic ? "(Fixo - Layout Estruturado)" : "(Customizada - Conteúdo HTML)"}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* FORMULÁRIO DE PÁGINA */}
-      {editingPage && (
-        <form onSubmit={handleSavePage} className="space-y-8 bg-card border border-border p-8 rounded-sm">
-          <div className="flex items-center justify-between border-b border-border pb-5 mb-5">
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setEditingPage(null)}
-                className="p-1.5 bg-secondary border border-border text-muted-foreground hover:text-foreground rounded-sm transition-colors"
-              >
-                <ArrowLeft size={16} />
-              </button>
-              <h2 style={TEKO} className="text-[26px] uppercase tracking-wide">
-                Editar Página: {editingPage.title || "Nova Página"}
-              </h2>
-            </div>
-            {!editingPage.isStatic && editingPage.id && (
-              <button
-                type="button"
-                onClick={() => handleDeletePage(editingPage.id)}
-                className="flex items-center gap-1.5 bg-red-950/20 hover:bg-primary border border-border hover:border-transparent text-primary hover:text-white text-[11px] font-bold uppercase tracking-wider px-3.5 py-2 transition-colors rounded-sm"
-              >
-                <Trash2 size={13} /> Deletar Página
-              </button>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-1.5">
-              <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold">Título da Página</label>
-              <input
-                required
-                type="text"
-                value={editingPage.title}
-                onChange={(e) => setEditingPage({ ...editingPage, title: e.target.value })}
-                placeholder="Ex: Contato"
-                className="w-full bg-[#222222] border border-border rounded-sm text-[14px] text-foreground px-4 py-2.5 outline-none focus:border-primary/50"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[12px] text-muted-foreground uppercase tracking-wider block font-bold">Slug URL</label>
-              <input
-                required
-                type="text"
-                disabled={editingPage.isStatic}
-                value={editingPage.slug}
-                onChange={(e) => setEditingPage({ ...editingPage, slug: generateSlugFromTitle(e.target.value) })}
-                placeholder="Ex: contato (Bloqueado para Home/Sobre)"
-                className="w-full bg-[#222222] border border-border rounded-sm text-[14px] text-foreground px-4 py-2.5 outline-none focus:border-primary/50 disabled:opacity-50"
-              />
-            </div>
-          </div>
-
-          {/* --- CONTEÚDO DA HOME (ESTÁTICA/ESTRUTURADA) --- */}
-          {editingPage.slug === "home" && (
-            <div className="space-y-6 pt-4 border-t border-border">
-              <h3 style={TEKO} className="text-[21px] uppercase tracking-wide text-foreground border-b border-border pb-1">Campos Estruturados - Home</h3>
-              
-              {/* HIERARQUIA REORDENÁVEL DE BLOCOS */}
-              <div className="border border-border p-5 bg-[#181818] rounded-sm space-y-4">
-                <h4 style={TEKO} className="text-[18px] uppercase tracking-wide text-primary flex items-center gap-2">
-                  Organização da Hierarquia de Blocos da Home
-                </h4>
-                <p className="text-[12px] text-muted-foreground">
-                  Use os botões <strong>Subir</strong> e <strong>Descer</strong> para reorganizar livremente a ordem das seções na página inicial.
-                </p>
-                {(() => {
-                  const sectionLabels: Record<string, string> = {
-                    hero: "Hero Inicial (Destaque Principal)",
-                    breaking: "Faixa de Notícia Rápida (Breaking Bar)",
-                    posts: "Seção de Últimos Posts + Sidebar",
-                    banner: "Banner Promocional da Moto"
-                  };
-                  const currentOrder: string[] = Array.isArray(editingPage.content.sectionOrder) && editingPage.content.sectionOrder.length > 0
-                    ? editingPage.content.sectionOrder
-                    : ["hero", "breaking", "posts", "banner"];
-
-                  const moveSection = (idx: number, direction: "up" | "down") => {
-                    const newOrder = [...currentOrder];
-                    const targetIdx = direction === "up" ? idx - 1 : idx + 1;
-                    if (targetIdx < 0 || targetIdx >= newOrder.length) return;
-                    const temp = newOrder[idx];
-                    newOrder[idx] = newOrder[targetIdx];
-                    newOrder[targetIdx] = temp;
-                    setEditingPage({
-                      ...editingPage,
-                      content: {
-                        ...editingPage.content,
-                        sectionOrder: newOrder
-                      }
-                    });
-                  };
-
-                  return (
-                    <div className="space-y-2">
-                      {currentOrder.map((key, index) => (
-                        <div key={key} className="flex items-center justify-between bg-[#222222] border border-border px-4 py-2.5 rounded-sm">
-                          <span className="text-[13px] font-semibold text-foreground uppercase tracking-wide">
-                            {index + 1}. {sectionLabels[key] || key}
-                          </span>
                           <div className="flex items-center gap-2">
                             <button
                               type="button"
-                              disabled={index === 0}
-                              onClick={() => moveSection(index, "up")}
-                              className="px-2 py-1 bg-secondary border border-border text-[11px] uppercase font-bold text-muted-foreground hover:text-foreground hover:border-primary/50 disabled:opacity-30 rounded-sm flex items-center gap-1"
+                              onClick={() => movePostBlock(idx, "up")}
+                              disabled={idx === 0}
+                              className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+                              title="Mover para cima"
                             >
-                              <ArrowUp size={12} /> Subir
+                              <ArrowUp size={14} />
                             </button>
                             <button
                               type="button"
-                              disabled={index === currentOrder.length - 1}
-                              onClick={() => moveSection(index, "down")}
-                              className="px-2 py-1 bg-secondary border border-border text-[11px] uppercase font-bold text-muted-foreground hover:text-foreground hover:border-primary/50 disabled:opacity-30 rounded-sm flex items-center gap-1"
+                              onClick={() => movePostBlock(idx, "down")}
+                              disabled={idx === postForm.blocks.length - 1}
+                              className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed"
+                              title="Mover para baixo"
                             >
-                              <ArrowDown size={12} /> Descer
+                              <ArrowDown size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRemovePostBlock(idx)}
+                              className="p-1 text-red-400 hover:text-red-300 ml-2"
+                              title="Remover Bloco"
+                            >
+                              <Trash2 size={14} />
                             </button>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  );
-                })()}
-              </div>
 
-              {/* TAGS GLOBAIS DO SITE */}
-              <div className="border border-border p-5 bg-[#181818] rounded-sm space-y-3">
-                <h4 style={TEKO} className="text-[18px] uppercase tracking-wide text-foreground">Tags Estáticas / Globais do Site</h4>
-                <label className="text-[11px] text-muted-foreground block uppercase">
-                  Separe as tags principais por vírgula (ex: Fazer250, FZ25, Review, Manutenção, Rotas, Eventos)
-                </label>
-                <input
-                  type="text"
-                  value={editingPage.content.siteTags || ""}
-                  onChange={(e) => setEditingPage({
-                    ...editingPage,
-                    content: { ...editingPage.content, siteTags: e.target.value }
-                  })}
-                  placeholder="Fazer250, FZ25, Review, Manutenção, Rotas, Eventos, 2026"
-                  className="w-full bg-[#222222] border border-border rounded-sm text-[13px] text-foreground px-3 py-2 outline-none focus:border-primary/50"
-                />
-              </div>
+                        <div className="space-y-2">
+                          <label className="text-[11px] text-muted-foreground uppercase tracking-widest block font-bold">Conteúdo HTML do Bloco</label>
+                          <textarea
+                            rows={4}
+                            value={block.text}
+                            onChange={(e) => handlePostBlockChange(idx, "text", e.target.value)}
+                            placeholder="<h2>Subtítulo</h2><p>Parágrafo explicativo...</p>"
+                            className="w-full bg-[#1C1C1C] border border-border rounded-sm text-[13px] text-foreground p-3 font-mono outline-none focus:border-primary/50 resize-y"
+                          />
+                        </div>
 
-              
-              <div className="border border-border p-5 bg-[#181818] rounded-sm space-y-4">
-                <h4 style={TEKO} className="text-[18px] uppercase tracking-wide text-foreground">Seção do Hero Inicial</h4>
-                
-                <div className="space-y-2 bg-[#202020] p-4 border border-border/40 rounded-sm mb-4">
-                  <label className="text-[11px] text-primary block uppercase font-bold tracking-widest">Promover Artigo no Hero</label>
-                  <select
-                    value={editingPage.content.heroPostId || ""}
-                    onChange={(e) => {
-                      const postId = e.target.value;
-                      const selectedPost = posts.find(p => p.id === postId);
-                      if (selectedPost) {
-                        setEditingPage({
-                          ...editingPage,
-                          content: {
-                            ...editingPage.content,
-                            heroPostId: postId,
-                            heroTitle: selectedPost.title,
-                            heroSubtitle: selectedPost.excerpt,
-                            heroImage: selectedPost.img,
-                            heroFocalPoint: selectedPost.imgFocalPoint || "center"
-                          }
-                        });
-                      } else {
-                        setEditingPage({
-                          ...editingPage,
-                          content: {
-                            ...editingPage.content,
-                            heroPostId: ""
-                          }
-                        });
-                      }
-                    }}
-                    className="w-full bg-[#111111] border border-border rounded-sm text-[13px] px-3 py-2 outline-none focus:border-primary/50 text-foreground"
-                  >
-                    <option value="">-- Nenhum (Usar textos estáticos abaixo) --</option>
-                    {posts.map((p) => (
-                      <option key={p.id} value={p.id}>{stripHtml(p.title)}</option>
-                    ))}
-                  </select>
-                  <p className="text-[11px] text-muted-foreground mt-1">
-                    Selecionar um post irá preencher dinamicamente a imagem, título, resumo e link do Hero com as informações desse artigo.
-                  </p>
-                </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-[11px] text-muted-foreground uppercase tracking-widest block font-bold">Imagem Opcional do Bloco</label>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                id={`block-file-${idx}`}
+                                onChange={(e) => handleFileUpload(e, (url) => handlePostBlockChange(idx, "image", url))}
+                              />
+                              <label
+                                htmlFor={`block-file-${idx}`}
+                                className="bg-secondary hover:bg-white/[0.04] text-muted-foreground hover:text-foreground text-[11px] font-bold uppercase tracking-wider px-2.5 py-1.5 border border-border rounded-sm cursor-pointer flex items-center gap-1.5 transition-all"
+                              >
+                                <Upload size={12} /> Upload
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => openGalleryModal((url) => handlePostBlockChange(idx, "image", url))}
+                                className="flex items-center gap-1 bg-blue-950 hover:bg-blue-900 border border-blue-700/60 text-blue-300 text-[11px] font-bold uppercase tracking-wider px-2.5 py-2 rounded-sm transition-all shadow-sm"
+                                title="Escolher imagem da galeria"
+                              >
+                                <ImageIcon size={12} /> Galeria
+                              </button>
+                              <input
+                                type="text"
+                                value={block.image || ""}
+                                onChange={(e) => handlePostBlockChange(idx, "image", e.target.value)}
+                                placeholder="https://... ou /uploads/..."
+                                className="flex-1 bg-[#1C1C1C] border border-border rounded-sm text-[12px] text-foreground px-3 py-1.5 font-mono outline-none focus:border-primary/50"
+                              />
+                            </div>
+                          </div>
 
-                <div className="opacity-70 space-y-4">
-                  <span className="text-[11px] text-muted-foreground uppercase font-bold block border-b border-border/40 pb-1">Textos de Fallback (Caso não promova um post acima)</span>
-                  <div className="space-y-3">
-                    <label className="text-[11px] text-muted-foreground block uppercase">Título do Hero (Quebra de linha aceita)</label>
-                    <textarea
-                      rows={2}
-                      value={editingPage.content.heroTitle || ""}
-                      onChange={(e) => setEditingPage({
-                        ...editingPage,
-                        content: { ...editingPage.content, heroTitle: e.target.value }
-                      })}
-                      className="w-full bg-[#222222] border border-border rounded-sm text-[13px] text-foreground px-3 py-2"
-                    />
-                  </div>
-                  <div className="space-y-3">
-                    <label className="text-[11px] text-muted-foreground block uppercase">Subtítulo / Parágrafo do Hero</label>
-                    <textarea
-                      rows={3}
-                      value={editingPage.content.heroSubtitle || ""}
-                      onChange={(e) => setEditingPage({
-                        ...editingPage,
-                        content: { ...editingPage.content, heroSubtitle: e.target.value }
-                      })}
-                      className="w-full bg-[#222222] border border-border rounded-sm text-[13px] text-foreground px-3 py-2"
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-[11px] text-muted-foreground block uppercase">Imagem do Hero (URL ou Upload)</label>
-                      <div className="flex gap-2">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => handleFileUpload(e, (url) => setEditingPage({
-                            ...editingPage,
-                            content: { ...editingPage.content, heroImage: url }
-                          }))}
-                          className="hidden"
-                          id="home-hero-file"
-                        />
-                        <label htmlFor="home-hero-file" className="bg-[#2a2a2a] border border-border text-[11px] px-3 py-2 cursor-pointer">Upload</label>
-                        <input
-                          type="text"
-                          value={editingPage.content.heroImage || ""}
-                          onChange={(e) => setEditingPage({
-                            ...editingPage,
-                            content: { ...editingPage.content, heroImage: e.target.value }
-                          })}
-                          className="flex-1 bg-[#222222] border border-border rounded-sm text-[12px] text-foreground px-2"
-                        />
+                          <div className="space-y-2">
+                            <label className="text-[11px] text-muted-foreground uppercase tracking-widest block font-bold">Texto Alternativo (Alt Text)</label>
+                            <input
+                              type="text"
+                              value={block.alt || ""}
+                              onChange={(e) => handlePostBlockChange(idx, "alt", e.target.value)}
+                              placeholder="Descrição da imagem para SEO e acessibilidade"
+                              className="w-full bg-[#1C1C1C] border border-border rounded-sm text-[12px] text-foreground px-3 py-1.5 outline-none focus:border-primary/50"
+                            />
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[11px] text-muted-foreground block uppercase">Ponto Focal Hero (Ajuste Visual)</label>
-                      <FocalPointPicker
-                        imageUrl={editingPage.content.heroImage || ""}
-                        value={editingPage.content.heroFocalPoint || "center"}
-                        onChange={(val) => setEditingPage({
-                          ...editingPage,
-                          content: { ...editingPage.content, heroFocalPoint: val }
-                        })}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="border border-border p-5 bg-[#181818] rounded-sm space-y-4">
-                <h4 style={TEKO} className="text-[18px] uppercase tracking-wide text-foreground">Faixa de Notícia Rápida (Breaking Bar)</h4>
-                
-                <div className="space-y-2 bg-[#202020] p-4 border border-border/40 rounded-sm mb-4">
-                  <label className="text-[11px] text-primary block uppercase font-bold tracking-widest">Promover Artigo na Breaking Bar</label>
-                  <select
-                    value={editingPage.content.breakingPostId || ""}
-                    onChange={(e) => {
-                      const postId = e.target.value;
-                      const selectedPost = posts.find(p => p.id === postId);
-                      if (selectedPost) {
-                        setEditingPage({
-                          ...editingPage,
-                          content: {
-                            ...editingPage.content,
-                            breakingPostId: postId,
-                            breakingText: selectedPost.title,
-                            breakingSlug: selectedPost.slug
-                          }
-                        });
-                      } else {
-                        setEditingPage({
-                          ...editingPage,
-                          content: {
-                            ...editingPage.content,
-                            breakingPostId: ""
-                          }
-                        });
-                      }
-                    }}
-                    className="w-full bg-[#111111] border border-border rounded-sm text-[13px] px-3 py-2 outline-none focus:border-primary/50 text-foreground"
-                  >
-                    <option value="">-- Nenhum (Usar textos estáticos abaixo) --</option>
-                    {posts.map((p) => (
-                      <option key={p.id} value={p.id}>{stripHtml(p.title)}</option>
                     ))}
-                  </select>
-                  <p className="text-[11px] text-muted-foreground mt-1">
-                    Selecionar um post exibirá dinamicamente o título do artigo selecionado na barra vermelha "Novo".
-                  </p>
-                </div>
-
-                <div className="opacity-70 grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[11px] text-muted-foreground block uppercase">Texto Informativo de Fallback</label>
-                    <input
-                      type="text"
-                      value={editingPage.content.breakingText || ""}
-                      onChange={(e) => setEditingPage({
-                        ...editingPage,
-                        content: { ...editingPage.content, breakingText: e.target.value }
-                      })}
-                      className="w-full bg-[#222222] border border-border rounded-sm text-[13px] px-3 py-2"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[11px] text-muted-foreground block uppercase">Slug do Post de Fallback</label>
-                    <input
-                      type="text"
-                      value={editingPage.content.breakingSlug || ""}
-                      onChange={(e) => setEditingPage({
-                        ...editingPage,
-                        content: { ...editingPage.content, breakingSlug: e.target.value }
-                      })}
-                      className="w-full bg-[#222222] border border-border rounded-sm text-[13px] px-3 py-2"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="border border-border p-5 bg-[#181818] rounded-sm space-y-4">
-                <h4 style={TEKO} className="text-[18px] uppercase tracking-wide text-foreground">Banner do Rodapé da Home</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[11px] text-muted-foreground block uppercase">Título do Banner</label>
-                    <input
-                      type="text"
-                      value={editingPage.content.bannerTitle}
-                      onChange={(e) => setEditingPage({
-                        ...editingPage,
-                        content: { ...editingPage.content, bannerTitle: e.target.value }
-                      })}
-                      className="w-full bg-[#222222] border border-border rounded-sm text-[13px] px-3 py-2"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[11px] text-muted-foreground block uppercase">Subtítulo / Ficha Curta</label>
-                    <input
-                      type="text"
-                      value={editingPage.content.bannerSubtitle}
-                      onChange={(e) => setEditingPage({
-                        ...editingPage,
-                        content: { ...editingPage.content, bannerSubtitle: e.target.value }
-                      })}
-                      className="w-full bg-[#222222] border border-border rounded-sm text-[13px] px-3 py-2"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[11px] text-muted-foreground block uppercase">Imagem do Banner (URL ou Upload)</label>
-                    <div className="flex gap-2">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handleFileUpload(e, (url) => setEditingPage({
-                          ...editingPage,
-                          content: { ...editingPage.content, bannerImage: url }
-                        }))}
-                        className="hidden"
-                        id="home-banner-file"
-                      />
-                      <label htmlFor="home-banner-file" className="bg-[#2a2a2a] border border-border text-[11px] px-3 py-2 cursor-pointer">Upload</label>
-                      <input
-                        type="text"
-                        value={editingPage.content.bannerImage}
-                        onChange={(e) => setEditingPage({
-                          ...editingPage,
-                          content: { ...editingPage.content, bannerImage: e.target.value }
-                        })}
-                        className="flex-1 bg-[#222222] border border-border rounded-sm text-[12px] text-foreground px-2"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[11px] text-muted-foreground block uppercase">Ponto Focal Banner (Ajuste Visual)</label>
-                    <FocalPointPicker
-                      imageUrl={editingPage.content.bannerImage || ""}
-                      value={editingPage.content.bannerFocalPoint || "center"}
-                      onChange={(val) => setEditingPage({
-                        ...editingPage,
-                        content: { ...editingPage.content, bannerFocalPoint: val }
-                      })}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* --- CONTEÚDO DA PÁGINA SOBRE (ESTÁTICA/ESTRUTURADA) --- */}
-          {editingPage.slug === "sobre" && (
-            <div className="space-y-6 pt-4 border-t border-border">
-              <h3 style={TEKO} className="text-[21px] uppercase tracking-wide text-foreground border-b border-border pb-1">Campos Estruturados - Sobre</h3>
-
-              <div className="border border-border p-5 bg-[#181818] rounded-sm space-y-4">
-                <h4 style={TEKO} className="text-[18px] uppercase tracking-wide text-foreground">Hero da Seção</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[11px] text-muted-foreground block uppercase">Título Principal</label>
-                    <input
-                      type="text"
-                      value={editingPage.content.heroTitle}
-                      onChange={(e) => setEditingPage({
-                        ...editingPage,
-                        content: { ...editingPage.content, heroTitle: e.target.value }
-                      })}
-                      className="w-full bg-[#222222] border border-border rounded-sm text-[13px] px-3 py-2"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[11px] text-muted-foreground block uppercase">Descrição</label>
-                    <input
-                      type="text"
-                      value={editingPage.content.heroDescription}
-                      onChange={(e) => setEditingPage({
-                        ...editingPage,
-                        content: { ...editingPage.content, heroDescription: e.target.value }
-                      })}
-                      className="w-full bg-[#222222] border border-border rounded-sm text-[13px] px-3 py-2"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[11px] text-muted-foreground block uppercase">Imagem do Hero (URL ou Upload)</label>
-                    <div className="flex gap-2">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handleFileUpload(e, (url) => setEditingPage({
-                          ...editingPage,
-                          content: { ...editingPage.content, heroImage: url }
-                        }))}
-                        className="hidden"
-                        id="sobre-hero-file"
-                      />
-                      <label htmlFor="sobre-hero-file" className="bg-[#2a2a2a] border border-border text-[11px] px-3 py-2 cursor-pointer">Upload</label>
-                      <input
-                        type="text"
-                        value={editingPage.content.heroImage}
-                        onChange={(e) => setEditingPage({
-                          ...editingPage,
-                          content: { ...editingPage.content, heroImage: e.target.value }
-                        })}
-                        className="flex-1 bg-[#222222] border border-border rounded-sm text-[12px] text-foreground px-2"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[11px] text-muted-foreground block uppercase">Ponto Focal Hero (Ajuste Visual)</label>
-                    <FocalPointPicker
-                      imageUrl={editingPage.content.heroImage || ""}
-                      value={editingPage.content.heroFocalPoint || "center"}
-                      onChange={(val) => setEditingPage({
-                        ...editingPage,
-                        content: { ...editingPage.content, heroFocalPoint: val }
-                      })}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Estatísticas */}
-              <div className="border border-border p-5 bg-[#181818] rounded-sm space-y-4">
-                <h4 style={TEKO} className="text-[18px] uppercase tracking-wide text-foreground">Barras de Estatísticas (4 itens)</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {(editingPage.content.stats || []).map((s: any, idx: number) => (
-                    <div key={idx} className="bg-[#222222] p-3 rounded-sm space-y-2">
-                      <span className="text-[11px] text-primary font-bold">Item {idx + 1}</span>
-                      <input
-                        type="text"
-                        placeholder="Valor (ex: 3.500 km)"
-                        value={s.value}
-                        onChange={(e) => {
-                          const statsCopy = [...editingPage.content.stats];
-                          statsCopy[idx] = { ...statsCopy[idx], value: e.target.value };
-                          setEditingPage({ ...editingPage, content: { ...editingPage.content, stats: statsCopy } });
-                        }}
-                        className="w-full bg-[#111111] border border-border text-[12px] px-2 py-1"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Rótulo (ex: Rodados)"
-                        value={s.label}
-                        onChange={(e) => {
-                          const statsCopy = [...editingPage.content.stats];
-                          statsCopy[idx] = { ...statsCopy[idx], label: e.target.value };
-                          setEditingPage({ ...editingPage, content: { ...editingPage.content, stats: statsCopy } });
-                        }}
-                        className="w-full bg-[#111111] border border-border text-[12px] px-2 py-1"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Biografia e Foto do Eliezer */}
-              <div className="border border-border p-5 bg-[#181818] rounded-sm space-y-4">
-                <h4 style={TEKO} className="text-[18px] uppercase tracking-wide text-foreground">Biografia do Autor</h4>
-                <div className="space-y-2">
-                  <label className="text-[11px] text-muted-foreground block uppercase">Título da Biografia</label>
-                  <input
-                    type="text"
-                    value={editingPage.content.bioTitle}
-                    onChange={(e) => setEditingPage({
-                      ...editingPage,
-                      content: { ...editingPage.content, bioTitle: e.target.value }
-                    })}
-                    className="w-full bg-[#222222] border border-border rounded-sm text-[13px] px-3 py-2"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[11px] text-muted-foreground block uppercase">Texto da Biografia (Suporta HTML)</label>
-                  <textarea
-                    rows={6}
-                    value={editingPage.content.bioContentHtml}
-                    onChange={(e) => setEditingPage({
-                      ...editingPage,
-                      content: { ...editingPage.content, bioContentHtml: e.target.value }
-                    })}
-                    className="w-full bg-[#222222] border border-border rounded-sm text-[13px] px-3 py-2"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[11px] text-muted-foreground block uppercase">Frase em Destaque (Citação)</label>
-                  <input
-                    type="text"
-                    value={editingPage.content.bioQuote}
-                    onChange={(e) => setEditingPage({
-                      ...editingPage,
-                      content: { ...editingPage.content, bioQuote: e.target.value }
-                    })}
-                    className="w-full bg-[#222222] border border-border rounded-sm text-[13px] px-3 py-2"
-                  />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[11px] text-muted-foreground block uppercase">Foto do Autor (Eliezer)</label>
-                    <div className="flex gap-2">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handleFileUpload(e, (url) => setEditingPage({
-                          ...editingPage,
-                          content: { ...editingPage.content, riderImage: url }
-                        }))}
-                        className="hidden"
-                        id="sobre-rider-file"
-                      />
-                      <label htmlFor="sobre-rider-file" className="bg-[#2a2a2a] border border-border text-[11px] px-3 py-2 cursor-pointer">Upload</label>
-                      <input
-                        type="text"
-                        value={editingPage.content.riderImage}
-                        onChange={(e) => setEditingPage({
-                          ...editingPage,
-                          content: { ...editingPage.content, riderImage: e.target.value }
-                        })}
-                        className="flex-1 bg-[#222222] border border-border rounded-sm text-[12px] text-foreground px-2"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[11px] text-muted-foreground block uppercase">Ponto Focal Foto (Ajuste Visual)</label>
-                    <FocalPointPicker
-                      imageUrl={editingPage.content.riderImage || ""}
-                      value={editingPage.content.riderFocalPoint || "center"}
-                      onChange={(val) => setEditingPage({
-                        ...editingPage,
-                        content: { ...editingPage.content, riderFocalPoint: val }
-                      })}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* --- CONTEÚDO DE PÁGINAS DE CATEGORIA --- */}
-          {(editingPage.slug === "reviews" || 
-            editingPage.slug === "manutencao" || 
-            editingPage.slug === "rotas" || 
-            editingPage.slug === "equipamentos") && (
-            <div className="space-y-6 pt-4 border-t border-border">
-              <h3 style={TEKO} className="text-[21px] uppercase tracking-wide text-foreground border-b border-border pb-1">
-                Configurações da Página de Categoria
-              </h3>
-              
-              <div className="space-y-1.5">
-                <label className="text-[12px] text-muted-foreground uppercase block font-bold">
-                  Descrição Curta (Apresentação da Categoria)
-                </label>
-                <textarea
-                  required
-                  rows={3}
-                  value={editingPage.content?.description || ""}
-                  onChange={(e) => setEditingPage({
-                    ...editingPage,
-                    content: { ...editingPage.content, description: e.target.value }
-                  })}
-                  placeholder="Ex: Análises detalhadas de jaquetas, capacetes..."
-                  className="w-full bg-[#222222] border border-border rounded-sm text-[13px] text-foreground p-3 outline-none focus:border-primary/50"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-1.5">
-                  <label className="text-[12px] text-muted-foreground uppercase block font-bold">
-                    Imagem de Fundo (Hero Banner)
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleFileUpload(e, (url) => setEditingPage({
-                        ...editingPage,
-                        content: { ...editingPage.content, heroImg: url }
-                      }))}
-                      className="hidden"
-                      id="category-hero-file"
-                    />
-                    <label htmlFor="category-hero-file" className="bg-[#2a2a2a] border border-border text-[11px] px-3 py-2.5 cursor-pointer">
-                      Upload
-                    </label>
-                    <input
-                      type="text"
-                      value={editingPage.content?.heroImg || ""}
-                      onChange={(e) => setEditingPage({
-                        ...editingPage,
-                        content: { ...editingPage.content, heroImg: e.target.value }
-                      })}
-                      className="flex-1 bg-[#222222] border border-border rounded-sm text-[13px] text-foreground px-3 py-1.5"
-                    />
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[12px] text-muted-foreground uppercase block font-bold">
-                    Ícone da Categoria
-                  </label>
-                  <select
-                    value={editingPage.content?.iconName || "Star"}
-                    onChange={(e) => setEditingPage({
-                      ...editingPage,
-                      content: { ...editingPage.content, iconName: e.target.value }
-                    })}
-                    className="w-full bg-[#222222] border border-border rounded-sm text-[14px] text-foreground px-4 py-2.5 outline-none focus:border-primary/50"
-                  >
-                    <option value="Star">Estrela (Reviews)</option>
-                    <option value="Wrench">Chave Inglesa (Manutenção)</option>
-                    <option value="Navigation">Navegação/Seta (Rotas)</option>
-                    <option value="ShieldCheck">Escudo com Check (Equipamentos)</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* --- CONTEÚDO DE PÁGINAS CUSTOMIZADAS (DINÂMICAS) --- */}
-          {!editingPage.isStatic && (
-            <div className="space-y-6 pt-4 border-t border-border">
-              <h3 style={TEKO} className="text-[21px] uppercase tracking-wide text-foreground border-b border-border pb-1">
-                Conteúdo HTML da Página
-              </h3>
-              <div className="space-y-2">
-                <label className="text-[12px] text-muted-foreground uppercase block font-bold">
-                  Corpo da Página (Suporta HTML completo: títulos, imagens, parágrafos)
-                </label>
-                <textarea
-                  required
-                  rows={15}
-                  value={editingPage.content?.bodyHtml || ""}
-                  onChange={(e) => setEditingPage({
-                    ...editingPage,
-                    content: { ...editingPage.content, bodyHtml: e.target.value }
-                  })}
-                  placeholder="Insira o HTML da sua página. Ex: <h2>Fale Conosco</h2> <p>Entre em contato pelo e-mail...</p>"
-                  className="w-full bg-[#222222] border border-border rounded-sm text-[13px] text-foreground p-3 outline-none focus:border-primary/50"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* SEO DA PÁGINA */}
-          <div className="border border-border p-5 bg-[#181818] rounded-sm space-y-4">
-            <h3 style={TEKO} className="text-[19px] uppercase tracking-wide border-b border-border pb-2 text-foreground">
-              Configurações de SEO da Página
-            </h3>
-            <div className="space-y-3">
-              <label className="text-[12px] text-muted-foreground uppercase tracking-wider block">Título de Metadados (Meta Title)</label>
-              <input
-                type="text"
-                value={editingPage.seoTitle}
-                onChange={(e) => setEditingPage({ ...editingPage, seoTitle: e.target.value })}
-                placeholder="Se vazio, usará o título da página."
-                className="w-full bg-[#222222] border border-border rounded-sm text-[13px] text-foreground px-4 py-2"
-              />
-            </div>
-            <div className="space-y-3">
-              <label className="text-[12px] text-muted-foreground uppercase tracking-wider block">Descrição de Metadados (Meta Description)</label>
-              <textarea
-                rows={2}
-                value={editingPage.seoDescription}
-                onChange={(e) => setEditingPage({ ...editingPage, seoDescription: e.target.value })}
-                placeholder="Insira uma descrição resumida para exibição em buscadores."
-                className="w-full bg-[#222222] border border-border rounded-sm text-[13px] text-foreground px-4 py-2"
-              />
-            </div>
-          </div>
-
-          {/* BOTÕES SALVAR/VOLTAR */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
-            <button
-              type="button"
-              onClick={() => setEditingPage(null)}
-              className="bg-secondary hover:bg-white/[0.03] text-muted-foreground hover:text-foreground text-[13px] font-bold uppercase tracking-wider px-5 py-3 border border-border rounded-sm transition-all"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex items-center gap-2 bg-primary hover:bg-[#E05300] text-white text-[13px] font-bold uppercase tracking-wider px-6 py-3 rounded-sm transition-colors disabled:bg-primary/50"
-            >
-              <Save size={14} /> {loading ? "Salvando..." : "Salvar Página"}
-            </button>
-          </div>
-        </form>
-      )}
-
-      {/* --- ABA 3: FUNÇÕES (CONFIGURAÇÕES DO SISTEMA) --- */}
-      {activeTab === "settings" && (
-        <div className="space-y-6">
-          <div className="border-b border-border pb-3">
-            <h2 style={TEKO} className="text-[26px] uppercase tracking-wide">Funções</h2>
-            <p className="text-[13px] text-muted-foreground">Ative ou desative recursos especiais do sistema de forma modular.</p>
-          </div>
-
-          <div className="space-y-6">
-            {plugins.map((plugin) => (
-              <div key={plugin.id} className="bg-card border border-border p-6 rounded-sm space-y-4">
-                <div className="flex items-start justify-between gap-6 pb-4 border-b border-border/60">
-                  <div className="space-y-1">
-                    <h3 style={TEKO} className="text-[20px] uppercase tracking-wide text-foreground">{plugin.name}</h3>
-                    <p className="text-[13px] text-muted-foreground max-w-[620px] leading-relaxed">
-                      {plugin.description}
-                    </p>
-                  </div>
-                  <div className="flex items-center pt-2">
-                    <label className="relative inline-flex items-center cursor-pointer select-none">
-                      <input 
-                        type="checkbox" 
-                        checked={!!activePlugins[plugin.id]}
-                        onChange={(e) => handleTogglePlugin(plugin.id, e.target.checked)}
-                        className="sr-only peer" 
-                      />
-                      <div className="w-11 h-6 bg-[#333333] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                    </label>
-                  </div>
-                </div>
-                
-                {plugin.detailedDescription && (
-                  <div className="text-[12px] text-muted-foreground bg-[#1A1A1A] p-4 border border-border/40 rounded-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: plugin.detailedDescription }} />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* --- ABA 4: NOTIFICAÇÕES, MÉTRICAS & NEWSLETTER --- */}
-      {activeTab === "notifications" && (
-        <div className="space-y-8">
-          <div className="border-b border-border pb-3">
-            <h2 style={TEKO} className="text-[26px] uppercase tracking-wide">Métricas & Notificações</h2>
-            <p className="text-[13px] text-muted-foreground">Acompanhe acessos reais de leitores (sem inflar por admin), inscrições de leitores e curtidas.</p>
-          </div>
-
-          {/* QUADROS DE MÉTRICAS */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
-            <div className="bg-card border border-border p-5 rounded-sm flex items-center justify-between">
-              <div>
-                <span className="text-[11px] text-muted-foreground uppercase tracking-wider block">Visualizações Reais</span>
-                <span style={TEKO} className="text-[32px] font-bold leading-none text-foreground">
-                  {posts.reduce((acc, p) => acc + (p.views || 0), 0)}
-                </span>
-                <span className="text-[10px] text-green-400 block mt-1">✓ Descontando seus acessos de admin</span>
-              </div>
-              <div className="p-3 bg-primary/10 text-primary rounded-full">
-                <Eye size={20} />
-              </div>
-            </div>
-
-            <div className="bg-card border border-border p-5 rounded-sm flex items-center justify-between">
-              <div>
-                <span className="text-[11px] text-muted-foreground uppercase tracking-wider block">Total de Curtidas</span>
-                <span style={TEKO} className="text-[32px] font-bold leading-none text-foreground">
-                  {posts.reduce((acc, p) => acc + (p.likes || 0), 0)}
-                </span>
-                <span className="text-[10px] text-muted-foreground block mt-1">Interações nos posts</span>
-              </div>
-              <div className="p-3 bg-red-950/30 text-red-500 rounded-full">
-                <Heart size={20} />
-              </div>
-            </div>
-
-            <div className="bg-card border border-border p-5 rounded-sm flex items-center justify-between">
-              <div>
-                <span className="text-[11px] text-muted-foreground uppercase tracking-wider block">Inscritos na Newsletter</span>
-                <span style={TEKO} className="text-[32px] font-bold leading-none text-foreground">
-                  {subscribers.length}
-                </span>
-                <span className="text-[10px] text-muted-foreground block mt-1">Leitores cadastrados</span>
-              </div>
-              <div className="p-3 bg-blue-950/30 text-blue-400 rounded-full">
-                <Mail size={20} />
-              </div>
-            </div>
-
-            <div className="bg-card border border-border p-5 rounded-sm flex items-center justify-between">
-              <div>
-                <span className="text-[11px] text-muted-foreground uppercase tracking-wider block">Notificações</span>
-                <span style={TEKO} className="text-[32px] font-bold leading-none text-foreground">
-                  {notifications.length}
-                </span>
-                <span className="text-[10px] text-muted-foreground block mt-1">
-                  {notifications.filter(n => !n.read).length} não lidas
-                </span>
-              </div>
-              <div className="p-3 bg-yellow-950/30 text-yellow-400 rounded-full">
-                <Bell size={20} />
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            
-            {/* FEED DE NOTIFICAÇÕES */}
-            <div className="bg-card border border-border p-6 rounded-sm space-y-4">
-              <div className="flex items-center justify-between border-b border-border pb-3 flex-wrap gap-2">
-                <h3 style={TEKO} className="text-[20px] uppercase tracking-wide text-foreground flex items-center gap-2">
-                  <Bell size={16} className="text-primary" /> Feed de Atividades Recentes
-                </h3>
-                <div className="flex items-center gap-3">
-                  <span className="text-[11px] text-muted-foreground uppercase">
-                    {notifications.length} registros
-                  </span>
-                  {notifications.some(n => !n.read) && (
+                {/* Botão de Salvar */}
+                <div className="flex items-center justify-end gap-4 border-t border-border pt-6">
+                  {editingPost && (
                     <button
                       type="button"
-                      onClick={async () => {
-                        await markAllNotificationsAsReadAction();
-                        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-                      }}
-                      className="text-[11px] bg-primary/20 hover:bg-primary text-primary hover:text-white px-2.5 py-1 rounded-sm border border-primary/40 uppercase font-bold transition-all"
+                      onClick={handleCancelPostEdit}
+                      className="px-6 py-2.5 border border-border text-muted-foreground hover:text-foreground text-[12px] font-bold uppercase tracking-wider rounded-sm transition-colors"
                     >
-                      Marcar todas como lidas
+                      Cancelar
                     </button>
                   )}
-                </div>
-              </div>
-
-              {notifications.length === 0 ? (
-                <div className="p-8 text-center text-muted-foreground text-[13px]">
-                  Nenhuma notificação registrada até o momento.
-                </div>
-              ) : (
-                <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
-                  {notifications.map((notif) => {
-                    const associatedPost = posts.find(p => p.id === notif.postId || p.title === notif.postTitle || (p.translationGroupId && p.translationGroupId === notif.postId));
-                    const postSlug = associatedPost?.slug;
-                    const postAudioUrl = associatedPost?.audioUrl;
-                    const postImgUrl = associatedPost?.img;
-
-                    return (
-                      <div
-                        key={notif.id}
-                        className={`p-3.5 border rounded-sm flex flex-col gap-2.5 text-[13px] transition-colors ${
-                          notif.read ? "bg-[#141414] border-border/40 text-muted-foreground" : "bg-[#1E1A16] border-primary/40 text-foreground"
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${
-                                notif.type === "REGISTER" ? "bg-blue-900/60 text-blue-300" :
-                                notif.type === "LIKE" ? "bg-red-900/60 text-red-300" :
-                                notif.type === "SHARE" ? "bg-purple-900/60 text-purple-300" :
-                                notif.type === "AUDIO" ? "bg-amber-900/60 text-amber-300" :
-                                notif.type === "IMAGE" ? "bg-cyan-900/60 text-cyan-300" :
-                                notif.type === "POST_UPDATE" ? "bg-emerald-900/60 text-emerald-300" :
-                                notif.type?.startsWith("AI_ACTION") ? "bg-purple-900/60 text-purple-300" :
-                                "bg-primary/30 text-primary"
-                              }`}>
-                                {notif.type === "POST_UPDATE" ? "POST API" : notif.type?.startsWith("AI_ACTION") ? "IA WEBHOOK" : notif.type}
-                              </span>
-
-                              {/* DURAÇÃO DO ÁUDIO NAS NOTIFICAÇÕES */}
-                              {(notif.type === "AUDIO" || postAudioUrl) && postAudioUrl && (
-                                <AudioDurationBadge url={postAudioUrl} />
-                              )}
-
-                              <span className="text-[11px] text-muted-foreground">
-                                {new Date(notif.createdAt).toLocaleString("pt-BR")}
-                              </span>
-                            </div>
-                            <p className="leading-snug font-medium">{notif.message}</p>
-                          </div>
-
-                          {!notif.read && (
-                            <button
-                              type="button"
-                              onClick={async () => {
-                                await markNotificationAsReadAction(notif.id);
-                                setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, read: true } : n));
-                              }}
-                              className="text-[10px] text-primary hover:underline shrink-0 uppercase font-bold"
-                            >
-                              Marcar lido
-                            </button>
-                          )}
-                        </div>
-
-                        {/* LINKS DE AÇÃO DIRETA NAS NOTIFICAÇÕES */}
-                        {associatedPost && (
-                          <div className="flex items-center gap-3 pt-2 border-t border-white/5 flex-wrap text-[11px]">
-                            <a
-                              href={associatedPost.lang === "en" ? `/en/post/${postSlug}` : associatedPost.lang === "es" ? `/es/post/${postSlug}` : `/post/${postSlug}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-1 font-bold text-emerald-400 hover:underline bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-800/40"
-                            >
-                              <ExternalLink size={11} /> Visualizar Post
-                            </a>
-
-                            {/* LINK PARA IMAGEM ISOLADA E NA POSIÇÃO DO POST */}
-                            {postImgUrl && (
-                              <>
-                                <a
-                                  href={postImgUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex items-center gap-1 text-cyan-400 hover:underline bg-cyan-950/40 px-2 py-0.5 rounded border border-cyan-800/40"
-                                  title="Abrir imagem isolada em nova aba"
-                                >
-                                  <ImageIcon size={11} /> Imagem Isolada
-                                </a>
-                                <a
-                                  href={associatedPost.lang === "en" ? `/en/post/${postSlug}#img-1` : associatedPost.lang === "es" ? `/es/post/${postSlug}#img-1` : `/post/${postSlug}#img-1`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex items-center gap-1 text-muted-foreground hover:text-white"
-                                  title="Abrir direto na imagem do post"
-                                >
-                                  <Eye size={11} /> Imagem no Post
-                                </a>
-                              </>
-                            )}
-
-                            {/* LINK PARA ÁUDIO ISOLADO E NA POSIÇÃO DO POST */}
-                            {postAudioUrl && (
-                              <>
-                                <a
-                                  href={postAudioUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex items-center gap-1 text-amber-400 hover:underline bg-amber-950/40 px-2 py-0.5 rounded border border-amber-800/40"
-                                  title="Reproduzir áudio em nova aba"
-                                >
-                                  <Volume2 size={11} /> Áudio Isolado
-                                </a>
-                                <a
-                                  href={associatedPost.lang === "en" ? `/en/post/${postSlug}#audio` : associatedPost.lang === "es" ? `/es/post/${postSlug}#audio` : `/post/${postSlug}#audio`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="flex items-center gap-1 text-muted-foreground hover:text-white"
-                                  title="Abrir direto no player do post"
-                                >
-                                  <Eye size={11} /> Áudio no Post
-                                </a>
-                              </>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* LISTA DE INSCRITOS DA NEWSLETTER */}
-            <div className="bg-card border border-border p-6 rounded-sm space-y-4">
-              <div className="flex items-center justify-between border-b border-border pb-3">
-                <h3 style={TEKO} className="text-[20px] uppercase tracking-wide text-foreground flex items-center gap-2">
-                  <Mail size={16} className="text-primary" /> Inscritos na Newsletter ({subscribers.length})
-                </h3>
-                {subscribers.length > 0 && (
                   <button
-                    onClick={() => {
-                      const emails = subscribers.map(s => s.email).join(", ");
-                      navigator.clipboard.writeText(emails);
-                      alert("Lista de e-mails copiada para a área de transferência!");
-                    }}
-                    className="flex items-center gap-1 text-[11px] bg-secondary hover:bg-primary text-muted-foreground hover:text-white px-2.5 py-1 rounded-sm border border-border uppercase font-bold transition-colors"
+                    type="submit"
+                    disabled={loading}
+                    className="flex items-center gap-2 bg-primary hover:bg-[#E05300] text-white text-[12px] font-bold uppercase tracking-wider px-8 py-2.5 rounded-sm transition-all shadow-md"
                   >
-                    <Copy size={11} /> Copiar E-mails
+                    <Save size={16} /> {loading ? "Salvando..." : (editingPost ? "Atualizar Post" : "Publicar Post")}
                   </button>
-                )}
-              </div>
-
-              {subscribers.length === 0 ? (
-                <div className="p-8 text-center text-muted-foreground text-[13px]">
-                  Nenhum leitor se inscreveu na newsletter ainda.
                 </div>
-              ) : (
-                <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
-                  {subscribers.map((sub) => (
-                    <div key={sub.id} className="p-3 bg-[#141414] border border-border/50 rounded-sm flex items-center justify-between text-[13px]">
-                      <div>
-                        <span className="text-foreground font-medium block">{sub.email}</span>
-                        {sub.name && <span className="text-[11px] text-muted-foreground block">{sub.name}</span>}
-                      </div>
-                      <span className="text-[11px] text-muted-foreground">
-                        {new Date(sub.createdAt).toLocaleDateString("pt-BR")}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
+              </form>
             </div>
 
-          </div>
+            {/* Lista de Posts Cadastrados */}
+            <div className="bg-card border border-border rounded-sm overflow-hidden space-y-4 p-6">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-border pb-4">
+                <div className="flex items-center gap-3">
+                  <span className="w-1.5 h-6 bg-primary" />
+                  <h2 style={TEKO} className="text-[24px] uppercase tracking-wide text-foreground">
+                    Artigos Cadastrados
+                  </h2>
+                </div>
 
-          {/* CONFIGURAÇÃO DO WEBHOOK DO N8N & CHAVE DE API AUTOMATIZADA */}
-          <div className="bg-card border border-border p-6 rounded-sm space-y-6">
-            <div className="flex items-center gap-2 border-b border-border pb-3 text-primary">
-              <Lock size={18} />
-              <h3 style={TEKO} className="text-[22px] uppercase tracking-wide font-semibold text-foreground">
-                Integração n8n & Endpoint de Automação de Posts
-              </h3>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              
-              {/* Webhook N8N */}
-              <div className="space-y-3">
-                <h4 style={TEKO} className="text-[18px] uppercase tracking-wide text-foreground">Webhook do n8n (Disparo ao Publicar)</h4>
-                <p className="text-[12px] text-muted-foreground">
-                  Insira a URL do seu Webhook no n8n. Sempre que um post novo for criado (manual ou via API), o sistema fará um disparo POST para esta URL informando o resumo e link do post.
-                </p>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
                   <input
-                    type="url"
-                    value={n8nWebhookUrl}
-                    onChange={(e) => setN8nWebhookUrl(e.target.value)}
-                    placeholder="https://seu-n8n.com/webhook/moto-post"
-                    className="flex-1 bg-[#141414] border border-border rounded-sm text-[13px] px-3 py-2 text-foreground outline-none focus:border-primary/50"
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Buscar por título ou slug..."
+                    className="bg-[#181818] border border-border rounded-sm text-[12px] text-foreground px-3 py-1.5 outline-none focus:border-primary/50 min-w-[200px]"
                   />
-                  <button
-                    onClick={async () => {
-                      setLoading(true);
-                      const existingConfig = pages.find(p => p.slug === "config") || {
-                        slug: "config",
-                        title: "Configurações do Sistema",
-                        isStatic: true,
-                        content: {}
-                      };
-                      const updated = {
-                        ...existingConfig,
-                        content: {
-                          ...((typeof existingConfig.content === "object" ? existingConfig.content : {}) as any),
-                          n8nWebhookUrl: n8nWebhookUrl.trim()
-                        }
-                      };
-                      const res = await savePageAction(updated);
-                      if (!res.error) {
-                        setMessage({ type: "success", text: "URL do Webhook do n8n salva com sucesso!" });
-                      } else {
-                        setMessage({ type: "error", text: "Erro ao salvar webhook: " + res.error });
-                      }
-                      setLoading(false);
-                    }}
-                    className="bg-primary hover:bg-[#E05300] text-white text-[12px] font-bold uppercase tracking-wider px-4 py-2 rounded-sm shrink-0"
+                  <select
+                    value={selectedLang}
+                    onChange={(e) => setSelectedLang(e.target.value)}
+                    className="bg-[#181818] border border-border rounded-sm text-[12px] text-foreground px-2 py-1.5 outline-none focus:border-primary/50"
                   >
-                    Salvar Webhook
-                  </button>
+                    <option value="all">Todos Idiomas</option>
+                    <option value="pt">Português (PT)</option>
+                    <option value="en">Inglês (EN)</option>
+                    <option value="es">Espanhol (ES)</option>
+                  </select>
+                  <select
+                    value={selectedTag}
+                    onChange={(e) => setSelectedTag(e.target.value)}
+                    className="bg-[#181818] border border-border rounded-sm text-[12px] text-foreground px-2 py-1.5 outline-none focus:border-primary/50"
+                  >
+                    <option value="all">Todas Categorias</option>
+                    <option value="Reviews">Reviews</option>
+                    <option value="Manutenção">Manutenção</option>
+                    <option value="Rotas">Rotas</option>
+                    <option value="Equipamentos">Equipamentos</option>
+                    <option value="Eventos">Eventos</option>
+                    <option value="MotoGP">MotoGP</option>
+                  </select>
                 </div>
               </div>
 
-              {/* Endpoint API de Automação */}
-              <div className="space-y-3 bg-[#141414] p-4 border border-border/60 rounded-sm">
-                <h4 style={TEKO} className="text-[18px] uppercase tracking-wide text-foreground">Endpoint de Automação API</h4>
-                <p className="text-[12px] text-muted-foreground">
-                  Para fazer chamadas de criação automática de notícias (via n8n ou Python):
-                </p>
-                <div className="bg-black/50 p-2.5 rounded text-[11px] font-mono text-primary select-all border border-border/40">
-                  POST /api/posts
-                </div>
-                <div className="text-[11px] text-muted-foreground space-y-1">
-                  <p><strong>Header de Autenticação:</strong> <code className="text-foreground">x-api-key: motonapratica-secret-key-2026</code></p>
-                  <p><strong>Payload:</strong> Aceita o JSON exato com <code className="text-foreground">title, slug, tag, category, excerpt, readTime, img, blocks</code>.</p>
-                </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-[13px] border-collapse">
+                  <thead>
+                    <tr className="border-b border-border bg-[#181818] text-muted-foreground text-[11px] uppercase tracking-wider font-bold">
+                      <th className="p-3">Artigo</th>
+                      <th className="p-3">Categoria</th>
+                      <th className="p-3">Idioma</th>
+                      <th className="p-3">Status</th>
+                      <th className="p-3 text-right">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/60">
+                    {posts
+                      .filter(p => {
+                        if (selectedLang !== "all" && p.lang !== selectedLang) return false;
+                        if (selectedTag !== "all" && p.tag !== selectedTag) return false;
+                        if (searchQuery.trim()) {
+                          const q = searchQuery.toLowerCase();
+                          return (p.title || "").toLowerCase().includes(q) || (p.slug || "").toLowerCase().includes(q);
+                        }
+                        return true;
+                      })
+                      .map((post) => (
+                        <tr key={post.id} className="hover:bg-white/[0.02] transition-colors">
+                          <td className="p-3">
+                            <div className="font-semibold text-foreground text-[14px]">{post.title}</div>
+                            <div className="text-[11px] text-muted-foreground font-mono flex items-center gap-2">
+                              <span>/post/{post.slug}</span>
+                              {post.translationGroupId && (
+                                <span className="text-primary font-bold">| Grupo #{post.translationGroupId}</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-3">
+                            <span className="text-[11px] font-bold uppercase tracking-wider bg-secondary px-2 py-0.5 border border-border rounded-xs">
+                              {post.tag || post.category}
+                            </span>
+                          </td>
+                          <td className="p-3 uppercase font-mono text-[11px] font-bold text-muted-foreground">
+                            {post.lang || "pt"}
+                          </td>
+                          <td className="p-3">
+                            <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-xs border ${
+                              post.status === "publicado" 
+                                ? "bg-emerald-950/40 text-emerald-400 border-emerald-800/60"
+                                : post.status === "em_edicao"
+                                ? "bg-amber-950/40 text-amber-400 border-amber-800/60"
+                                : "bg-zinc-800 text-zinc-400 border-zinc-700"
+                            }`}>
+                              {post.status || "publicado"}
+                            </span>
+                          </td>
+                          <td className="p-3 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => handleEditPost(post)}
+                                className="p-1.5 text-muted-foreground hover:text-primary transition-colors"
+                                title="Editar Post"
+                              >
+                                <Edit size={16} />
+                              </button>
+                              <Link
+                                href={`/post/${post.slug}`}
+                                target="_blank"
+                                className="p-1.5 text-muted-foreground hover:text-foreground transition-colors"
+                                title="Ver no Site"
+                              >
+                                <ExternalLink size={16} />
+                              </Link>
+                              <button
+                                onClick={() => handleDeletePost(post.id)}
+                                className="p-1.5 text-red-400 hover:text-red-300 transition-colors"
+                                title="Excluir Post"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
               </div>
-
             </div>
           </div>
+        )}
 
-        </div>
-      )}
+        {/* --- ABA 2: PÁGINAS INSTITUCIONAIS --- */}
+        {activeTab === "pages" && (
+          <div className="space-y-6">
+            <div className="border-b border-border pb-4">
+              <h2 style={TEKO} className="text-[26px] uppercase tracking-wide">Páginas Institucionais (E-E-A-T)</h2>
+              <p className="text-[13px] text-muted-foreground">Gerencie o conteúdo estático, páginas de compliance e políticas do portal.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {DEFAULT_FALLBACK_PAGES.map((defPage) => {
+                const livePage = pages.find(p => p.slug === defPage.slug) || defPage;
+                return (
+                  <div key={defPage.slug} className="bg-card border border-border p-5 rounded-sm space-y-3">
+                    <div className="flex items-center justify-between border-b border-border/60 pb-2">
+                      <h3 style={TEKO} className="text-[20px] uppercase text-foreground">{livePage.title}</h3>
+                      <span className="text-[10px] font-mono text-muted-foreground font-bold uppercase">/{livePage.slug}</span>
+                    </div>
+                    <p className="text-[12px] text-muted-foreground line-clamp-3 leading-relaxed">
+                      {typeof livePage.content === "string" ? livePage.content : JSON.stringify(livePage.content)}
+                    </p>
+                    <div className="flex items-center justify-end gap-2 pt-2">
+                      <Link
+                        href={`/${livePage.slug}`}
+                        target="_blank"
+                        className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground hover:text-primary flex items-center gap-1"
+                      >
+                        Visualizar <ExternalLink size={12} />
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* --- ABA 3: FUNÇÕES (CONFIGURAÇÕES DO SISTEMA) --- */}
+        {activeTab === "settings" && (
+          <div className="space-y-8">
+            <div className="border-b border-border pb-3">
+              <h2 style={TEKO} className="text-[26px] uppercase tracking-wide">Funções e Recursos Opcionais (Plugins)</h2>
+              <p className="text-[13px] text-muted-foreground">Ative ou desative recursos especiais do sistema de forma modular.</p>
+            </div>
+
+            <div className="space-y-6">
+              {plugins.map((plugin) => (
+                <div key={plugin.id} className="bg-card border border-border p-6 rounded-sm space-y-4">
+                  <div className="flex items-start justify-between gap-6 pb-4 border-b border-border/60">
+                    <div className="space-y-1">
+                      <h3 style={TEKO} className="text-[20px] uppercase tracking-wide text-foreground">{plugin.name}</h3>
+                      <p className="text-[13px] text-muted-foreground max-w-[620px] leading-relaxed">
+                        {plugin.description}
+                      </p>
+                    </div>
+                    <div className="flex items-center pt-2">
+                      <label className="relative inline-flex items-center cursor-pointer select-none">
+                        <input 
+                          type="checkbox" 
+                          checked={!!activePlugins[plugin.id]}
+                          onChange={(e) => handleTogglePlugin(plugin.id, e.target.checked)}
+                          className="sr-only peer" 
+                        />
+                        <div className="w-11 h-6 bg-[#333333] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                      </label>
+                    </div>
+                  </div>
+                  
+                  {plugin.detailedDescription && (
+                    <div className="text-[12px] text-muted-foreground bg-[#1A1A1A] p-4 border border-border/40 rounded-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: plugin.detailedDescription }} />
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* SEÇÃO DE INTEGRAÇÕES & WEBHOOKS */}
+            <div className="border-t border-border pt-8 space-y-6">
+              <div className="border-b border-border pb-3">
+                <h3 style={TEKO} className="text-[24px] uppercase tracking-wide text-foreground">Integrações de Automação & Webhooks</h3>
+                <p className="text-[13px] text-muted-foreground">Configurações de infraestrutura e disparo automatizado.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Webhook N8N */}
+                <div className="space-y-3">
+                  <h4 style={TEKO} className="text-[18px] uppercase tracking-wide text-foreground">Automação de Webhooks n8n</h4>
+                  <p className="text-[12px] text-muted-foreground">
+                    O endpoint do webhook é gerenciado exclusivamente no servidor via variável de ambiente <code className="text-foreground font-mono">N8N_WEBHOOK_URL</code>.
+                  </p>
+                </div>
+
+                {/* Endpoint API de Automação */}
+                <div className="space-y-3 bg-[#141414] p-4 border border-border/60 rounded-sm">
+                  <h4 style={TEKO} className="text-[18px] uppercase tracking-wide text-foreground">Endpoint de Automação API</h4>
+                  <p className="text-[12px] text-muted-foreground">
+                    Para fazer chamadas de criação automática de notícias (via n8n ou Python):
+                  </p>
+                  <div className="bg-black/50 p-2.5 rounded text-[11px] font-mono text-primary select-all border border-border/40">
+                    POST /api/posts
+                  </div>
+                  <div className="text-[11px] text-muted-foreground space-y-1">
+                    <p><strong>Header de Autenticação:</strong> <code className="text-foreground">x-api-key: &lt;API_SECRET_KEY&gt;</code></p>
+                    <p><strong>Payload:</strong> Aceita o JSON exato com <code className="text-foreground">title, slug, tag, category, excerpt, readTime, img, blocks</code>.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* --- ABA 4: NOTIFICAÇÕES --- */}
+        {activeTab === "notifications" && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between border-b border-border pb-4">
+              <div>
+                <h2 style={TEKO} className="text-[26px] uppercase tracking-wide">Registro de Eventos & Notificações</h2>
+                <p className="text-[13px] text-muted-foreground">Histórico de ações disparadas, respostas de IA e avisos de sistema.</p>
+              </div>
+              {notifications.length > 0 && (
+                <button
+                  onClick={async () => {
+                    await markAllNotificationsAsReadAction();
+                    fetchAuxiliaryData();
+                  }}
+                  className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground hover:text-primary transition-colors"
+                >
+                  Marcar todas como lidas
+                </button>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              {notifications.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Bell size={32} className="mx-auto text-muted-foreground/30 mb-2" />
+                  <p>Nenhuma notificação recente.</p>
+                </div>
+              ) : (
+                notifications.map((notif) => (
+                  <div key={notif.id} className="bg-card border border-border p-4 rounded-sm flex items-start justify-between gap-4">
+                    <div className="space-y-1">
+                      <div className="text-[13px] text-foreground font-medium">{notif.message}</div>
+                      <div className="text-[11px] text-muted-foreground font-mono flex items-center gap-3">
+                        <span>Tipo: {notif.type}</span>
+                        <span>{formatDate(notif.createdAt)}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* --- ABA 5: ASSINANTES NEWSLETTER --- */}
+        {activeTab === "subscribers" && (
+          <div className="space-y-6">
+            <div className="border-b border-border pb-4">
+              <h2 style={TEKO} className="text-[26px] uppercase tracking-wide">Assinantes da Newsletter ({subscribers.length})</h2>
+              <p className="text-[13px] text-muted-foreground">Lista de e-mails cadastrados para receber novidades e atualizações.</p>
+            </div>
+
+            <div className="bg-card border border-border rounded-sm overflow-hidden">
+              <table className="w-full text-left text-[13px]">
+                <thead>
+                  <tr className="border-b border-border bg-[#181818] text-muted-foreground text-[11px] uppercase tracking-wider font-bold">
+                    <th className="p-3">E-mail</th>
+                    <th className="p-3">Data de Inscrição</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60">
+                  {subscribers.map((sub) => (
+                    <tr key={sub.id} className="hover:bg-white/[0.02]">
+                      <td className="p-3 font-mono text-foreground">{sub.email}</td>
+                      <td className="p-3 text-muted-foreground text-[12px]">{formatDate(sub.createdAt)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* --- MODAL DE AÇÕES DE IA --- */}
+      <StyledActionModal
+        modal={activeModal}
+        onClose={() => setActiveModal(null)}
+        onConfirm={async () => {
+          if (!activeModal) return;
+          setLoading(true);
+          try {
+            if (activeModal.actionType === "update") {
+              await triggerImprovePostWithAIAction({
+                id: activeModal.postData.id,
+                translationGroupId: activeModal.postData.translationGroupId,
+                title: activeModal.postData.title,
+                excerpt: activeModal.postData.excerpt,
+                slug: activeModal.postData.slug,
+                lang: activeModal.postData.lang,
+                tag: activeModal.postData.tag,
+                category: activeModal.postData.category,
+                force: true
+              });
+            } else if (activeModal.actionType === "img") {
+              await triggerGenerateImagesAction({
+                id: activeModal.postData.id,
+                translationGroupId: activeModal.postData.translationGroupId,
+                title: activeModal.postData.title,
+                excerpt: activeModal.postData.excerpt,
+                blocks: activeModal.postData.blocks
+              });
+            } else if (activeModal.actionType === "audio") {
+              await triggerCreateAudioAction({
+                id: activeModal.postData.id,
+                translationGroupId: activeModal.postData.translationGroupId,
+                title: activeModal.postData.title,
+                excerpt: activeModal.postData.excerpt,
+                blocks: activeModal.postData.blocks
+              });
+            }
+            setMessage({ type: "success", text: "Comando enviado com sucesso para o servidor!" });
+            setActiveModal(null);
+          } catch (e: any) {
+            setMessage({ type: "error", text: "Erro ao executar ação: " + e.message });
+          }
+          setLoading(false);
+        }}
+        loading={loading}
+      />
 
       {/* --- MODAL DE GALERIA DE IMAGENS --- */}
       {isGalleryModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
           <div className="bg-[#181818] border border-border rounded-sm max-w-4xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
-            {/* Cabeçalho do Modal */}
             <div className="flex items-center justify-between p-4 border-b border-border bg-[#141414]">
               <div className="flex items-center gap-2">
                 <ImageIcon className="text-primary" size={20} />
@@ -3287,8 +1511,7 @@ function BlockLinkMapper({
               </button>
             </div>
 
-            {/* Barra de Pesquisa e Ações de Limpeza */}
-            <div className="p-4 border-b border-border bg-[#1A1A1A] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div className="p-4 border-b border-border bg-[#1A1A1A] flex items-center gap-3">
               <div className="relative flex-1">
                 <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
@@ -3299,33 +1522,11 @@ function BlockLinkMapper({
                   className="w-full bg-[#222222] border border-border rounded-sm text-[13px] text-foreground pl-9 pr-4 py-2 outline-none focus:border-primary/50"
                 />
               </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handlePurgeUnusedImages}
-                  disabled={galleryLoading}
-                  className="px-3 py-2 bg-amber-950/80 hover:bg-amber-900 border border-amber-700/60 text-amber-300 text-[11px] font-bold uppercase rounded-sm transition-all shadow-sm whitespace-nowrap"
-                  title="Excluir do servidor todas as imagens da pasta /uploads que não estejam em uso"
-                >
-                  🧹 Limpar Não Utilizadas
-                </button>
-                <button
-                  type="button"
-                  onClick={handlePurgeAllImages}
-                  disabled={galleryLoading}
-                  className="px-3 py-2 bg-red-950/80 hover:bg-red-900 border border-red-700/60 text-red-300 text-[11px] font-bold uppercase rounded-sm transition-all shadow-sm whitespace-nowrap"
-                  title="Apagar todas as imagens da pasta /uploads"
-                >
-                  🗑️ Zerar Galeria
-                </button>
-                <span className="text-[11px] text-muted-foreground whitespace-nowrap font-mono hidden md:inline ml-2">
-                  {galleryImages.length} mídias
-                </span>
-              </div>
+              <span className="text-[12px] text-muted-foreground whitespace-nowrap font-mono hidden sm:inline">
+                {galleryImages.length} imagens na biblioteca
+              </span>
             </div>
 
-            {/* Grid de Imagens */}
             <div className="flex-1 p-4 overflow-y-auto min-h-[300px] bg-[#121212]">
               {galleryLoading ? (
                 <div className="flex flex-col items-center justify-center h-48 space-y-2 text-muted-foreground">
@@ -3358,17 +1559,6 @@ function BlockLinkMapper({
                             onClick={() => selectGalleryImage(imgUrl)}
                             className="group relative bg-[#1B1B1B] border border-border hover:border-primary rounded-sm overflow-hidden cursor-pointer transition-all duration-150 hover:shadow-lg flex flex-col h-[135px]"
                           >
-                            <div className="absolute top-1.5 right-1.5 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button
-                                type="button"
-                                onClick={(e) => handleDeleteGalleryImage(imgUrl, e)}
-                                className="p-1.5 bg-red-600/90 hover:bg-red-600 text-white rounded-sm transition-colors shadow-md flex items-center justify-center"
-                                title="Excluir imagem da galeria"
-                              >
-                                <Trash2 size={12} />
-                              </button>
-                            </div>
-
                             <div className="relative flex-1 bg-black/40 overflow-hidden flex items-center justify-center">
                               <img
                                 src={imgUrl}
@@ -3397,7 +1587,6 @@ function BlockLinkMapper({
               )}
             </div>
 
-            {/* Rodapé do Modal */}
             <div className="p-3 border-t border-border bg-[#141414] flex justify-end">
               <button
                 type="button"
@@ -3410,19 +1599,10 @@ function BlockLinkMapper({
           </div>
         </div>
       )}
-
-      {/* POPUP MODAL ESTILIZADO DE RESPOSTA/AÇÕES */}
-      <StyledActionModal modal={actionModal} onClose={() => setActionModal(null)} />
-
     </div>
   );
 }
 
 export default function AdminDashboard(props: AdminDashboardProps) {
-  return (
-    <AdminErrorBoundary>
-      <AdminDashboardContent {...props} />
-    </AdminErrorBoundary>
-  );
+  return <AdminDashboardContent {...props} />;
 }
-
