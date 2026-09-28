@@ -400,7 +400,7 @@ export default async function Home({ searchParams }: HomeProps) {
         <MotorsportWidget nextRace={nextRace} ranking={topRiders} lang={safeLang} />
       </section>
 
-      {/* 4. VITRINE EDITORIAL: TESTES & AVALIAÇÕES DA REDAÇÃO */}
+      {/* 4. VITRINE EDITORIAL: ANÁLISES & REVIEWS */}
       <section className="max-w-[1200px] mx-auto px-4 md:px-6 py-10">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 pb-4 border-b border-border">
           <div>
@@ -415,7 +415,7 @@ export default async function Home({ searchParams }: HomeProps) {
             </div>
             <p className="text-[14px] text-muted-foreground max-w-[650px]">
               {t.homePortal?.reviewsSubtitle ||
-                "Análises aprofundadas com medição real de consumo na bomba e veredito prático."}
+                "Análises aprofundadas sobre motos, mercado e uso cotidiano."}
             </p>
           </div>
           <Link
