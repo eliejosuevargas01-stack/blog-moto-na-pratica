@@ -1,5 +1,8 @@
 # 02 — Sistema Editorial n8n V2
 
+> **Natureza:** especificação alvo. Para o estado remoto documentado, use `12_N8N_REFOUNDATION_STATE.md`; para a ordem atual, use `13_SEQUENTIAL_EXECUTION_PLAN.md`.
+> **Enum canônico:** os tipos editoriais são os definidos em `05_CONTENT_TAXONOMY_AND_MIGRATION.md` e devem ser idênticos no site, CMS e n8n.
+
 ## 1. Objetivo
 
 Reorientar o n8n para crescimento e autoridade sem reconstruir o Deep Research já existente.
@@ -29,7 +32,7 @@ Saída mínima:
 Substitui a lógica estreita “volume + dor” por uma decisão multidimensional.
 
 Deve produzir:
-- `editorial_type`: NEWS, BUYING_GUIDE, COMPARISON, MAINTENANCE, EXPLAINER, MOTORSPORT, PERSONAL_EXPERIENCE, DATA_STUDY;
+- `editorial_type`: NEWS, ANALYSIS, BUYING_GUIDE, COMPARISON, MAINTENANCE_GUIDE, EXPLAINER, MOTORSPORT_REPORT, PERSONAL_EXPERIENCE, DATA_STUDY, REVIEW_VERIFIED;
 - `traffic_intent`: SEARCH, DISCOVER, NEWS, EVERGREEN, AUTHORITY;
 - `primary_query`;
 - queries secundárias;
@@ -57,6 +60,7 @@ Formalizar contrato de saída.
 
 O dossiê deve conter:
 - `research_id`;
+- `topic_id` quando disponível na fronteira;
 - `generated_at`;
 - pergunta principal;
 - fatos consolidados;
@@ -147,7 +151,7 @@ Campos mínimos:
 - trafficIntent;
 - category;
 - tags;
-- authorSlug;
+- authorSlug explícito quando houver autoria atribuída; nunca usar autor institucional como fallback automático;
 - personalExperienceVerified;
 - seoTitle;
 - seoDescription;
@@ -184,14 +188,24 @@ Campos mínimos:
 - separar especificação de julgamento;
 - não inventar vencedor universal.
 
-### MAINTENANCE
+### MAINTENANCE_GUIDE
 - atenção especial à segurança;
 - citar manual/fabricante quando aplicável;
 - distinguir procedimento básico de reparo que exige profissional.
 
-### MOTORSPORT
+### MOTORSPORT_REPORT
 - separar resultado confirmado, declaração e especulação;
 - manter temporada/data correta.
+
+### ANALYSIS
+- interpretação baseada em dados/fontes;
+- separar fato de conclusão editorial;
+- não apresentar análise documental como teste físico.
+
+### REVIEW_VERIFIED
+- somente quando uso/teste real estiver comprovado;
+- exige `personal_experience_verified=true` e autoria humana explicitamente atribuída;
+- condições, período, quilometragem/medições só aparecem quando documentados.
 
 ### PERSONAL_EXPERIENCE
 Só permitido quando houver material humano fornecido:
