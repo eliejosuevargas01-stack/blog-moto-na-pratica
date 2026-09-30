@@ -8,6 +8,8 @@ Eliminar a situação em que grande parte do site cai genericamente em “Review
 
 Tipos são diferentes de categorias.
 
+**Este é o enum canônico do refoundation. Site, CMS, API, n8n, testes e documentação devem usar exatamente estes identificadores; aliases legados devem ser normalizados na fronteira, não persistidos como novos valores.**
+
 Tipos:
 - NEWS;
 - ANALYSIS;
@@ -149,7 +151,7 @@ Material autoral deve ser enriquecido ao longo do tempo, não refeito artificial
 ## 12. Atualizações
 
 Artigo atualizado deve registrar:
-- modifiedAt;
+- `editorialModifiedAt` (ou campo editorial equivalente dedicado), nunca o `updatedAt` técnico do registro;
 - motivo quando material;
 - correção quando houve erro;
 - nova fonte se necessário.
