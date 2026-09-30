@@ -202,7 +202,7 @@ export function buildArticleViewModel(post: any): ArticleViewModel {
   const publishedAt = normalizePublishedDate(post.publishedAt ?? post.date ?? post.createdAt);
 
   // IMPORTANTE: Não usar post.updatedAt técnico do Prisma! Apenas campos editoriais explícitos.
-  const modifiedAt = normalizeModifiedDate(post.modifiedAt ?? post.editorialUpdatedAt);
+  const modifiedAt = normalizeModifiedDate(post.editorialModifiedAt ?? post.modifiedAt ?? post.editorialUpdatedAt);
 
   // 2. Autoria (Somente se explicitamente fornecida; slug opcional, sem criar de nome)
   let author: AuthorIdentity | undefined = undefined;
@@ -237,19 +237,20 @@ export function buildArticleViewModel(post: any): ArticleViewModel {
   // 4. Experiência Pessoal Verificada (APENAS se explicitamente true)
   const personalExperienceVerified = post.personalExperienceVerified === true;
 
-  // 5. Fontes (Sanitiza URLs e descarta URLs inseguras)
+  // 5. Fontes (Sanitiza URLs e descarta URLs inseguras, suportando formato plano ou relacional Prisma)
   let sources: EditorialSource[] | undefined = undefined;
   if (Array.isArray(post.sources) && post.sources.length > 0) {
     const parsedSources = post.sources
       .map((s: any) => {
-        const cleanUrl = sanitizeExternalUrl(s.url);
+        const item = s?.source ? s.source : s;
+        const cleanUrl = sanitizeExternalUrl(item?.url);
         if (!cleanUrl) return null;
         return {
           url: cleanUrl,
-          title: s.title ? String(s.title) : undefined,
-          publisher: s.publisher ? String(s.publisher) : undefined,
-          sourceType: s.sourceType ? String(s.sourceType) : undefined,
-          primarySource: Boolean(s.primarySource),
+          title: item.title ? String(item.title) : undefined,
+          publisher: item.publisher ? String(item.publisher) : undefined,
+          sourceType: s?.role || item.sourceType ? String(s?.role || item.sourceType) : undefined,
+          primarySource: s?.role === "PRIMARY" || Boolean(item.primarySource),
         };
       })
       .filter((s: EditorialSource | null): s is EditorialSource => s !== null);
@@ -268,18 +269,23 @@ export function buildArticleViewModel(post: any): ArticleViewModel {
   const VALID_INTENTS: TrafficIntent[] = ["SEARCH", "DISCOVER", "NEWS", "EVERGREEN", "AUTHORITY"];
   const trafficIntent = VALID_INTENTS.includes(post.trafficIntent) ? (post.trafficIntent as TrafficIntent) : undefined;
 
-  // 7. Disclosure e Correção
+  // 7. Disclosure e Correção (suporta objeto singular ou array relacional Prisma)
   const disclosure = typeof post.disclosure === "string" && post.disclosure.trim().length > 0
     ? post.disclosure.trim()
     : undefined;
 
+  let rawCorrection = post.correction;
+  if (!rawCorrection && Array.isArray(post.corrections) && post.corrections.length > 0) {
+    rawCorrection = post.corrections[0]; // mais recente ou primária
+  }
+
   let correction: CorrectionInfo | undefined = undefined;
-  if (post.correction && typeof post.correction === "object" && post.correction.description) {
+  if (rawCorrection && typeof rawCorrection === "object" && rawCorrection.description) {
     correction = {
-      description: String(post.correction.description),
-      correctedAt: post.correction.correctedAt ? String(post.correction.correctedAt) : undefined,
-      previousText: post.correction.previousText ? String(post.correction.previousText) : undefined,
-      correctedText: post.correction.correctedText ? String(post.correction.correctedText) : undefined,
+      description: String(rawCorrection.description),
+      correctedAt: rawCorrection.correctedAt || rawCorrection.createdAt ? String(rawCorrection.correctedAt || rawCorrection.createdAt) : undefined,
+      previousText: rawCorrection.previousText ? String(rawCorrection.previousText) : undefined,
+      correctedText: rawCorrection.correctedText ? String(rawCorrection.correctedText) : undefined,
     };
   }
 

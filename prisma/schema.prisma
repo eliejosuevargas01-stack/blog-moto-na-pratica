@@ -44,12 +44,33 @@ model Post {
   // Contador de citações em outros posts (Link Building interno)
   mentions            Int      @default(0)
 
+  // --- PERSISTÊNCIA EDITORIAL V2 ---
+  editorialType               String?  // Canonical: NEWS, ANALYSIS, BUYING_GUIDE, COMPARISON, MAINTENANCE_GUIDE, EXPLAINER, MOTORSPORT_REPORT, PERSONAL_EXPERIENCE, DATA_STUDY, REVIEW_VERIFIED
+  trafficIntent               String?  // SEARCH, DISCOVER, NEWS, EVERGREEN, AUTHORITY
+  authorId                    String?
+  reviewerId                  String?
+  researchId                  String?  // Rastreabilidade com dossiê do Deep Research / n8n
+  personalExperienceVerified  Boolean  @default(false)
+  factCheckedAt               DateTime?
+  disclosure                  String?  @db.Text
+  correctionStatus            String?  // NONE, PENDING, CORRECTED
+  firstPublishedAt            DateTime?
+  editorialModifiedAt         DateTime? // Data de modificação editorial dedicada (não confundir com updatedAt técnico)
+  updatedReason               String?
+
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  author         Author?      @relation("PostAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  reviewer       Author?      @relation("PostReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  sources        PostSource[]
+  corrections    Correction[]
   comments       Comment[]
 
   @@index([translationGroupId], map: "idx_post_translation_group")
   @@index([lang], map: "idx_post_lang")
+  @@index([authorId], map: "idx_post_author")
+  @@index([editorialType], map: "idx_post_editorial_type")
 }
 
 model Page {
@@ -166,5 +187,84 @@ model ResultadosEtapas {
   @@unique([eventExternalId, sessionType, riderName], name: "uq_resultado_piloto")
   @@map("resultados_etapas")
 }
+
+// ========================================================
+// PERSISTÊNCIA EDITORIAL V2 (E-E-A-T & TRUST ARCHITECTURE)
+// ========================================================
+
+model Author {
+  id          String   @id @default(uuid())
+  slug        String   @unique
+  name        String
+  type        String   @default("PERSON") // PERSON | ORGANIZATION
+  bio         String?  @db.Text
+  shortBio    String?
+  avatarUrl   String?
+  profileUrl  String?
+  role        String?  // Cargo / título editorial (ex: "Fundador e Piloto de Testes", "Redação")
+  sameAs      Json?    // Links externos canônicos (redes, perfis, lattes, etc.)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  posts         Post[] @relation("PostAuthor")
+  reviewedPosts Post[] @relation("PostReviewer")
+
+  @@map("authors")
+}
+
+model Source {
+  id            String   @id @default(uuid())
+  url           String
+  domain        String?
+  title         String?
+  publisher     String?
+  sourceType    String?  // OFFICIAL, MANUFACTURER, NEWS, FEDERATION, TECHNICAL, etc.
+  publishedAt   DateTime?
+  accessedAt    DateTime? @default(now())
+  primarySource Boolean  @default(false)
+  confidence    Float?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  postSources   PostSource[]
+
+  @@map("sources")
+}
+
+model PostSource {
+  id         String   @id @default(uuid())
+  postId     String
+  sourceId   String
+  role       String   @default("SUPPORTING") // PRIMARY | SUPPORTING | DATA | QUOTE | BACKGROUND
+  note       String?
+  sortOrder  Int      @default(0)
+
+  post       Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  source     Source   @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, sourceId], name: "uq_post_source")
+  @@index([postId], map: "idx_post_source_post")
+  @@index([sourceId], map: "idx_post_source_source")
+  @@map("post_sources")
+}
+
+model Correction {
+  id            String   @id @default(uuid())
+  postId        String
+  description   String   @db.Text
+  previousText  String?  @db.Text
+  correctedText String?  @db.Text
+  reason        String?
+  material      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  post          Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId], map: "idx_correction_post")
+  @@map("corrections")
+}
+
 
 
