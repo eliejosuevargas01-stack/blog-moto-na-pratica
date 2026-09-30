@@ -1,5 +1,7 @@
 # Security Hardening — Handoff
 
+> **CHECKPOINT HISTÓRICO DA PR #3.** Este arquivo registra o estado validado no momento do hardening. A `main` recebeu alterações posteriores (incluindo migração da verificação JWT para Web Crypto/Edge Runtime e o refoundation editorial). Para estado geral atual, use o README raiz e `artifacts/restructure-2026-09-28/13_SEQUENTIAL_EXECUTION_PLAN.md`.
+
 ## Checkpoint validado
 
 PR: #3 — `security/hardening-fixes`
@@ -37,11 +39,15 @@ Workflow validado:
 
 ### Upgrade do Next.js
 
-A versão atualmente validada no repositório continua sendo:
+A versão atualmente presente no `package.json` continua sendo:
 
 `next@14.2.23`
 
+Isso é uma constatação do repositório, não uma recomendação de permanecer nessa versão indefinidamente.
+
 O upgrade deve ser tratado separadamente, em branch/PR dedicada, partindo de um checkpoint verde.
+
+A versão alvo deve ser escolhida e verificada no momento da execução; não usar um número de versão histórico deste handoff como recomendação permanente.
 
 Motivo: a atualização precisa alterar `package.json` e `pnpm-lock.yaml` juntos. O lockfile deve ser regenerado por pnpm em ambiente com acesso ao registry; não editar hashes/integrity manualmente e não enfraquecer o CI com `--no-frozen-lockfile`.
 
@@ -52,7 +58,7 @@ git checkout main
 git pull origin main
 git checkout -b security/next-upgrade
 
-pnpm update next@15.5.26
+pnpm update next@<TARGET_VERSION>
 
 git add package.json pnpm-lock.yaml
 git commit -m "chore(deps): upgrade Next.js with synchronized lockfile"
