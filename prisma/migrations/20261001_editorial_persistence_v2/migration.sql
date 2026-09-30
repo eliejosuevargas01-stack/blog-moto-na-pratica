@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS "authors" (
     "sameAs" JSONB,
     "active" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "authors_pkey" PRIMARY KEY ("id")
 );
@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS "sources" (
     "primarySource" BOOLEAN NOT NULL DEFAULT false,
     "confidence" DOUBLE PRECISION,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "sources_pkey" PRIMARY KEY ("id")
 );
@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS "corrections" (
     "reason" TEXT,
     "material" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "corrections_pkey" PRIMARY KEY ("id")
 );
