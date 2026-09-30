@@ -1,5 +1,7 @@
 # n8n — Relatório de Auditoria Independente (t5)
 
+> **AUDITORIA HISTÓRICA t5.** Houve QA e alterações posteriores no mesmo dia. Para o estado consolidado use `12_N8N_REFOUNDATION_STATE.md`; para o gate PROCEED/SKIP posterior use `n8n-feeds-update.md`.
+
 **Data:** 2026-09-28
 **Auditor:** execução independente (delegação por subagente indisponível — provider `render` não configurado; auditoria feita pelo orquestrador em modo read-only, com evidência remota via API)
 **Instância:** https://myn8n.dominuslabs.online
@@ -25,7 +27,7 @@
 ## Riscos residuais
 
 - Credenciais novas (`ZeO5EBYZt3MNBsME`, `i8S9lCHxuzghW3VR`, `12NzTeLDEIzLLl4S`) criadas via API — recomendado validar uma execução real de publicação (t6) para confirmar que o header auth genérico está sendo enviado corretamente.
-- O gate de SKIP do Diretor está apenas no prompt (não há node downstream que bloqueie a chamada ao Deep Research) — dependência de conformidade do LLM.
+- **[RESOLVIDO após esta auditoria]** o gate de SKIP estava apenas no prompt neste corte; posteriormente foi convertido em enforcement determinístico por node `If`.
 
-## Próxima ação recomendada
-Prosseguir para QA (t6): cenários A (NEWS), B (BUYING_GUIDE), C (COMPARISON) + adversarial de experiência falsa, preferencialmente com execução real do pipeline.
+## Próxima ação recomendada naquele corte
+O QA t6 ainda era a próxima ação no momento desta auditoria. Ele foi executado posteriormente e está registrado em `n8n-implementation-report.md`; isso não equivale a smoke test end-to-end de publicação no CMS V2, que continua pendente.
