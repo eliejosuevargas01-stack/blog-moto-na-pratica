@@ -3,6 +3,8 @@
 **Atualizado em:** 2026-09-30  
 **Princípio:** executar uma fase por vez, com PR pequena/auditável, testes e merge antes de abrir a próxima dependência.
 
+**Contrato canônico:** usar o enum de `editorial_type` definido em `05_CONTENT_TAXONOMY_AND_MIGRATION.md`: `NEWS | ANALYSIS | BUYING_GUIDE | COMPARISON | MAINTENANCE_GUIDE | EXPLAINER | MOTORSPORT_REPORT | PERSONAL_EXPERIENCE | DATA_STUDY | REVIEW_VERIFIED`.
+
 ## Estado já concluído
 
 1. Security hardening — concluído e mergeado.
@@ -31,10 +33,23 @@ Antes do merge:
 - validar URLs de fontes/autores;
 - tratar data inválida em correções;
 - ampliar regressions para Home, Tag, CategoryView, Sobre, Posts e Article;
+- alinhar o enum do contrato TypeScript ao enum canônico do documento 05;
 - atualizar a branch sobre a `main` mais recente;
 - rodar suíte, typecheck e build;
 - auditar diff final;
 - merge somente após CI verde.
+
+### Fase 1B — Baseline antes de migração/rollout amplo
+
+Sem bloquear a correção da PR #7, registrar antes de migração de acervo ou mudança ampla de URLs:
+- Search Console 28/90 dias;
+- analytics disponível;
+- URLs indexadas;
+- Core Web Vitals;
+- backlinks/referrals conhecidos;
+- distribuição atual por categoria/tag.
+
+Persistir snapshot datado. Não usar ausência desse baseline como motivo para adiar correções de confiança/segurança já aprovadas.
 
 ### Fase 2 — Persistência Editorial V2
 
@@ -193,6 +208,6 @@ Branches atualmente classificadas para descarte:
 - `trust/editorial-transparency-v1-14286312563683114504`;
 - `trust/frontend-editorial-claims-1163435019021958983`.
 
-A branch antiga `docs/restructure-roadmap-2026-09-28` só deve ser removida depois que a documentação útil do n8n estiver consolidada na main.
+A documentação útil do n8n já foi consolidada na `main` pela PR #8; portanto `docs/restructure-roadmap-2026-09-28` e `docs/n8n-refoundation-state` podem ser removidas quando a limpeza remota de branches for executada.
 
 A branch `trust/article-contract-v1-9059764352191146855` permanece ativa até a PR #7 ser corrigida, auditada e mergeada.

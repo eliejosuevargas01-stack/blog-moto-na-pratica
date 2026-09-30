@@ -1,8 +1,10 @@
 # n8n — Mapa do Estado Atual (Inventário)
 
+> **SNAPSHOT HISTÓRICO PRÉ-IMPLEMENTAÇÃO — 2026-09-28.** “Atual” neste título significa o estado no momento da coleta, antes das modificações posteriores do mesmo dia. Não usar este arquivo sozinho para inferir o estado remoto vigente. Consulte `12_N8N_REFOUNDATION_STATE.md` e `n8n-feeds-update.md`.
+
 **Data da coleta:** 2026-09-28
 **Instância:** `https://myn8n.dominuslabs.online` (API pública v1, verificada remotamente)
-**Método:** `GET /api/v1/workflows` + `GET /api/v1/workflows/{id}` para cada workflow candidato. Backups completos (sanitizados, sem credenciais) em `./n8n-backup/`.
+**Método:** `GET /api/v1/workflows` + `GET /api/v1/workflows/{id}` para cada workflow candidato. A coleta original usou backups sanitizados; os exports completos `n8n-backup/*.json` não foram consolidados na `main` por higiene de repositório.
 **Escopo:** somente leitura. Nenhuma alteração remota foi feita nesta etapa.
 
 ---

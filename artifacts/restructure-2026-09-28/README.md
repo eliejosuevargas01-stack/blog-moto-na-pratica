@@ -1,9 +1,10 @@
 # Moto na Prática — Reestruturação Editorial, Produto e Autoridade
 
-**Status:** APROVADO PARA EXECUÇÃO  
-**Data-base:** 2026-09-28  
+**Status:** EM EXECUÇÃO — foundation/trust concluídos; Article Trust Contract V1 em andamento  
+**Data-base original:** 2026-09-28  
+**Última consolidação documental:** 2026-09-30  
 **Repositório:** `eliejosuevargas01-stack/blog-moto-na-pratica`  
-**Branch de planejamento:** `docs/restructure-roadmap-2026-09-28`  
+**Branch canônica:** `main`  
 **Objetivo:** transformar o Moto na Prática de um blog automatizado com baixa autoridade externa em uma publicação independente de motociclismo, reconhecível, confiável, útil, popular e orientada por tráfego real.
 
 ## Princípios imutáveis
@@ -33,8 +34,20 @@
 - `11_SPARK_MCP_IMPLEMENTATION_PROMPT.md`: prompt histórico de execução remota da adaptação n8n.
 - `12_N8N_REFOUNDATION_STATE.md`: estado consolidado do refoundation n8n e pendências de integração com site/CMS.
 - `13_SEQUENTIAL_EXECUTION_PLAN.md`: ordem de execução e dependências para concluir o refoundation.
+- `14_DOCUMENTATION_COHERENCE_AUDIT.md`: decisões canônicas, precedência documental e inconsistências corrigidas.
 - `n8n-current-state-map.md`, `n8n-gap-analysis.md`, `n8n-contracts.md`, `n8n-implementation-report.md`, `n8n-audit-report.md` e `n8n-feeds-update.md`: evidências e histórico técnico da implementação remota registrada em 2026-09-28.
+
+## Hierarquia documental
+
+Quando dois documentos parecerem divergir, use esta ordem:
+
+1. `13_SEQUENTIAL_EXECUTION_PLAN.md` — ordem operacional vigente;
+2. `12_N8N_REFOUNDATION_STATE.md` — estado consolidado do n8n conhecido pelo repositório;
+3. `14_DOCUMENTATION_COHERENCE_AUDIT.md` — decisões canônicas de nomenclatura/contrato;
+4. `00`–`10` — arquitetura alvo e requisitos por domínio;
+5. `n8n-current-state-map.md`, `n8n-gap-analysis.md`, `n8n-implementation-report.md`, `n8n-audit-report.md` e `n8n-feeds-update.md` — evidência histórica datada; não devem ser lidos isoladamente como estado atual;
+6. `11_SPARK_MCP_IMPLEMENTATION_PROMPT.md` — prompt histórico de execução, não runbook atual.
 
 ## Regra de retomada
 
-Qualquer agente que retomar este projeto deve ler primeiro este README, depois `00_MASTER_ROADMAP.md` e `01_RESPONSIBILITY_MATRIX.md`. Nenhuma implementação deve começar apenas com base em um prompt isolado. As decisões registradas aqui substituem ideias anteriores conflitantes, salvo decisão posterior documentada no repositório.
+Qualquer agente que retomar este projeto deve ler primeiro este README, depois `13_SEQUENTIAL_EXECUTION_PLAN.md`, `00_MASTER_ROADMAP.md` e `01_RESPONSIBILITY_MATRIX.md`. Para trabalho no n8n, ler também `12_N8N_REFOUNDATION_STATE.md`. Nenhuma implementação deve começar apenas com base em um prompt isolado. Decisão posterior documentada prevalece sobre snapshot histórico anterior.

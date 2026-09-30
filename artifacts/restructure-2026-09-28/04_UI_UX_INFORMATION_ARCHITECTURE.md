@@ -1,5 +1,7 @@
 # 04 — UI/UX e Arquitetura de Informação
 
+> **Natureza:** arquitetura de informação alvo. Campos editoriais são condicionais: dado ausente não deve ser substituído por autor, data, leitura, badge ou métrica inventados.
+
 ## 1. Direção visual
 
 A nova paleta clara e de maior contraste já criada deve ser tratada como decisão aprovada.
@@ -73,15 +75,15 @@ Contextual, não invasiva.
 ## 4. Artigo
 
 Primeira dobra:
-- breadcrumb;
-- categoria;
+- breadcrumb quando aplicável;
+- categoria quando explícita;
 - título;
-- subtítulo;
-- autor;
-- publicação;
-- atualização;
-- tempo de leitura;
-- imagem.
+- subtítulo/excerpt quando disponível;
+- autor somente quando explicitamente conhecido;
+- publicação somente com data editorial válida;
+- atualização somente com timestamp editorial real;
+- tempo de leitura somente quando disponível/calculado por regra real, sem default arbitrário;
+- imagem quando disponível.
 
 Logo após:
 - resposta rápida quando o formato permitir;
@@ -183,7 +185,7 @@ Adicionar gradualmente:
 
 ## 10. Critérios de aceite UX
 
-- usuário identifica tema e autor rapidamente;
+- usuário identifica o tema rapidamente e a autoria quando ela estiver explicitamente disponível;
 - artigo é legível em tela pequena;
 - fontes ficam acessíveis sem esconder;
 - categoria é coerente;

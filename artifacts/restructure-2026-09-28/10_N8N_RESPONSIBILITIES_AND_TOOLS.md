@@ -1,5 +1,7 @@
 # 10 — Responsabilidades do n8n, Ferramentas e Fronteiras
 
+> **Natureza:** especificação normativa de responsabilidades. O enum de `editorial_type` canônico é o definido em `05_CONTENT_TAXONOMY_AND_MIGRATION.md`. Estado remoto documentado: `12_N8N_REFOUNDATION_STATE.md`.
+
 ## Objetivo
 
 Definir de forma operacional o papel de cada componente do sistema editorial no n8n, onde atua, como atua e quais ferramentas utiliza.
@@ -361,8 +363,9 @@ Permitida apenas quando:
 `personal_experience_verified = true`
 
 Caso contrário:
-- Redação Moto na Prática;
-- "a gente" apenas como voz editorial quando apropriado;
+- usar voz editorial impessoal/institucional quando apropriado;
+- “a gente” pode ser voz de marca, mas NÃO cria autoria automaticamente;
+- `authorSlug` permanece ausente até existir atribuição explícita;
 - nunca fingir experiência.
 
 ## Não deve
@@ -477,8 +480,8 @@ Recebe somente conteúdo PASS.
 - trafficIntent;
 - category;
 - tags;
-- authorSlug;
-- reviewer;
+- authorSlug somente quando explicitamente atribuído; nunca usar `redacao-moto-na-pratica` como fallback;
+- reviewer somente quando houver revisão real registrada;
 - personalExperienceVerified;
 - researchId;
 - sources;

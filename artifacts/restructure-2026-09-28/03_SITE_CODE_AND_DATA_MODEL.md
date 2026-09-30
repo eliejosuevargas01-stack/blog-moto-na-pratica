@@ -1,5 +1,7 @@
 # 03 — Código do Site, Banco e CMS
 
+> **Natureza:** modelo alvo para as próximas fases. A persistência descrita aqui ainda não deve ser confundida com o contrato TypeScript transitório do Article Trust V1.
+
 ## 1. Prioridade crítica: remover inferências falsas do frontend
 
 No código atual, a Home pode:
@@ -30,9 +32,11 @@ Campos sugeridos:
 - createdAt;
 - updatedAt.
 
-Autores iniciais:
+Identidades candidatas iniciais, somente após confirmação/persistência explícita:
 - Eliezer Vargas;
-- Redação Moto na Prática.
+- Redação Moto na Prática como identidade ORGANIZATION.
+
+**Regra:** `Redação Moto na Prática` nunca é fallback automático para ausência de autor. Um post só recebe essa autoria se a relação for persistida explicitamente.
 
 ### Extensões de Post
 Adicionar conceitualmente:
@@ -46,7 +50,10 @@ Adicionar conceitualmente:
 - disclosure opcional;
 - correctionStatus;
 - firstPublishedAt;
+- editorialModifiedAt opcional;
 - updatedReason opcional.
+
+O `Post.updatedAt` técnico do Prisma não representa freshness editorial: mudanças de views/admin/infra não podem produzir `dateModified` ou selo “Atualizado”.
 
 ### Model Source
 - id;
@@ -85,7 +92,7 @@ Criar mais tarde model/tabela `ContentPerformanceDaily`.
 Sequência:
 1. migration aditiva;
 2. deploy compatível com dados antigos;
-3. backfill de defaults;
+3. backfill apenas de valores verificáveis/mapeados; nunca criar autor, tipo, experiência ou fonte por default;
 4. atualização do CMS;
 5. atualização de leitura;
 6. ativação de validações fortes;
@@ -109,8 +116,8 @@ Adicionar controles visuais:
 - data de fact-check.
 
 ### Validações no publish
-Bloquear publicação se:
-- não houver autor;
+Depois da ativação do contrato V2 para **novas publicações**, bloquear publicação se:
+- não houver autor explicitamente selecionado;
 - NEWS sem data;
 - conteúdo factual sem fontes quando tipo exigir;
 - PERSONAL_EXPERIENCE sem flag;
@@ -121,10 +128,10 @@ Bloquear publicação se:
 ## 5. Página de artigo
 
 Deve receber do banco:
-- autor real;
+- autor real quando explicitamente associado;
 - tipo;
-- publishedAt;
-- modifiedAt;
+- firstPublishedAt/data editorial de publicação;
+- editorialModifiedAt quando houver atualização editorial real;
 - fontes;
 - correções;
 - metodologia;
@@ -166,8 +173,8 @@ Criar como rotas/CMS estruturado:
 - /politica-de-correcoes;
 - /uso-de-inteligencia-artificial;
 - /publicidade-e-afiliados;
-- /privacidade;
-- /termos.
+- /politica-de-privacidade;
+- /termos-de-uso.
 
 ## 8. Categorias e rotas
 

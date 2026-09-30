@@ -59,7 +59,15 @@ O gargalo principal deixou de ser a criação inicial do pipeline editorial e pa
 
 Este documento consolida evidências remotas registradas em 2026-09-28. A instância n8n não foi reconsultada durante esta consolidação em 2026-09-30; portanto, ele não afirma que nenhum workflow tenha mudado depois da última verificação registrada.
 
-## Fonte de verdade
+## Fonte de verdade e precedência
+
+Este documento é a referência de **estado conhecido do n8n** no repositório. Ele não substitui especificações alvo.
+
+Precedência:
+1. este documento para estado consolidado conhecido;
+2. `n8n-feeds-update.md` para alterações posteriores ao relatório/auditoria inicial no mesmo dia;
+3. `10_N8N_RESPONSIBILITIES_AND_TOOLS.md` + `05_CONTENT_TAXONOMY_AND_MIGRATION.md` + `n8n-contracts.md` para contrato alvo;
+4. mapas/gaps/relatórios anteriores como evidência histórica.
 
 Leia em conjunto:
 - `10_N8N_RESPONSIBILITIES_AND_TOOLS.md`;
@@ -70,4 +78,4 @@ Leia em conjunto:
 - `n8n-audit-report.md`;
 - `n8n-feeds-update.md`.
 
-Quando houver conflito cronológico, o documento com timestamp/alteração posterior prevalece.
+Quando houver conflito cronológico de estado, a evidência posterior prevalece. Exemplo: o risco antigo de SKIP depender apenas do prompt foi resolvido posteriormente pelo gate determinístico documentado em `n8n-feeds-update.md`. Contratos alvo não devem ser confundidos com implementação já concluída.

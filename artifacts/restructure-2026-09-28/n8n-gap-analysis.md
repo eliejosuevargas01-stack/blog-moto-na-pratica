@@ -1,5 +1,7 @@
 # n8n — Gap Analysis (Estado Atual × 10_N8N_RESPONSIBILITIES_AND_TOOLS.md)
 
+> **SNAPSHOT HISTÓRICO DE GAPS — 2026-09-28.** Este documento registra o diagnóstico anterior às implementações do mesmo dia. Alguns gaps foram resolvidos depois (por exemplo Auditor Editorial, experience gate e gate determinístico PROCEED/SKIP); outros continuam pendentes (especialmente persistência CMS V2 e idempotência completa). Para estado consolidado, use `12_N8N_REFOUNDATION_STATE.md`.
+
 **Data:** 2026-09-28
 **Base de comparação:** `10_N8N_RESPONSIBILITIES_AND_TOOLS.md` (pipeline V2) × `n8n-current-state-map.md` (inventário verificado remotamente).
 **Classificação:** `KEEP` · `MODIFY` · `SPLIT` · `REMOVE` · `ADD`
