@@ -24,8 +24,7 @@ export default function LoginPage() {
         setLoading(false);
       } else if (res?.success) {
         // Redireciona para o painel principal do admin
-        router.push("/admin");
-        router.refresh();
+        window.location.href = "/admin";
       }
     } catch (err) {
       setError("Erro ao tentar logar. Tente novamente.");

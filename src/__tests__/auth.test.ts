@@ -39,6 +39,25 @@ describe('Auth Library Edge Cases', () => {
       expect(verified).not.toBeNull();
       expect(verified?.username).toBe('user@example.com');
     });
+
+    it('should return null for expired tokens', async () => {
+      process.env.JWT_SECRET = 'test-secret';
+      const expiredToken = jwt.sign(
+        { username: 'admin', role: 'admin', tokenType: 'admin', exp: Math.floor(Date.now() / 1000) - 60 },
+        'test-secret'
+      );
+      const verified = await verifyToken(expiredToken);
+      expect(verified).toBeNull();
+    });
+
+    it('should verify in environments without Node.js crypto module (Edge Runtime simulation)', async () => {
+      process.env.JWT_SECRET = 'test-secret';
+      const token = await signToken('admin', 'admin');
+      const verified = await verifyToken(token);
+      expect(verified).not.toBeNull();
+      expect(verified?.role).toBe('admin');
+      expect(verified?.username).toBe('admin');
+    });
   });
 
   describe('checkCredentials', () => {
