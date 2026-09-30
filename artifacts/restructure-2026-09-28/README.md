@@ -29,6 +29,11 @@
 - `07_TECHNICAL_SEO_NEWS_DISCOVER.md`: schema, sitemaps, Google News/Discover, canonicals, imagens e performance.
 - `08_ANALYTICS_AND_GROWTH_LOOP.md`: telemetria e feedback do público de volta ao n8n.
 - `09_ROLLOUT_TESTING_AND_BACKLOG.md`: sequência de execução, critérios de aceite, testes, riscos e Definition of Done.
+- `10_N8N_RESPONSIBILITIES_AND_TOOLS.md`: responsabilidades e fronteiras operacionais do pipeline n8n.
+- `11_SPARK_MCP_IMPLEMENTATION_PROMPT.md`: prompt histórico de execução remota da adaptação n8n.
+- `12_N8N_REFOUNDATION_STATE.md`: estado consolidado do refoundation n8n e pendências de integração com site/CMS.
+- `13_SEQUENTIAL_EXECUTION_PLAN.md`: ordem de execução e dependências para concluir o refoundation.
+- `n8n-current-state-map.md`, `n8n-gap-analysis.md`, `n8n-contracts.md`, `n8n-implementation-report.md`, `n8n-audit-report.md` e `n8n-feeds-update.md`: evidências e histórico técnico da implementação remota registrada em 2026-09-28.
 
 ## Regra de retomada
 
