@@ -1,18 +1,28 @@
 # 00 — Master Roadmap
 
+> **Status do documento:** visão macro originalmente aprovada em 2026-09-28. A ordem operacional vigente está em `13_SEQUENTIAL_EXECUTION_PLAN.md`. Em caso de conflito de sequência, o documento 13 prevalece.
+
+### Status consolidado em 2026-09-30
+
+- Fase A — baseline: **pendente** antes de migração/rollout amplo do acervo;
+- Fase B — confiança/modelo de dados: **parcial**; claims falsos e Trust Layer V1 foram corrigidos, persistência Author/Source/Correction ainda pendente;
+- Fase C — n8n: **avançada remotamente e documentada**, mas integração persistente/idempotência final ainda pendentes;
+- Fase D — UI/UX/IA: **parcial**; trust institucional existe, taxonomia/Home/navigation V2 ainda pendentes;
+- Fases E–H: **pendentes/parciais conforme documento 13**.
+
 ## 1. Estado atual relevante
 
 O projeto já é um portal customizado em Next.js 14, TypeScript, Prisma e PostgreSQL/Supabase, com CMS próprio, SSR, uploads, internacionalização, newsletter, MotoGP e automações n8n.
 
 O problema principal não é falta de infraestrutura. É desalinhamento entre infraestrutura, posicionamento, conteúdo e sinais de confiança.
 
-Achados técnicos já observados no código atual:
+Achados técnicos do baseline original de 2026-09-28 (marcados quando já resolvidos):
 
 - `Post` usa campos genéricos `tag` e `category`, sem modelo editorial forte.
 - não existem estruturas formais para autor, revisor, fontes, correções, tipo editorial ou método de pesquisa.
-- a Home possui uma seção chamada “Testes & Avaliações da Redação”.
-- a função `getConsumptionLabel()` contém fallbacks que podem exibir “Consumo aferido” mesmo sem medição correspondente.
-- cards podem exibir “TESTE DE LONGA DURAÇÃO / AVALIAÇÃO PRÁTICA” para posts classificados genericamente como Review.
+- **[RESOLVIDO na Trust Layer/frontend trust]** a Home possuía uma seção chamada “Testes & Avaliações da Redação”.
+- **[RESOLVIDO]** `getConsumptionLabel()` possuía fallbacks capazes de exibir “Consumo aferido” sem medição correspondente.
+- **[RESOLVIDO]** cards podiam inferir “TESTE DE LONGA DURAÇÃO / AVALIAÇÃO PRÁTICA” a partir de Review.
 - o sitemap atual cobre páginas e posts, mas não existe news sitemap específico.
 - o `robots.ts` já bloqueia `/admin/` e `/api/`, o que é uma base aceitável.
 - a Home atual já possui estrutura de portal, mas ainda representa categorias antigas e uma identidade editorial que será substituída.
@@ -64,7 +74,7 @@ Primeiro mudar a capacidade estrutural do site:
 - suportar páginas institucionais;
 - remover labels automáticos que alegam experiência inexistente.
 
-Essa fase antecede a troca dos prompts, pois os agentes precisam ter onde persistir os novos metadados.
+Arquiteturalmente, esta capacidade deve existir antes de ativar persistência/publicação V2 completa. A execução real avançou parte do n8n antes da persistência do site; por isso, a partir de 2026-09-30, novas integrações de payload V2 com produção ficam condicionadas à conclusão da persistência/CMS descrita no documento 13.
 
 ### Fase C — Arquitetura editorial e n8n
 
