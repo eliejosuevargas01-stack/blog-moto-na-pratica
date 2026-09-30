@@ -1,97 +1,137 @@
-# Moto na Prática - Blog SSR & CMS Avançado
+# Moto na Prática
 
-O **Moto na Prática** é um blog de altíssimo desempenho focado em motociclismo. Ele foi desenvolvido utilizando **Next.js (App Router)** para renderização dinâmica no servidor (SSR) e SEO orgânico de alta indexação, conectado a um banco de dados **PostgreSQL (Supabase)** através do **Prisma ORM**, e com um painel administrativo (**CMS**) moderno e integrado.
+Portal independente de motociclismo construído em Next.js, TypeScript, Prisma e PostgreSQL/Supabase, com CMS próprio e automações editoriais via n8n.
 
----
+## Estado do projeto
 
-## 📸 Telas Principais
+O projeto está em **refoundation editorial/técnico**. A direção atual não é apenas “publicar mais”, mas consolidar:
 
-````carousel
-![Página Inicial](/home/eliezer/Música/Design para blog de motos/screenshots/home.png)
-<!-- slide -->
-![Página Sobre](/home/eliezer/Música/Design para blog de motos/screenshots/sobre.png)
-<!-- slide -->
-![Página Login Admin](/home/eliezer/Música/Design para blog de motos/screenshots/login.png)
-````
+- confiança e transparência editorial;
+- autoria e fontes rastreáveis;
+- distinção entre análise documental e experiência real;
+- contratos claros entre n8n, CMS e frontend;
+- taxonomia consistente;
+- SEO técnico sem freshness/autoria inventadas;
+- crescimento orientado por dados.
 
----
+A documentação canônica da reestruturação está em:
 
-## 🛠️ Recursos & Funcionalidades do CMS
+`artifacts/restructure-2026-09-28/README.md`
 
-O painel administrativo em `/admin` conta com recursos de nível empresarial para otimização de conteúdo e SEO:
+Para retomar o trabalho, leia primeiro:
 
-### 1. Sistema de Plugins Modular
-Na aba **Funções**, você pode ativar ou desativar recursos em tempo real:
-- **Tempo de Leitura Estimado Automático**: Calcula matematicamente o tempo de leitura com base nas palavras dos blocos (média de 200 palavras por minuto) e desabilita o campo de entrada manual.
-- **Indexação Instantânea do Google (Google Indexing API)**: Envia automaticamente solicitações de indexação imediata para o Googlebot sempre que um post é criado ou editado.
+1. `artifacts/restructure-2026-09-28/README.md`
+2. `artifacts/restructure-2026-09-28/13_SEQUENTIAL_EXECUTION_PLAN.md`
+3. `artifacts/restructure-2026-09-28/14_DOCUMENTATION_COHERENCE_AUDIT.md`
 
-### 2. Editor de Blocos Dinâmicos com Grip Handle
-- Permite construir posts com blocos ilimitados de texto e imagem.
-- **Reordenação Inteligente**: A funcionalidade de arrastar e soltar (drag & drop) é restrita exclusivamente ao ícone de **Grip Handle** (6 pontinhos). Isso evita conflitos irritantes ao tentar selecionar textos longos nos campos editores.
+## Stack verificada no repositório
 
-### 3. Ponto Focal de Imagem (Focal Point Picker)
-- Cada bloco e imagem de destaque possui um seletor visual de ponto focal.
-- Clique diretamente na imagem para definir a coordenada de destaque, garantindo que o corte visual (através de `object-position` do CSS) fique perfeito em dispositivos móveis e desktops.
+- Next.js `14.2.23` (App Router);
+- React `18.3.1`;
+- TypeScript;
+- Prisma `6.2.1`;
+- PostgreSQL/Supabase;
+- Vitest;
+- Tailwind CSS;
+- Sharp;
+- CMS/admin próprio;
+- integração server-side com n8n.
 
-### 4. Mapeador Dinâmico de Links HTML (`BlockLinkMapper`)
-- O CMS analisa em tempo real o texto dos blocos em busca de links HTML (`<a>`).
-- Apresenta um painel onde você pode selecionar posts existentes no banco de dados para preencher dinamicamente a URL com o formato correto: `/{lang}/post/{slug}`.
-- **Filtro de Idioma**: O mapeador inteligente só lista posts do mesmo idioma do post atual (ex: posts em português só exibem links de posts em português), garantindo integridade e consistência de navegação.
+Consulte `package.json` como fonte de verdade para versões.
 
----
+## Segurança
 
-## 🐳 Guia de Deploy no Coolify (Docker)
+O hardening principal foi consolidado pela PR #3 e inclui, entre outros pontos:
 
-O projeto inclui um [Dockerfile](file:///home/eliezer/M%C3%BAsica/Design%20para%20blog%20de%20motos/Dockerfile) multi-stage otimizado para o modo **standalone** do Next.js, gerando imagens leves (~100MB).
+- segregação de sessão admin/usuário;
+- autenticação M2M por header;
+- cliente n8n server-side;
+- proteção de drafts;
+- hardening de uploads;
+- sanitização/XSS;
+- CI com TypeScript, testes e build.
 
-> [!IMPORTANT]
-> **Ajuste de Caminho no Coolify**: Para evitar o erro `open Dockerfile: no such file or directory` durante o deployment, configure o **Base Directory** como `/` (raiz do repositório) e o **Dockerfile Path** como `/Dockerfile` (ou `./Dockerfile`) no painel de configurações da aplicação no Coolify.
+O documento `docs/security-hardening-handoff.md` é um checkpoint histórico e está identificado como tal.
 
-### 1. Variáveis de Ambiente (Environment Variables)
+## Variáveis de ambiente
 
-Declare as variáveis abaixo no painel de configurações do Coolify:
+Use `.env.example` como referência. Não copie valores de documentação antiga e não versione `.env`.
 
-| Variável | Descrição | Exemplo |
-| :--- | :--- | :--- |
-| `DATABASE_URL` | String de conexão PostgreSQL (Prisma). | `postgresql://postgres:senha@db.supabase.co:5432/postgres` |
-| `NEXT_PUBLIC_SUPABASE_URL` | URL do Supabase para requisições de cliente. | `https://sua-id.supabase.co` |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Chave pública anônima do Supabase. | `sb_publishable_...` |
-| `SUPABASE_SECRET_KEY` | Chave secreta de serviço do Supabase. | `sb_secret_...` |
-| `SUPABASE_JWKS_URL` | URL de chaves públicas para validar chaves JWT. | `https://sua-id.supabase.co/auth/v1/.well-known/jwks.json` |
-| `ADMIN_USERNAME` | Nome de usuário administrativo do painel. | `seu_usuario` |
-| `ADMIN_PASSWORD` | Senha de acesso ao painel do CMS. | `sua_senha_secreta` |
-| `JWT_SECRET` | Hash/Segredo para criptografia do token de sessão. | `qualquer-chave-longa-e-segura` |
-| `NEXT_PUBLIC_SITE_URL` | URL oficial de produção (usado no sitemap.xml). | `https://motonapratica.online` |
-| `N8N_WEBHOOK_URL` | (Opcional) Webhook para disparar automações de posts. | `https://n8n.seu-servidor.com/webhook/post` |
+Principais grupos:
 
-### 2. Volumes Persistentes (Armazenamento de Uploads)
+- banco: `DATABASE_URL`;
+- Supabase: `NEXT_PUBLIC_SUPABASE_URL`, chaves públicas/server-side conforme `.env.example`;
+- autenticação: `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `JWT_SECRET`, `API_SECRET_KEY`;
+- n8n: `N8N_WEBHOOK_URL`;
+- site: `SITE_URL`, `NEXT_PUBLIC_SITE_URL`.
 
-Configure um volume no painel do Coolify para evitar perda de imagens enviadas no upload do CMS quando o container atualizar:
+Nunca exponha chaves server-side em variáveis `NEXT_PUBLIC_*`.
 
-- **Diretório do Container**: `/app/uploads`
-- **Mapeamento do Servidor (Volume Host)**: ex: `motonapratica-uploads:/app/uploads`
+## Desenvolvimento local
 
----
+Instale dependências e gere o Prisma Client:
 
-## 💻 Executando Localmente
+```bash
+pnpm install
+pnpm prisma:generate
+```
 
-1. **Instalar Dependências**:
-   ```bash
-   pnpm install
-   ```
+Configure um arquivo `.env` local a partir de `.env.example`.
 
-2. **Sincronizar Banco de Dados (Prisma)**:
-   ```bash
-   npx prisma db push
-   ```
+Depois:
 
-3. **Gerar Carga Inicial de Dados (Seed)**:
-   ```bash
-   npx prisma db seed
-   ```
+```bash
+pnpm dev
+```
 
-4. **Executar em Modo de Desenvolvimento**:
-   ```bash
-   pnpm dev
-   ```
-   Acesse no navegador: `http://localhost:3000`
+Validações usadas pelo CI:
+
+```bash
+pnpm exec tsc --noEmit
+pnpm test
+pnpm build
+```
+
+### Banco local
+
+O repositório possui scripts:
+
+```bash
+pnpm prisma:db:push
+pnpm prisma:seed
+```
+
+Use-os apenas em ambiente de desenvolvimento/controlado e sabendo qual banco está em `DATABASE_URL`. **Não execute `db push` ou seed contra produção como passo genérico de setup.**
+
+Mudanças de schema do refoundation devem seguir migration aditiva, revisão e plano de compatibilidade descritos nos artifacts.
+
+## CI
+
+O workflow `.github/workflows/ci.yml` executa em PRs para `main`:
+
+1. instalação;
+2. Prisma Client generation;
+3. TypeScript;
+4. Vitest;
+5. production build.
+
+Uma PR não deve ser considerada pronta apenas porque compila localmente.
+
+## Deploy
+
+O projeto contém Dockerfile e é operado em ambiente containerizado/Coolify. Configurações específicas de produção devem vir do ambiente de deploy, não de paths locais de uma máquina de desenvolvimento.
+
+Uploads persistentes precisam de storage/volume compatível com a configuração do ambiente.
+
+## Regras editoriais técnicas essenciais
+
+O frontend/CMS não deve:
+
+- inventar autor;
+- transformar ausência de data em data atual;
+- inferir teste/review de categoria, tag, slug ou título;
+- exibir consumo/teste próprio sem evidência;
+- usar `Post.updatedAt` técnico como freshness editorial;
+- usar posts demo como fallback público de produção.
+
+Veja `14_DOCUMENTATION_COHERENCE_AUDIT.md` para as decisões canônicas.
