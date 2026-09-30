@@ -1,5 +1,7 @@
 # 11 — Prompt de execução para Spark via MCP
 
+> **HISTÓRICO — NÃO USAR COMO RUNBOOK ATUAL.** Este foi o prompt que orientou uma execução remota em 2026-09-28. Parte das tarefas foi implementada, parte ficou pendente e houve correções posteriores. Para estado atual use `12_N8N_REFOUNDATION_STATE.md`; para próximas tarefas use `13_SEQUENTIAL_EXECUTION_PLAN.md` e a especificação normativa `10_N8N_RESPONSIBILITIES_AND_TOOLS.md`.
+
 Use o prompt abaixo no Spark para executar a fase de adaptação do sistema editorial.
 
 ---
