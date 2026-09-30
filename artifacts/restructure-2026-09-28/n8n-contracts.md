@@ -1,5 +1,7 @@
 # n8n — Contratos de Entrada/Saída (Pipeline Editorial V2)
 
+> **Natureza:** contrato alvo/normativo, não declaração de que todos os campos já estão implementados remotamente. Estado conhecido: `12_N8N_REFOUNDATION_STATE.md`. O enum de `editorial_type` abaixo é o mesmo enum canônico de `05_CONTENT_TAXONOMY_AND_MIGRATION.md`.
+
 **Data:** 2026-09-28
 **Princípio:** JSON estruturado em cada fronteira; blobs de texto só onde o Deep Research já trabalha assim (dossiê markdown permanece como campo `dossier_markdown`, nunca como "o contrato inteiro").
 **Identificadores:** `topic_id` (determinístico, ver 1.1) · `research_id` (= `id_pesquisa` legado do DR) · `post_id` (retornado pelo CMS).
@@ -188,7 +190,7 @@ Se faltar fato essencial: `{"needs_research": true, "research_gap": "preço ofic
       "meta-title": "...", "meta-description": "...", "meta-tags": "...",
       "block-1": "...", "img-1": "...",
       "editorialType": "NEWS", "trafficIntent": "NEWS",
-      "authorSlug": "redacao-moto-na-pratica",
+      "authorSlug": null,
       "personalExperienceVerified": false,
       "researchId": 12345, "topicId": "tp_9f2c1a04b7d3e8f1",
       "sources": ["https://honda..."],
@@ -201,6 +203,8 @@ Se faltar fato essencial: `{"needs_research": true, "research_gap": "preço ofic
   "translationGroupId": "tg_...", "mentioned_slugs": ["..."]
 }
 ```
+
+`authorSlug` só deve ser preenchido quando houver autoria explicitamente atribuída; ausência de autor não vira automaticamente “Redação Moto na Prática”.
 
 Campos legados (`block-N`, `img-N`, `meta-*`) permanecem — o CMS atual os consome; os campos V2 são ignorados sem erro até a sprint do site persisti-los (dependência documentada). Canonical/JSON-LD/schema: **responsabilidade do site** — nunca gerados no n8n.
 
