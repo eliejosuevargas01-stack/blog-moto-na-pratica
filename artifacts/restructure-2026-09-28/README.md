@@ -32,6 +32,7 @@
 - `10_N8N_RESPONSIBILITIES_AND_TOOLS.md`: responsabilidades e fronteiras operacionais do pipeline n8n.
 - `11_SPARK_MCP_IMPLEMENTATION_PROMPT.md`: prompt histórico de execução remota da adaptação n8n.
 - `12_N8N_REFOUNDATION_STATE.md`: estado consolidado do refoundation n8n e pendências de integração com site/CMS.
+- `13_SEQUENTIAL_EXECUTION_PLAN.md`: ordem de execução e dependências para concluir o refoundation.
 - `n8n-current-state-map.md`, `n8n-gap-analysis.md`, `n8n-contracts.md`, `n8n-implementation-report.md`, `n8n-audit-report.md` e `n8n-feeds-update.md`: evidências e histórico técnico da implementação remota registrada em 2026-09-28.
 
 ## Regra de retomada
