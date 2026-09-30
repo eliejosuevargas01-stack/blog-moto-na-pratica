@@ -121,7 +121,14 @@ export function sanitizeExternalUrl(url?: string | null): string | undefined {
   if (!url || typeof url !== "string") return undefined;
   const trimmed = url.trim();
   if (/^https?:\/\//i.test(trimmed)) {
-    return trimmed;
+    try {
+      const parsed = new URL(trimmed);
+      if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+        return trimmed;
+      }
+    } catch {
+      return undefined;
+    }
   }
   return undefined;
 }
@@ -133,10 +140,10 @@ export function sanitizeExternalUrl(url?: string | null): string | undefined {
 export function sanitizeProfileUrl(url?: string | null): string | undefined {
   if (!url || typeof url !== "string") return undefined;
   const trimmed = url.trim();
-  if (/^(https?:\/\/|\/)/i.test(trimmed)) {
+  if (trimmed.startsWith("/") && !trimmed.startsWith("//")) {
     return trimmed;
   }
-  return undefined;
+  return sanitizeExternalUrl(trimmed);
 }
 
 /**

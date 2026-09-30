@@ -12,6 +12,12 @@ export default function CorrectionNotice({ correction, className = "" }: Correct
     return null;
   }
 
+  const formattedDate = React.useMemo(() => {
+    if (!correction?.correctedAt) return null;
+    const d = new Date(correction.correctedAt);
+    return isNaN(d.getTime()) ? null : d.toLocaleDateString("pt-BR");
+  }, [correction?.correctedAt]);
+
   return (
     <div className={`my-6 p-4 bg-muted/70 border-l-4 border-blue-500 rounded-r-md text-[13px] ${className}`}>
       <div className="flex items-start gap-2.5">
@@ -21,9 +27,9 @@ export default function CorrectionNotice({ correction, className = "" }: Correct
             <span className="font-semibold text-foreground uppercase tracking-wider text-[11px]">
               Nota de Correção
             </span>
-            {correction.correctedAt && (
+            {formattedDate && (
               <span className="text-[11px] text-muted-foreground">
-                ({new Date(correction.correctedAt).toLocaleDateString("pt-BR")})
+                ({formattedDate})
               </span>
             )}
           </div>

@@ -93,8 +93,11 @@ export default async function TagPage({ params }: TagPageProps) {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {posts.map((post) => {
-                const createdDate = post.createdAt ? new Date(post.createdAt) : (post.date ? new Date(post.date) : new Date());
-                const formattedDate = createdDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
+                const rawDate = post.createdAt || post.date;
+                const createdDate = rawDate ? new Date(rawDate) : null;
+                const formattedDate = createdDate && !isNaN(createdDate.getTime())
+                  ? createdDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })
+                  : "";
                 const postUrl = formatPostUrl(post.slug, post.lang);
 
                 return (
@@ -125,7 +128,7 @@ export default async function TagPage({ params }: TagPageProps) {
                               <Clock size={10} /> {post.readTime}
                             </span>
                           )}
-                          <span>{formattedDate}</span>
+                          {formattedDate && <span>{formattedDate}</span>}
                         </div>
                       </div>
                     </Link>
