@@ -1,5 +1,7 @@
 # n8n — Relatório Final de Implementação (Reestruturação Editorial V2)
 
+> **RELATÓRIO HISTÓRICO — corte anterior às últimas correções de 2026-09-28.** O estado posterior está consolidado em `12_N8N_REFOUNDATION_STATE.md`. Em especial, o risco descrito abaixo de SKIP depender apenas do prompt foi posteriormente resolvido por um gate determinístico `If`, conforme `n8n-feeds-update.md`.
+
 **Data:** 2026-09-28
 **Instância:** https://myn8n.dominuslabs.online (API pública v1)
 **Branch:** `docs/restructure-roadmap-2026-09-28`
@@ -81,7 +83,7 @@ Preservando integralmente o Deep Research existente e adicionando gates editoria
   - `x-api-key` (CMS) → credencial `ZeO5EBYZt3MNBsME`
   - `x-apify-secret` → credencial `i8S9lCHxuzghW3VR`
 - Nova credencial do Auditor: `12NzTeLDEIzLLl4S` (x-internal-token)
-- Backups sanitizados em `n8n-backup/` (0 secrets literais, verificado)
+- Backups sanitizados existiam na branch histórica de trabalho (0 secrets literais, verificado); os exports completos não foram consolidados na `main`.
 - Nenhum secret copiado para artifacts
 
 ---
@@ -89,7 +91,7 @@ Preservando integralmente o Deep Research existente e adicionando gates editoria
 ## 6. Riscos residuais e pendências
 
 1. **Validação de publicação real:** as novas credenciais httpHeaderAuth foram anexadas mas uma execução real de publicação end-to-end ainda não foi feita (não se publicou conteúdo de teste em produção, por regra da missão). Recomenda-se um smoke test controlado.
-2. **Gate SKIP do Diretor** está no prompt (não há node downstream bloqueando o Deep Research) — depende de conformidade do LLM.
+2. **[RESOLVIDO posteriormente] Gate SKIP do Diretor:** neste corte ainda estava apenas no prompt; depois foi adicionado gate determinístico `If` antes do Deep Research, documentado em `n8n-feeds-update.md`.
 3. **Delegação por subagente indisponível** (provider `render` não configurado): auditoria e QA foram executados pelo orquestrador em modo read-only com evidência remota.
 4. **Radar/Editor de Pauta/Publisher V2:** os contratos estão em `n8n-contracts.md`; o pipeline atual do Escritor já recebe o callback do Deep Research — a separação formal Editor≠Diretor e Publisher V2 dedicado pode ser fase 2 se desejado.
 
