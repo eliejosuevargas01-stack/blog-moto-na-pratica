@@ -1,5 +1,5 @@
 import { prisma } from "../../lib/db";
-import { POSTS, TAG_COLORS, TEKO, BODY, optimizeImageUrl, formatPostUrl } from "../data";
+import { TAG_COLORS, TEKO, BODY, optimizeImageUrl, formatPostUrl } from "../data";
 import Link from "next/link";
 import SafeHtml from "../components/SafeHtml";
 import { Clock, Search, ArrowRight, Tag } from "lucide-react";
@@ -66,8 +66,8 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
       orderBy: { createdAt: "desc" },
     });
   } catch (error) {
-    console.warn("Falha ao buscar posts no banco, usando POSTS estáticos:", error);
-    posts = POSTS;
+    console.warn("Falha ao buscar posts no banco, usando lista vazia:", error);
+    posts = [];
   }
 
   return (
@@ -108,12 +108,27 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {posts.map((post) => {
-                const createdDate = post.createdAt ? new Date(post.createdAt) : (post.date ? new Date(post.date) : new Date());
-                const updatedDate = post.updatedAt ? new Date(post.updatedAt) : null;
-                const isUpdated = updatedDate && (updatedDate.getTime() - createdDate.getTime() > 24 * 60 * 60 * 1000);
+                const rawCreated = post.createdAt || post.date;
+                const createdDate = rawCreated ? new Date(rawCreated) : null;
+                const validCreated = createdDate && !isNaN(createdDate.getTime()) ? createdDate : null;
 
-                const formattedCreated = createdDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
-                const formattedUpdated = updatedDate ? updatedDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" }) : "";
+                // Não usar updatedAt técnico como freshness editorial
+                const rawModified = post.editorialModifiedAt ?? post.modifiedAt;
+                const modifiedDate = rawModified ? new Date(rawModified) : null;
+                const validModified = modifiedDate && !isNaN(modifiedDate.getTime()) ? modifiedDate : null;
+
+                const isUpdated = Boolean(
+                  validCreated &&
+                  validModified &&
+                  validModified.getTime() - validCreated.getTime() > 24 * 60 * 60 * 1000
+                );
+
+                const formattedCreated = validCreated
+                  ? validCreated.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })
+                  : "";
+                const formattedUpdated = validModified
+                  ? validModified.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })
+                  : "";
                 const postUrlPath = formatPostUrl(post.slug, post.lang);
 
                 return (
@@ -140,10 +155,12 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
                         </p>
                         <div className="pt-3 border-t border-border/50 flex flex-col gap-1 text-[11px] text-muted-foreground">
                           <div className="flex items-center justify-between">
-                            <span className="flex items-center gap-1">
-                              <Clock size={10} /> {post.readTime}
-                            </span>
-                            <span>{formattedCreated}</span>
+                            {post.readTime && (
+                              <span className="flex items-center gap-1">
+                                <Clock size={10} /> {post.readTime}
+                              </span>
+                            )}
+                            {formattedCreated && <span>{formattedCreated}</span>}
                           </div>
                           {isUpdated && (
                             <span className="text-[10px] text-primary/80 italic font-mono">
