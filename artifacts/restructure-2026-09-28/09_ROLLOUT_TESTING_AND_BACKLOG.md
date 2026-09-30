@@ -1,5 +1,13 @@
 # 09 — Rollout, Testes e Backlog Executivo
 
+> **Status:** este arquivo preserva o plano original de sprints de 2026-09-28. A execução real não seguiu a ordem integralmente: frontend trust/Trust Layer foram adiantados e o n8n V2 avançou remotamente antes da persistência editorial do site. Para a ordem vigente, use `13_SEQUENTIAL_EXECUTION_PLAN.md`.
+
+### Situação consolidada
+- Sprint 1: **parcial** — trust/frontend institucional concluídos; Author/Source/Correction persistentes pendentes;
+- Sprint 2: **parcial** — trust components existem; Home/navigation/taxonomia V2 pendentes;
+- Sprint 3: **avançada remotamente**, com integração CMS V2/idempotência final ainda pendentes;
+- Sprints 4–7: pendentes/parciais conforme documento 13.
+
 ## 1. Estratégia
 
 Executar em sprints independentes, com deploy verificável e rollback.
@@ -12,7 +20,7 @@ Executar em sprints independentes, com deploy verificável e rollback.
 - Correction;
 - campos editoriais;
 - migration aditiva;
-- backfill.
+- backfill somente de valores verificáveis; nenhum autor/tipo/experiência pode ser inventado.
 
 ### Site
 - remover fallbacks de consumo aferido;
@@ -219,18 +227,10 @@ O projeto V2 só é considerado concluído quando:
 
 ## 8. Próximo passo operacional
 
-A primeira implementação deve abrir uma sprint específica chamada conceitualmente **Foundation / Trust Layer**.
+A sequência original acima foi parcialmente superada pela execução. Em 2026-09-30:
 
-Ela deve começar por:
-1. auditar o schema atual;
-2. desenhar migration aditiva;
-3. remover fallbacks enganosos da Home;
-4. implementar Author/Source metadata;
-5. atualizar CMS;
-6. atualizar article template;
-7. publicar páginas institucionais mínimas;
-8. validar staging;
-9. deploy controlado;
-10. somente então iniciar mudanças nos prompts n8n.
+- frontend trust e páginas institucionais já foram implementados;
+- o n8n V2 já possui avanços remotos documentados;
+- a persistência editorial do site/CMS continua sendo a dependência central.
 
-Esta ordem evita que o n8n produza dados que o site ainda não sabe armazenar.
+A ordem operacional vigente está em `13_SEQUENTIAL_EXECUTION_PLAN.md`. Não iniciar integração final Publisher → CMS V2 antes de concluir Article Trust Contract, persistência e API/CMS V2.
