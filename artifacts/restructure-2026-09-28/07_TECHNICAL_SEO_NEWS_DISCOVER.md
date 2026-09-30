@@ -1,5 +1,7 @@
 # 07 — SEO Técnico, Google News e Discover
 
+> **Regra transversal:** schema e metadata só usam dados persistidos/explicitamente conhecidos. Não inferir tipo editorial, autor, freshness ou perfis sociais a partir de categoria, slug, título ou defaults.
+
 ## 1. Responsabilidade
 
 O n8n sugere campos de conteúdo.
@@ -11,13 +13,13 @@ O site gera metadata técnica final.
 Organization.
 
 ### Autor pessoa
-ProfilePage + Person.
+ProfilePage + Person somente para pessoa real, explicitamente persistida e com página de perfil válida.
 
 ### Artigo evergreen
 Article ou BlogPosting conforme decisão técnica.
 
 ### Notícia
-NewsArticle.
+NewsArticle somente quando o `editorialType` persistido for `NEWS` e os dados mínimos exigidos estiverem presentes. Não inferir NEWS por categoria/tag.
 
 ### Todos quando aplicável
 BreadcrumbList.
@@ -36,8 +38,8 @@ Campos:
 - logo;
 - description;
 - founder quando apropriado;
-- sameAs;
-- contactPoint se fizer sentido.
+- sameAs apenas com perfis oficiais reais/configurados; omitir quando não houver confirmação;
+- contactPoint apenas com canal real/configurado.
 
 ## 4. Article/NewsArticle
 
@@ -46,8 +48,8 @@ Gerar de dados persistidos:
 - description;
 - image;
 - datePublished;
-- dateModified;
-- author;
+- dateModified derivado de timestamp editorial dedicado, nunca de `Post.updatedAt` técnico;
+- author somente quando explicitamente associado ao post;
 - publisher;
 - mainEntityOfPage.
 
