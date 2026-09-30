@@ -1,7 +1,7 @@
 # 14 — Auditoria de Coerência Documental
 
 **Data:** 2026-09-30  
-**Escopo:** `artifacts/restructure-2026-09-28/`  
+**Escopo:** documentação do refoundation + README raiz + handoff de segurança  
 **Objetivo:** estabelecer decisões canônicas e impedir que snapshots históricos sejam tratados como estado atual.
 
 ## 1. Hierarquia de documentos
@@ -195,7 +195,16 @@ Ele não bloqueia correções de segurança, confiança ou falsos claims.
 - `/politica-de-privacidade`;
 - `/termos-de-uso`.
 
-## 13. Regra final
+## 13. Documentação fora do pacote de refoundation
+
+Também auditados:
+- `README.md` raiz — atualizado para remover paths locais, claims promocionais/obsoletos e instruções perigosamente genéricas de banco; agora aponta para a documentação canônica;
+- `docs/security-hardening-handoff.md` — mantido como checkpoint histórico e sem versão futura de Next.js tratada como recomendação permanente;
+- `ATTRIBUTIONS.md` — licença/atribuições, sem conflito semântico com o refoundation;
+- `guidelines/Guidelines.md` — template genérico vazio, não é fonte de requisitos do projeto;
+- `prompt_curiosotech.md` — documento explicitamente de outro projeto (Curiosotech), não participa da hierarquia do Moto na Prática.
+
+## 14. Regra final
 
 Quando um documento histórico descreve “estado atual”, interpretar a frase no contexto da data daquele documento.
 
