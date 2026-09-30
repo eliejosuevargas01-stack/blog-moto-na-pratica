@@ -1,5 +1,5 @@
 import { prisma } from "../../../lib/db";
-import { POSTS, TAG_COLORS, TEKO, BODY, optimizeImageUrl, formatPostUrl } from "../../data";
+import { TAG_COLORS, TEKO, BODY, optimizeImageUrl, formatPostUrl } from "../../data";
 import Link from "next/link";
 import { Clock, Tag, ArrowRight } from "lucide-react";
 import Sidebar from "../../components/Sidebar";
@@ -47,7 +47,8 @@ export default async function TagPage({ params }: TagPageProps) {
       orderBy: { createdAt: "desc" }
     });
   } catch (error) {
-    posts = POSTS.filter(p => p.tag.toLowerCase() === decodedTag.toLowerCase());
+    console.warn("Tag page database query failed.", error);
+    posts = [];
   }
 
   return (
@@ -107,9 +108,11 @@ export default async function TagPage({ params }: TagPageProps) {
                           style={{ objectPosition: post.imgFocalPoint || "center" }}
                           loading="lazy"
                         />
-                        <span className={`absolute top-2 left-2 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 ${TAG_COLORS[post.tag] || "bg-[#252525] text-white"}`}>
-                          {post.tag}
-                        </span>
+                        {post.tag && (
+                          <span className={`absolute top-2 left-2 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 ${TAG_COLORS[post.tag] || "bg-[#252525] text-white"}`}>
+                            {post.tag}
+                          </span>
+                        )}
                       </div>
                       <div className="p-5 flex flex-col flex-1">
                         <SafeHtml tag="h2" style={TEKO} className="text-[24px] font-semibold uppercase leading-tight text-foreground mb-2 group-hover:text-primary transition-colors" html={post.title} />
@@ -117,9 +120,11 @@ export default async function TagPage({ params }: TagPageProps) {
                           {post.excerpt}
                         </p>
                         <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-3 border-t border-border/50">
-                          <span className="flex items-center gap-1">
-                            <Clock size={10} /> {post.readTime}
-                          </span>
+                          {post.readTime && (
+                            <span className="flex items-center gap-1">
+                              <Clock size={10} /> {post.readTime}
+                            </span>
+                          )}
                           <span>{formattedDate}</span>
                         </div>
                       </div>

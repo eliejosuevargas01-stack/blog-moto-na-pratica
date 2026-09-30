@@ -96,10 +96,29 @@ export async function generatePostMetadata(slug: string, lang: string = "pt") {
       alternates = { languages };
     }
 
+    const keywords = post.seoKeywords
+      ? post.seoKeywords
+      : post.tag
+      ? `${post.tag}, Moto`
+      : "Moto, Motociclismo";
+
+    const ogImages = post.img
+      ? [
+          {
+            url: post.img,
+            width: 1200,
+            height: 675,
+            alt: stripHtml(post.title),
+          },
+        ]
+      : undefined;
+
+    const twitterImages = post.img ? [post.img] : undefined;
+
     return {
       title: `${stripHtml(post.seoTitle || post.title)} · Moto na Prática`,
       description: post.seoDescription || post.excerpt,
-      keywords: post.seoKeywords || `${post.tag}, Fazer 250, Moto`,
+      keywords,
       alternates,
       robots: {
         index: true,
@@ -115,21 +134,14 @@ export async function generatePostMetadata(slug: string, lang: string = "pt") {
       openGraph: {
         title: stripHtml(post.title),
         description: post.excerpt,
-        images: [
-          {
-            url: post.img,
-            width: 1200,
-            height: 675,
-            alt: stripHtml(post.title),
-          },
-        ],
+        ...(ogImages ? { images: ogImages } : {}),
         type: "article",
       },
       twitter: {
         card: "summary_large_image",
         title: stripHtml(post.title),
         description: post.excerpt,
-        images: [post.img],
+        ...(twitterImages ? { images: twitterImages } : {}),
       },
     };
   } catch (error) {

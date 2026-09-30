@@ -312,11 +312,12 @@ describe("Portal de Motos: Testes Semânticos da Nova Homepage & MotorsportWidge
     });
 
     it("deve garantir desduplicação semântica: a manchete principal NÃO aparece nos Top Stories", () => {
-      expect(pageContent).toContain("const topStories = posts.filter((p) => p.id !== leadPost.id).slice(0, 3);");
+      expect(pageContent).toContain("const topStories = leadPost");
+      expect(pageContent).toContain("posts.filter((p) => String(p.id) !== String(leadPost.id)).slice(0, 3)");
     });
 
     it("deve suportar heroPostId configurável para personalizar a manchete", () => {
-      expect(pageContent).toContain("if (homeContent.heroPostId)");
+      expect(pageContent).toContain("if (homeContent.heroPostId && posts.length > 0)");
       expect(pageContent).toContain("const found = posts.find((p) => String(p.id) === String(homeContent.heroPostId));");
       expect(pageContent).toContain("if (found) leadPost = found;");
     });
@@ -440,18 +441,18 @@ describe("Portal de Motos: Testes Semânticos da Nova Homepage & MotorsportWidge
   // 5. RESILIÊNCIA A FALHAS DE BANCO DE DADOS (DATABASE OFFLINE / TIMEOUT)
   // =========================================================================
   describe("5. Resiliência do SSR e Tolerância a Falhas de Banco de Dados", () => {
-    it("deve envolver a busca de dados de página e posts em bloco try/catch com fallback para POSTS", () => {
+    it("deve envolver a busca de dados de página e posts em bloco try/catch e retornar lista vazia em caso de falha", () => {
       expect(pageContent).toContain("try {");
       expect(pageContent).toContain("const pageDb = await prisma.page.findUnique");
       expect(pageContent).toContain("posts = await prisma.post.findMany");
       expect(pageContent).toContain("} catch (error) {");
-      expect(pageContent).toContain('console.warn("Home database query failed, using static fallback.", error);');
-      expect(pageContent).toContain("posts = searchQuery");
+      expect(pageContent).toContain("posts = [];");
+      expect(pageContent).not.toContain("posts = POSTS;");
     });
 
-    it("deve assegurar que posts nunca seja nulo ou vazio após o bloco de consulta", () => {
-      expect(pageContent).toContain("if (!posts || posts.length === 0) {");
-      expect(pageContent).toContain("posts = POSTS;");
+    it("deve lidar de forma graciosa com ausência de posts sem recorrer a POSTS estático", () => {
+      expect(pageContent).not.toContain("if (!posts || posts.length === 0) {");
+      expect(pageContent).not.toContain("posts = POSTS;");
     });
 
     it("deve envolver a consulta do Motorsport em bloco try/catch isolado para não derrubar o portal", () => {

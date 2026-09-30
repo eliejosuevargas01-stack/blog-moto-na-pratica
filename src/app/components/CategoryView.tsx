@@ -1,5 +1,5 @@
 import { prisma } from "../../lib/db";
-import { POSTS, TAG_COLORS, TEKO, BODY, optimizeUnsplashUrl, formatPostUrl } from "../data";
+import { TAG_COLORS, TEKO, BODY, optimizeUnsplashUrl, formatPostUrl } from "../data";
 import Sidebar from "./Sidebar";
 import Link from "next/link";
 import SafeHtml from "./SafeHtml";
@@ -64,9 +64,9 @@ export default async function CategoryView({ tag, title, description, heroImg, i
       orderBy: { updatedAt: "desc" }
     });
   } catch (error) {
-    console.warn("Category database query failed, using static fallback.", error);
-    posts = POSTS.filter(p => p.tag === tag);
-    allOthers = POSTS.filter(p => p.tag !== tag).slice(0, 3);
+    console.warn("Category database query failed.", error);
+    posts = [];
+    allOthers = [];
   }
 
   const firstPost = posts[0] || null;
@@ -74,7 +74,7 @@ export default async function CategoryView({ tag, title, description, heroImg, i
 
   const categoryLabel = currentLang === "en" ? "Category" : currentLang === "es" ? "Categoría" : "Categoria";
   const postsInHeader = currentLang === "en" ? `Posts in ${title}` : currentLang === "es" ? `Posts en ${title}` : `Posts em ${title}`;
-  const seeAlsoTitle = currentLang === "en" ? "See also" : currentLang === "es" ? "Ver también" : "Veja também";
+  const seeAlsoTitle = currentLang === "en" ? "See also" : currentLang === "es" ? "Ver também" : "Veja também";
 
   return (
     <div>
@@ -126,7 +126,9 @@ export default async function CategoryView({ tag, title, description, heroImg, i
                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                          style={{ objectPosition: firstPost.imgFocalPoint || "center" }}
                        />
-                      <span className={`absolute top-2 left-2 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 ${TAG_COLORS[firstPost.tag] || "bg-[#252525]"}`}>{firstPost.tag}</span>
+                      {firstPost.tag && (
+                        <span className={`absolute top-2 left-2 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 ${TAG_COLORS[firstPost.tag] || "bg-[#252525]"}`}>{firstPost.tag}</span>
+                      )}
                     </div>
                     <div className="p-6 flex flex-col justify-center flex-1">
                       <SafeHtml tag="h3" style={TEKO} 
@@ -135,7 +137,7 @@ export default async function CategoryView({ tag, title, description, heroImg, i
                       <p className="text-[13px] text-muted-foreground leading-relaxed mb-4">{firstPost.excerpt}</p>
                       <div className="flex items-center justify-between">
                         <span className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
-                          <Clock size={11} /> {firstPost.readTime} · {firstPost.date instanceof Date ? firstPost.date.toLocaleDateString(currentLang === "en" ? "en-US" : currentLang === "es" ? "es-ES" : "pt-BR", { day: '2-digit', month: 'short', year: 'numeric' }) : firstPost.date}
+                          {firstPost.readTime ? `${firstPost.readTime} · ` : ""}{firstPost.date instanceof Date ? firstPost.date.toLocaleDateString(currentLang === "en" ? "en-US" : currentLang === "es" ? "es-ES" : "pt-BR", { day: '2-digit', month: 'short', year: 'numeric' }) : (firstPost.date || "")}
                         </span>
                         <span className="text-[12px] font-bold text-primary uppercase tracking-wider flex items-center gap-1">{t.posts.read} <ArrowRight size={12} /></span>
                       </div>
@@ -157,7 +159,9 @@ export default async function CategoryView({ tag, title, description, heroImg, i
                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                              style={{ objectPosition: post.imgFocalPoint || "center" }}
                            />
-                          <span className={`absolute top-2 left-2 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 ${TAG_COLORS[post.tag] || "bg-[#252525]"}`}>{post.tag}</span>
+                          {post.tag && (
+                            <span className={`absolute top-2 left-2 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 ${TAG_COLORS[post.tag] || "bg-[#252525]"}`}>{post.tag}</span>
+                          )}
                         </div>
                         <div className="p-5 flex flex-col flex-1">
                           <SafeHtml tag="h3" style={TEKO} 
@@ -165,7 +169,7 @@ export default async function CategoryView({ tag, title, description, heroImg, i
                              html={post.title} />
                           <p className="text-[13px] text-muted-foreground leading-relaxed mb-4 flex-1">{post.excerpt}</p>
                           <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                            <Clock size={10} /> {post.readTime} · {post.date instanceof Date ? post.date.toLocaleDateString(currentLang === "en" ? "en-US" : currentLang === "es" ? "es-ES" : "pt-BR", { day: '2-digit', month: 'short', year: 'numeric' }) : post.date}
+                            {post.readTime ? `${post.readTime} · ` : ""}{post.date instanceof Date ? post.date.toLocaleDateString(currentLang === "en" ? "en-US" : currentLang === "es" ? "es-ES" : "pt-BR", { day: '2-digit', month: 'short', year: 'numeric' }) : (post.date || "")}
                           </div>
                         </div>
                       </Link>
@@ -206,7 +210,9 @@ export default async function CategoryView({ tag, title, description, heroImg, i
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                           style={{ objectPosition: o.imgFocalPoint || "center" }}
                         />
-                        <span className={`absolute top-2 left-2 text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 ${TAG_COLORS[o.tag] || "bg-[#252525]"}`}>{o.tag}</span>
+                        {o.tag && (
+                          <span className={`absolute top-2 left-2 text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 ${TAG_COLORS[o.tag] || "bg-[#252525]"}`}>{o.tag}</span>
+                        )}
                       </div>
                       <div className="p-3">
                         <SafeHtml tag="h4" style={TEKO} 

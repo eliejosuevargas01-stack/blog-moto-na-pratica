@@ -1,10 +1,10 @@
 # 10 — Article Trust Contract V1 + Safe Legacy Fallbacks
 
-**Status:** IMPLEMENTADO
+**Status:** IMPLEMENTADO E AUDITADO
 **Data:** 2026-09-28
 **Repositório:** `eliejosuevargas01-stack/blog-moto-na-pratica`
 **Branch:** `trust/article-contract-v1`
-**Escopo:** Página de artigo individual, normalização de dados editoriais, remoção de fallbacks estáticos fictícios e componentes de metadados de confiança.
+**Escopo:** Página de artigo individual, normalização de dados editoriais, enum canônico `EditorialType`, remoção de fallbacks estáticos fictícios em todo o runtime público e componentes de metadados de confiança.
 
 ---
 
@@ -20,23 +20,36 @@ Esta camada atua em nível de aplicação (TypeScript puro e componentes React) 
 
 ## 2. O que foi Implementado
 
-### 2.1 Contrato Editorial (`src/lib/editorial-contract.ts`)
-- **`EditorialType`**: Representa formatos como `NEWS`, `BUYING_GUIDE`, `COMPARISON`, `MAINTENANCE`, `EXPLAINER`, `MOTORSPORT`, `PERSONAL_EXPERIENCE`, `DATA_STUDY`.
+### 2.1 Contrato Editorial Canônico (`src/lib/editorial-contract.ts`)
+- **`EditorialType` Canônico**:
+  - `NEWS`
+  - `ANALYSIS`
+  - `BUYING_GUIDE`
+  - `COMPARISON`
+  - `MAINTENANCE_GUIDE`
+  - `EXPLAINER`
+  - `MOTORSPORT_REPORT`
+  - `PERSONAL_EXPERIENCE`
+  - `DATA_STUDY`
+  - `REVIEW_VERIFIED` (restrito e permitido apenas quando `personalExperienceVerified === true`).
+- **Adapter de Aliases Legados**:
+  - `MAINTENANCE` -> Mapeado graciosamente para `MAINTENANCE_GUIDE`.
+  - `MOTORSPORT` -> Mapeado graciosamente para `MOTORSPORT_REPORT`.
 - **`TrafficIntent`**: `SEARCH`, `DISCOVER`, `NEWS`, `EVERGREEN`, `AUTHORITY`.
-- **`AuthorIdentity`**: Entidade autoral conceitual (pessoa ou organização, slug, cargo, URL de perfil, avatar).
-- **`EditorialSource`**: Modelo de fonte estruturada (URL, título, publisher, tipo, indicador de fonte primária).
-- **`CorrectionInfo`**: Registro de correção editorial (descrição, data, texto original e texto corrigido).
+- **`AuthorIdentity`**: Entidade autoral conceitual (pessoa ou organização, slug opcional sem sintetizar nome, cargo, URL de perfil sanitizada, avatar).
+- **`EditorialSource`**: Modelo de fonte estruturada com sanitização rigorosa de URLs (somente `http://` e `https://`).
+- **`CorrectionInfo`**: Registro de correção editorial com validação graciosa de datas.
 - **`ArticleEditorialMeta`** e **`ArticleViewModel`**: Interfaces completas do view model para artigos.
 
-### 2.2 Normalização Segura de Datas e Dados
-- **`normalizePublishedDate`**: Converte `createdAt` / `date` / `publishedAt` para `Date` válido. Se ausente/inválido, retorna `null` (nunca `new Date()`).
-- **`normalizeModifiedDate`**: Retorna `Date` válido para `updatedAt` / `modifiedAt`, ou `null`.
+### 2.2 Normalização Segura de Datas e Dados (Sem Freshness Falsa)
+- **`normalizePublishedDate`**: Converte `publishedAt` / `date` / `createdAt` para `Date` válido. Se ausente/inválido, retorna `null` (nunca `new Date()`).
+- **`normalizeModifiedDate`**: Ignora o campo técnico `updatedAt` do Prisma (que é incrementado a cada visualização do artigo no banco). Retorna `Date` válido apenas para campos editoriais explícitos (`modifiedAt` / `editorialUpdatedAt`).
 - **`shouldShowUpdatedDate`**: Retorna `true` apenas se ambas as datas existirem, `modifiedAt > publishedAt` e a diferença for editorialmente relevante (> 24 horas).
 - **`buildArticleViewModel`**: Normalizador puro e determinístico que garante:
-  - Autoria só aparece se explicitamente informada em `post.author` ou `post.authorName`.
+  - Autoria só aparece se explicitamente informada em `post.author` ou `post.authorName`. Não sintetiza slugs de autores se ausentes.
   - Experiência Pessoal Verificada só é `true` se `post.personalExperienceVerified === true`. Proibido inferir por slug, título, tag ou categoria.
-  - Fontes só são incluídas se um array de `sources` estruturado for fornecido.
-  - Nenhum `NewsArticle` é atribuído automaticamente sem o tipo `NEWS`.
+  - Fontes só são incluídas se um array de `sources` estruturado for fornecido e sanitizado.
+  - Nenhum valor arbitrário por padrão para `tag`, `readTime` ou `views`.
 
 ### 2.3 Structured Data JSON-LD (`buildArticleStructuredData`)
 - Gera schema `@type: Article` (ou `NewsArticle` se explicitamente marcado como `NEWS`).
@@ -49,7 +62,7 @@ Esta camada atua em nível de aplicação (TypeScript puro e componentes React) 
 - **`FreshnessMeta`**: Exibe datas reais de publicação e atualização.
 - **`ArticleSources`**: Exibe bloco de fontes estruturadas quando existentes.
 - **`ArticleDisclosure`**: Exibe nota de transparência/disclosure apenas se houver string explícita.
-- **`CorrectionNotice`**: Exibe nota de correção apenas se houver registro explícito.
+- **`CorrectionNotice`**: Exibe nota de correção apenas se houver registro explícito, com tratamento seguro de datas inválidas.
 
 ### 2.5 Refatoração da Página de Artigo (`src/app/post/[slug]/page.tsx`)
 - Utiliza `buildArticleViewModel` para derivar o view model.
@@ -58,11 +71,16 @@ Esta camada atua em nível de aplicação (TypeScript puro e componentes React) 
 
 ---
 
-## 3. Fallbacks Fictícios Removidos
+## 3. Fallbacks Fictícios Removidos de Todo o Runtime Público
 
-- **`findPostBySlugOrId` (`src/lib/post-helpers.ts`)**: Removido o fallback `staticPost = POSTS.find(...)`. Se o post não for encontrado no banco ou houver erro na query, retorna `null`, acionando `notFound()`.
-- **`src/app/post/[slug]/page.tsx`**: Removido o bloco `catch` que recorria ao array `POSTS` estático. Para posts relacionados, utiliza `[]` em caso de erro na consulta, sem inventar matérias.
-- **`src/app/posts/page.tsx`**: Removida a atribuição `posts = POSTS` no bloco `catch`. Se o banco falhar, o estado exibido é de lista vazia.
+Todos os usos e importações de `POSTS` estáticos foram completamente removidos dos módulos públicos:
+- **`findPostBySlugOrId` (`src/lib/post-helpers.ts`)**: Removido o fallback `POSTS.find`. Se o post não for encontrado no banco ou houver erro na query, retorna `null`.
+- **`src/app/page.tsx`**: Removida a atribuição `posts = POSTS` e importações de `POSTS`. Se o banco falhar, seções são omitidas/exibem estados graciosos neutros.
+- **`src/app/post/[slug]/page.tsx`**: Removido o bloco `catch` com `POSTS`. Para relacionados, utiliza `[]` em caso de falha.
+- **`src/app/posts/page.tsx`**: Se o banco falhar, o estado exibido é de lista vazia.
+- **`src/app/tag/[tag]/page.tsx`**: Se o banco falhar, o estado é de lista vazia.
+- **`src/app/components/CategoryView.tsx`**: Se o banco falhar, o estado é de lista vazia.
+- **`src/app/sobre/page.tsx`**: Se o banco falhar, o estado é de lista vazia.
 
 ---
 

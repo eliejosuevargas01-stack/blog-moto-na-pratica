@@ -1,9 +1,8 @@
 import { prisma } from "../../lib/db";
-import { POSTS, TAG_COLORS, TEKO, BODY, optimizeImageUrl } from "../data";
+import { TAG_COLORS, TEKO, BODY, optimizeImageUrl } from "../data";
 import SafeHtml from "../components/SafeHtml";
 import SocialLinks from "../components/SocialLinks";
 import Link from "next/link";
-import EditorialMethodologyCard from "../components/EditorialMethodologyCard";
 import { 
   Clock, 
   ArrowRight, 
@@ -17,8 +16,7 @@ import {
   Users, 
   Mail, 
   Sparkles,
-  CheckCircle2,
-  ExternalLink
+  CheckCircle2
 } from "lucide-react";
 import { cookies } from "next/headers";
 
@@ -116,8 +114,8 @@ export default async function Sobre() {
       orderBy: { createdAt: "desc" }
     });
   } catch (error) {
-    console.warn("Sobre database query failed, using static fallback.", error);
-    recentPosts = POSTS.slice(0, 3);
+    console.warn("Sobre database query failed.", error);
+    recentPosts = [];
   }
 
   const pilares = [
@@ -346,45 +344,51 @@ export default async function Sobre() {
         </div>
 
         {/* POSTS RECENTES */}
-        <div>
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-3">
-              <span className="block w-1.5 h-8 bg-primary" />
-              <h2 style={TEKO} className="text-[30px] font-semibold uppercase tracking-wide text-foreground">
-                Últimas Publicações da Redação
-              </h2>
+        {recentPosts.length > 0 && (
+          <div>
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                <span className="block w-1.5 h-8 bg-primary" />
+                <h2 style={TEKO} className="text-[30px] font-semibold uppercase tracking-wide text-foreground">
+                  Últimas Publicações da Redação
+                </h2>
+              </div>
+              <Link href="/" className="text-[12px] font-semibold text-muted-foreground hover:text-primary uppercase tracking-wider flex items-center gap-1 transition-colors">
+                Ver todos <ArrowRight size={13} />
+              </Link>
             </div>
-            <Link href="/" className="text-[12px] font-semibold text-muted-foreground hover:text-primary uppercase tracking-wider flex items-center gap-1 transition-colors">
-              Ver todos <ArrowRight size={13} />
-            </Link>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              {recentPosts.slice(0, 3).map((post) => (
+                <article key={post.id} className="group bg-card border border-border overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-lg rounded">
+                  <Link href={`/post/${post.slug}`} className="flex flex-col flex-1">
+                    <div className="relative overflow-hidden" style={{ height: "170px" }}>
+                      <img
+                        src={optimizeImageUrl(post.img, 450, 260)}
+                        alt={post.title.replace(/<[^>]*>/g, "")}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        style={{ objectPosition: post.imgFocalPoint || "center" }}
+                        loading="lazy"
+                      />
+                      {post.tag && (
+                        <span className={`absolute top-2 left-2 text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-sm ${TAG_COLORS[post.tag] || "bg-[#252525] text-white"}`}>
+                          {post.tag}
+                        </span>
+                      )}
+                    </div>
+                    <div className="p-4 flex-1 flex flex-col justify-between">
+                      <SafeHtml tag="h3" style={TEKO} className="text-[20px] font-semibold uppercase leading-tight text-foreground mb-2 group-hover:text-primary transition-colors" html={post.title} />
+                      {post.readTime && (
+                        <span className="text-[11.5px] text-muted-foreground flex items-center gap-1">
+                          <Clock size={11} className="text-primary" /> {post.readTime}
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+                </article>
+              ))}
+            </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            {recentPosts.slice(0, 3).map((post) => (
-              <article key={post.id} className="group bg-card border border-border overflow-hidden flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-lg rounded">
-                <Link href={`/post/${post.slug}`} className="flex flex-col flex-1">
-                  <div className="relative overflow-hidden" style={{ height: "170px" }}>
-                    <img 
-                      src={optimizeImageUrl(post.img, 450, 260)} 
-                      alt={post.title.replace(/<[^>]*>/g, "")} 
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                      style={{ objectPosition: post.imgFocalPoint || "center" }}
-                      loading="lazy"
-                    />
-                    <span className={`absolute top-2 left-2 text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-sm ${TAG_COLORS[post.tag] || "bg-[#252525] text-white"}`}>
-                      {post.tag}
-                    </span>
-                  </div>
-                  <div className="p-4 flex-1 flex flex-col justify-between">
-                    <SafeHtml tag="h3" style={TEKO} className="text-[20px] font-semibold uppercase leading-tight text-foreground mb-2 group-hover:text-primary transition-colors" html={post.title} />
-                    <span className="text-[11.5px] text-muted-foreground flex items-center gap-1">
-                      <Clock size={11} className="text-primary" /> {post.readTime}
-                    </span>
-                  </div>
-                </Link>
-              </article>
-            ))}
-          </div>
-        </div>
+        )}
 
       </div>
     </div>

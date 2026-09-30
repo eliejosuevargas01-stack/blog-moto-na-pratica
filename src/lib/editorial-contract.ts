@@ -1,12 +1,51 @@
 export type EditorialType =
   | "NEWS"
+  | "ANALYSIS"
   | "BUYING_GUIDE"
   | "COMPARISON"
-  | "MAINTENANCE"
+  | "MAINTENANCE_GUIDE"
   | "EXPLAINER"
-  | "MOTORSPORT"
+  | "MOTORSPORT_REPORT"
   | "PERSONAL_EXPERIENCE"
-  | "DATA_STUDY";
+  | "DATA_STUDY"
+  | "REVIEW_VERIFIED";
+
+export const CANONICAL_EDITORIAL_TYPES: EditorialType[] = [
+  "NEWS",
+  "ANALYSIS",
+  "BUYING_GUIDE",
+  "COMPARISON",
+  "MAINTENANCE_GUIDE",
+  "EXPLAINER",
+  "MOTORSPORT_REPORT",
+  "PERSONAL_EXPERIENCE",
+  "DATA_STUDY",
+  "REVIEW_VERIFIED",
+];
+
+const LEGACY_EDITORIAL_TYPE_ALIASES: Record<string, EditorialType> = {
+  MAINTENANCE: "MAINTENANCE_GUIDE",
+  MOTORSPORT: "MOTORSPORT_REPORT",
+};
+
+export function normalizeEditorialType(
+  rawType: any,
+  personalExperienceVerified?: boolean
+): EditorialType | undefined {
+  if (typeof rawType !== "string" || !rawType.trim()) return undefined;
+  const upper = rawType.trim().toUpperCase();
+
+  const mappedType = LEGACY_EDITORIAL_TYPE_ALIASES[upper] || upper;
+
+  if (CANONICAL_EDITORIAL_TYPES.includes(mappedType as EditorialType)) {
+    if (mappedType === "REVIEW_VERIFIED" && !personalExperienceVerified) {
+      return undefined;
+    }
+    return mappedType as EditorialType;
+  }
+
+  return undefined;
+}
 
 export type TrafficIntent =
   | "SEARCH"
@@ -17,7 +56,7 @@ export type TrafficIntent =
 
 export interface AuthorIdentity {
   name: string;
-  slug: string;
+  slug?: string;
   type: "PERSON" | "ORGANIZATION";
   role?: string;
   profileUrl?: string;
@@ -61,17 +100,43 @@ export interface ArticleViewModel {
   excerpt: string;
   content: string;
   blocks: any[];
-  img: string;
+  img?: string;
   imgFocalPoint: string;
-  tag: string;
+  tag?: string;
   seoKeywords?: string;
   audioUrl?: string;
-  likes: number;
-  views: number;
-  readTime: string;
+  likes?: number;
+  views?: number;
+  readTime?: string;
   lang: string;
   translationGroupId?: number | null;
   meta: ArticleEditorialMeta;
+}
+
+/**
+ * Normaliza e valida URLs externas (deve começar com http:// ou https://).
+ * Descarta URLs inseguras ou protocolos maliciosos como javascript:.
+ */
+export function sanitizeExternalUrl(url?: string | null): string | undefined {
+  if (!url || typeof url !== "string") return undefined;
+  const trimmed = url.trim();
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+  return undefined;
+}
+
+/**
+ * Normaliza e valida URLs de perfil ou links internos/externos.
+ * Permite caminhos internos iniciados por '/' ou URLs http(s)://.
+ */
+export function sanitizeProfileUrl(url?: string | null): string | undefined {
+  if (!url || typeof url !== "string") return undefined;
+  const trimmed = url.trim();
+  if (/^(https?:\/\/|\/)/i.test(trimmed)) {
+    return trimmed;
+  }
+  return undefined;
 }
 
 /**
@@ -88,7 +153,7 @@ export function normalizePublishedDate(inputDate?: Date | string | number | null
 
 /**
  * Normaliza data de modificação / atualização.
- * Retorna Date válido somente se houver um valor real.
+ * Retorna Date válido somente se houver um valor real em campo editorial dedicado.
  */
 export function normalizeModifiedDate(inputDate?: Date | string | number | null): Date | null {
   if (!inputDate) return null;
@@ -115,35 +180,38 @@ export function shouldShowUpdatedDate(
 /**
  * Normalizador seguro que transforma um objeto de post em um ArticleViewModel.
  *
- * Princípio inviolável:
- * DADO AUSENTE -> INFORMAÇÃO AUSENTE OU ESTADO NEUTRO.
- * NUNCA inferir autoria, tipo editorial, fontes ou experiência pessoal
- * a partir de títulos, slugs, tags, categorias ou conteúdo textual.
+ * Princípios invioláveis:
+ * 1. DADO AUSENTE -> INFORMAÇÃO AUSENTE OU ESTADO NEUTRO.
+ * 2. NUNCA inferir autoria, tipo editorial, fontes ou experiência pessoal.
+ * 3. NÃO usar o updatedAt técnico do Prisma como data de modificação editorial (views incrementam updatedAt).
+ * 4. NÃO fabricar valores arbitrários para tag, readTime ou views.
  */
 export function buildArticleViewModel(post: any): ArticleViewModel {
   if (!post) {
     throw new Error("Cannot build ArticleViewModel from null or undefined post");
   }
 
-  // 1. Datas
-  const publishedAt = normalizePublishedDate(post.createdAt ?? post.date ?? post.publishedAt);
-  const modifiedAt = normalizeModifiedDate(post.updatedAt ?? post.modifiedAt);
+  // 1. Datas (Semântica: publishedAt ?? date ?? createdAt)
+  const publishedAt = normalizePublishedDate(post.publishedAt ?? post.date ?? post.createdAt);
 
-  // 2. Autoria (Somente se explicitamente fornecida nos dados do post)
+  // IMPORTANTE: Não usar post.updatedAt técnico do Prisma! Apenas campos editoriais explícitos.
+  const modifiedAt = normalizeModifiedDate(post.modifiedAt ?? post.editorialUpdatedAt);
+
+  // 2. Autoria (Somente se explicitamente fornecida; slug opcional, sem criar de nome)
   let author: AuthorIdentity | undefined = undefined;
   if (post.author && typeof post.author === "object" && post.author.name) {
+    const rawProfileUrl = post.author.profileUrl ? String(post.author.profileUrl) : undefined;
     author = {
       name: String(post.author.name),
-      slug: String(post.author.slug || post.author.name.toLowerCase().replace(/\s+/g, "-")),
+      slug: post.author.slug ? String(post.author.slug) : undefined,
       type: post.author.type === "ORGANIZATION" ? "ORGANIZATION" : "PERSON",
       role: post.author.role ? String(post.author.role) : undefined,
-      profileUrl: post.author.profileUrl ? String(post.author.profileUrl) : undefined,
+      profileUrl: sanitizeProfileUrl(rawProfileUrl),
       avatarUrl: post.author.avatarUrl ? String(post.author.avatarUrl) : undefined,
     };
   } else if (typeof post.authorName === "string" && post.authorName.trim().length > 0) {
     author = {
       name: post.authorName.trim(),
-      slug: post.authorName.trim().toLowerCase().replace(/\s+/g, "-"),
       type: "PERSON",
     };
   }
@@ -153,46 +221,47 @@ export function buildArticleViewModel(post: any): ArticleViewModel {
   if (post.reviewer && typeof post.reviewer === "object" && post.reviewer.name) {
     reviewer = {
       name: String(post.reviewer.name),
-      slug: String(post.reviewer.slug || post.reviewer.name.toLowerCase().replace(/\s+/g, "-")),
+      slug: post.reviewer.slug ? String(post.reviewer.slug) : undefined,
       type: post.reviewer.type === "ORGANIZATION" ? "ORGANIZATION" : "PERSON",
       role: post.reviewer.role ? String(post.reviewer.role) : undefined,
     };
   }
 
-  // 4. Experiência Pessoal Verificada
-  // APENAS se o campo booleano personalExperienceVerified for EXPLICITAMENTE true.
-  // Proibido inferir por tag, categoria, título ou slug!
+  // 4. Experiência Pessoal Verificada (APENAS se explicitamente true)
   const personalExperienceVerified = post.personalExperienceVerified === true;
 
-  // 5. Fontes (Somente se array estruturado existir nos dados)
+  // 5. Fontes (Sanitiza URLs e descarta URLs inseguras)
   let sources: EditorialSource[] | undefined = undefined;
   if (Array.isArray(post.sources) && post.sources.length > 0) {
-    sources = post.sources.map((s: any) => ({
-      url: String(s.url || ""),
-      title: s.title ? String(s.title) : undefined,
-      publisher: s.publisher ? String(s.publisher) : undefined,
-      sourceType: s.sourceType ? String(s.sourceType) : undefined,
-      primarySource: Boolean(s.primarySource),
-    })).filter((s: EditorialSource) => s.url.length > 0);
+    const parsedSources = post.sources
+      .map((s: any) => {
+        const cleanUrl = sanitizeExternalUrl(s.url);
+        if (!cleanUrl) return null;
+        return {
+          url: cleanUrl,
+          title: s.title ? String(s.title) : undefined,
+          publisher: s.publisher ? String(s.publisher) : undefined,
+          sourceType: s.sourceType ? String(s.sourceType) : undefined,
+          primarySource: Boolean(s.primarySource),
+        };
+      })
+      .filter((s: EditorialSource | null): s is EditorialSource => s !== null);
+
+    if (parsedSources.length > 0) {
+      sources = parsedSources;
+    }
   }
 
-  // 6. Type e TrafficIntent (Somente se explicitamente fornecido e válido)
-  const VALID_TYPES: EditorialType[] = [
-    "NEWS",
-    "BUYING_GUIDE",
-    "COMPARISON",
-    "MAINTENANCE",
-    "EXPLAINER",
-    "MOTORSPORT",
-    "PERSONAL_EXPERIENCE",
-    "DATA_STUDY",
-  ];
-  const editorialType = VALID_TYPES.includes(post.editorialType) ? (post.editorialType as EditorialType) : undefined;
+  // 6. Type e TrafficIntent (Somente se explicitamente fornecidos e válidos via adapter)
+  const editorialType = normalizeEditorialType(
+    post.editorialType,
+    personalExperienceVerified
+  );
 
   const VALID_INTENTS: TrafficIntent[] = ["SEARCH", "DISCOVER", "NEWS", "EVERGREEN", "AUTHORITY"];
   const trafficIntent = VALID_INTENTS.includes(post.trafficIntent) ? (post.trafficIntent as TrafficIntent) : undefined;
 
-  // 7. Disclosure e Correção (Somente se explicitamente fornecidos)
+  // 7. Disclosure e Correção
   const disclosure = typeof post.disclosure === "string" && post.disclosure.trim().length > 0
     ? post.disclosure.trim()
     : undefined;
@@ -207,6 +276,13 @@ export function buildArticleViewModel(post: any): ArticleViewModel {
     };
   }
 
+  // 8. Campos opcionais sem defaults arbitrários
+  const tag = typeof post.tag === "string" && post.tag.trim().length > 0 ? post.tag.trim() : undefined;
+  const readTime = typeof post.readTime === "string" && post.readTime.trim().length > 0 ? post.readTime.trim() : undefined;
+  const views = typeof post.views === "number" ? post.views : undefined;
+  const likes = typeof post.likes === "number" ? post.likes : undefined;
+  const img = typeof post.img === "string" && post.img.trim().length > 0 ? post.img.trim() : undefined;
+
   return {
     id: String(post.id ?? ""),
     slug: String(post.slug ?? ""),
@@ -214,14 +290,14 @@ export function buildArticleViewModel(post: any): ArticleViewModel {
     excerpt: String(post.excerpt ?? ""),
     content: String(post.content ?? ""),
     blocks: Array.isArray(post.blocks) ? post.blocks : typeof post.blocks === "string" ? parseJsonBlocks(post.blocks) : [],
-    img: String(post.img ?? ""),
+    img,
     imgFocalPoint: String(post.imgFocalPoint ?? "center"),
-    tag: String(post.tag ?? "Geral"),
+    tag,
     seoKeywords: post.seoKeywords ? String(post.seoKeywords) : undefined,
     audioUrl: post.audioUrl ? String(post.audioUrl) : undefined,
-    likes: typeof post.likes === "number" ? post.likes : 0,
-    views: typeof post.views === "number" ? post.views : 0,
-    readTime: String(post.readTime ?? "3 min"),
+    likes,
+    views,
+    readTime,
     lang: String(post.lang ?? "pt"),
     translationGroupId: typeof post.translationGroupId === "number" ? post.translationGroupId : null,
     meta: {
@@ -271,7 +347,6 @@ export function buildArticleStructuredData(
   const cleanTitle = viewModel.title.replace(/<[^>]*>/g, "").trim();
   const cleanExcerpt = viewModel.excerpt ? viewModel.excerpt.replace(/<[^>]*>/g, "").trim() : "";
 
-  // Schema de Artigo (NewsArticle apenas se editorialType for EXPLICITAMENTE NEWS)
   const schemaType = viewModel.meta.editorialType === "NEWS" ? "NewsArticle" : "Article";
 
   const schema: Record<string, any> = {
