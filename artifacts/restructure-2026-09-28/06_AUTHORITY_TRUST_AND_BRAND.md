@@ -42,9 +42,11 @@ Não inflar credenciais.
 
 ## 5. Redação Moto na Prática
 
-Criar entidade editorial institucional para conteúdos de pesquisa.
+Criar entidade editorial institucional para conteúdos de pesquisa quando houver atribuição explícita.
 Não fingir equipe humana inexistente.
-Descrição pode explicar que é a assinatura editorial do portal.
+Descrição pode explicar que é a identidade/assinatura institucional do portal.
+
+**Regra:** a existência dessa entidade não autoriza preencher autoria ausente. `Redação Moto na Prática` só é autor quando o post tiver essa autoria persistida explicitamente.
 
 ## 6. Transparência
 
@@ -85,7 +87,7 @@ Fontes secundárias continuam úteis para contexto.
 
 ## 9. Correções
 
-Criar endereço para reporte.
+Disponibilizar canal verificável para reporte. Enquanto não existir email institucional confirmado/configurado, usar a rota `/contato` em vez de inventar endereço.
 Correção material deve aparecer no artigo.
 
 Log deve informar:
@@ -112,7 +114,7 @@ Perfis prioritários:
 
 ## 11. Email de domínio
 
-Usar endereços institucionais do domínio para contato/redação.
+Quando endereços institucionais reais estiverem configurados, usá-los para contato/redação.
 Evitar comunicação pública principal por email genérico gratuito.
 
 ## 12. Fonte primária própria
