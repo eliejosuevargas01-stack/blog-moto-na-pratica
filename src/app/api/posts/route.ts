@@ -5,6 +5,7 @@ import { processImageBase64, saveAudioBuffer, calculateReadTime } from "@/lib/im
 import { toNumericGroupId } from "../../data";
 import { verifyM2MAuth } from "@/lib/m2m";
 import { verifyAdminToken } from "@/lib/auth";
+import { validateEditorialInput, applyEditorialPersistenceTransaction } from "@/lib/editorial-persistence";
 
 async function isAuthorizedAdminOrM2M(request: Request): Promise<boolean> {
   const cookieHeader = request.headers.get("cookie") || "";
@@ -427,6 +428,31 @@ export async function POST(req: Request) {
       const createdPosts: any[] = [];
       const extractedMentionedSlugs: Set<string> = new Set(explicitMentionedSlugs);
 
+      // Editorial V2: extract and validate once from body-level fields
+      const editorialFieldNames = [
+        "editorialType", "trafficIntent", "authorId", "reviewerId",
+        "researchId", "personalExperienceVerified", "factCheckedAt",
+        "disclosure", "correctionStatus", "firstPublishedAt",
+        "editorialModifiedAt", "updatedReason", "sources", "corrections",
+      ];
+      const rawEditorial: Record<string, any> = {};
+      let hasEditorialV2 = false;
+      for (const f of editorialFieldNames) {
+        const val = body[f] ?? output[f];
+        if (val !== undefined) {
+          rawEditorial[f] = val;
+          hasEditorialV2 = true;
+        }
+      }
+      let validatedEditorial: any = null;
+      if (hasEditorialV2) {
+        const vResult = validateEditorialInput(rawEditorial);
+        if (vResult.error) {
+          return NextResponse.json({ error: vResult.error }, { status: 400 });
+        }
+        validatedEditorial = vResult.validated;
+      }
+
       const langs = ["pt", "en", "es"];
 
       const existingGroupPosts = translationGroupId ? await prisma.post.findMany({
@@ -524,48 +550,60 @@ export async function POST(req: Request) {
 
         let post;
         if (existingPostForLang) {
-          post = await prisma.post.update({
-            where: { id: existingPostForLang.id },
-            data: {
-              slug: finalSlug,
-              tag: postTag,
-              category: postTag,
-              title: langData.title,
-              excerpt: langData.summary || langData.title,
-              readTime: calculatedReadTime,
-              img: featuredImg,
-              audioUrl: finalAudioUrl,
-              status: postStatus,
-              blocks,
-              seoTitle: langData["meta-title"] || langData.title,
-              seoDescription: langData["meta-description"] || langData.summary,
-              seoKeywords: langData["meta-tags"] || `${postTag}, Moto na Prática`,
-              translationGroupId,
-              lang,
-              updatedAt: new Date(),
+          post = await prisma.$transaction(async (tx) => {
+            const p = await tx.post.update({
+              where: { id: existingPostForLang.id },
+              data: {
+                slug: finalSlug,
+                tag: postTag,
+                category: postTag,
+                title: langData.title,
+                excerpt: langData.summary || langData.title,
+                readTime: calculatedReadTime,
+                img: featuredImg,
+                audioUrl: finalAudioUrl,
+                status: postStatus,
+                blocks,
+                seoTitle: langData["meta-title"] || langData.title,
+                seoDescription: langData["meta-description"] || langData.summary,
+                seoKeywords: langData["meta-tags"] || `${postTag}, Moto na Prática`,
+                translationGroupId,
+                lang,
+                updatedAt: new Date(),
+              }
+            });
+            if (validatedEditorial) {
+              await applyEditorialPersistenceTransaction(tx, p.id, validatedEditorial, true);
             }
+            return p;
           });
         } else {
-          post = await prisma.post.create({
-            data: {
-              slug: finalSlug,
-              tag: postTag,
-              category: postTag,
-              title: langData.title,
-              excerpt: langData.summary || langData.title,
-              readTime: calculatedReadTime,
-              img: featuredImg,
-              audioUrl: finalAudioUrl,
-              status: postStatus,
-              imgFocalPoint: "center",
-              blocks,
-              seoTitle: langData["meta-title"] || langData.title,
-              seoDescription: langData["meta-description"] || langData.summary,
-              seoKeywords: langData["meta-tags"] || `${postTag}, Moto na Prática`,
-              translationGroupId,
-              lang,
-              date: new Date(),
+          post = await prisma.$transaction(async (tx) => {
+            const p = await tx.post.create({
+              data: {
+                slug: finalSlug,
+                tag: postTag,
+                category: postTag,
+                title: langData.title,
+                excerpt: langData.summary || langData.title,
+                readTime: calculatedReadTime,
+                img: featuredImg,
+                audioUrl: finalAudioUrl,
+                status: postStatus,
+                imgFocalPoint: "center",
+                blocks,
+                seoTitle: langData["meta-title"] || langData.title,
+                seoDescription: langData["meta-description"] || langData.summary,
+                seoKeywords: langData["meta-tags"] || `${postTag}, Moto na Prática`,
+                translationGroupId,
+                lang,
+                date: new Date(),
+              }
+            });
+            if (validatedEditorial) {
+              await applyEditorialPersistenceTransaction(tx, p.id, validatedEditorial, false);
             }
+            return p;
           });
         }
 
@@ -693,49 +731,85 @@ export async function POST(req: Request) {
 
     const singleStatus = body.status || "publicado";
 
+    // Editorial V2 for single-post path
+    const singleEditorialFields = [
+      "editorialType", "trafficIntent", "authorId", "reviewerId",
+      "researchId", "personalExperienceVerified", "factCheckedAt",
+      "disclosure", "correctionStatus", "firstPublishedAt",
+      "editorialModifiedAt", "updatedReason", "sources", "corrections",
+    ];
+    const singleRawEditorial: Record<string, any> = {};
+    let singleHasEditorial = false;
+    for (const f of singleEditorialFields) {
+      if (body[f] !== undefined) {
+        singleRawEditorial[f] = body[f];
+        singleHasEditorial = true;
+      }
+    }
+    let singleValidatedEditorial: any = null;
+    if (singleHasEditorial) {
+      const vResult = validateEditorialInput(singleRawEditorial);
+      if (vResult.error) {
+        return NextResponse.json({ error: vResult.error }, { status: 400 });
+      }
+      singleValidatedEditorial = vResult.validated;
+    }
+
     let post;
     if (existingSinglePost) {
-      post = await prisma.post.update({
-        where: { id: existingSinglePost.id },
-        data: {
-          slug: finalSlug,
-          tag: finalTag,
-          category: finalTag,
-          title,
-          excerpt: excerpt || title,
-          readTime: finalReadTime,
-          audioUrl: finalAudioUrlSingle || existingSinglePost.audioUrl,
-          status: singleStatus,
-          blocks: cleanedBlocks,
-          seoTitle: seoTitle || title,
-          seoDescription: seoDescription || excerpt,
-          seoKeywords: seoKeywords || `${finalTag}, Moto na Prática`,
-          translationGroupId: finalTranslationGroupId || existingSinglePost.translationGroupId,
-          lang: targetLang,
-          updatedAt: new Date(),
+      post = await prisma.$transaction(async (tx) => {
+        const p = await tx.post.update({
+          where: { id: existingSinglePost.id },
+          data: {
+            slug: finalSlug,
+            tag: finalTag,
+            category: finalTag,
+            title,
+            excerpt: excerpt || title,
+            readTime: finalReadTime,
+            audioUrl: finalAudioUrlSingle || existingSinglePost.audioUrl,
+            status: singleStatus,
+            blocks: cleanedBlocks,
+            seoTitle: seoTitle || title,
+            seoDescription: seoDescription || excerpt,
+            seoKeywords: seoKeywords || `${finalTag}, Moto na Prática`,
+            translationGroupId: finalTranslationGroupId || existingSinglePost.translationGroupId,
+            lang: targetLang,
+            updatedAt: new Date(),
+          }
+        });
+        if (singleValidatedEditorial) {
+          await applyEditorialPersistenceTransaction(tx, p.id, singleValidatedEditorial, true);
         }
+        return p;
       });
     } else {
-      post = await prisma.post.create({
-        data: {
-          slug: finalSlug,
-          tag: finalTag,
-          category: finalTag,
-          title,
-          excerpt: excerpt || title,
-          readTime: finalReadTime,
-          img: img || "",
-          imgFocalPoint: imgFocalPoint || "center",
-          audioUrl: finalAudioUrlSingle,
-          status: singleStatus,
-          blocks: cleanedBlocks,
-          seoTitle: seoTitle || title,
-          seoDescription: seoDescription || excerpt,
-          seoKeywords: seoKeywords || `${finalTag}, Moto na Prática`,
-          translationGroupId: finalTranslationGroupId || null,
-          lang: targetLang,
-          date: new Date(),
-        },
+      post = await prisma.$transaction(async (tx) => {
+        const p = await tx.post.create({
+          data: {
+            slug: finalSlug,
+            tag: finalTag,
+            category: finalTag,
+            title,
+            excerpt: excerpt || title,
+            readTime: finalReadTime,
+            img: img || "",
+            imgFocalPoint: imgFocalPoint || "center",
+            audioUrl: finalAudioUrlSingle,
+            status: singleStatus,
+            blocks: cleanedBlocks,
+            seoTitle: seoTitle || title,
+            seoDescription: seoDescription || excerpt,
+            seoKeywords: seoKeywords || `${finalTag}, Moto na Prática`,
+            translationGroupId: finalTranslationGroupId || null,
+            lang: targetLang,
+            date: new Date(),
+          },
+        });
+        if (singleValidatedEditorial) {
+          await applyEditorialPersistenceTransaction(tx, p.id, singleValidatedEditorial, false);
+        }
+        return p;
       });
     }
 

@@ -88,6 +88,21 @@ export async function savePostAction(data: {
   lang?: string;
   blocks?: any[];
   translationGroupId?: number | string | null;
+  // --- Editorial V2 fields (all optional; omitted = preserve on update) ---
+  editorialType?: string | null;
+  trafficIntent?: string | null;
+  authorId?: string | null;
+  reviewerId?: string | null;
+  researchId?: string | null;
+  personalExperienceVerified?: boolean;
+  factCheckedAt?: string | null;
+  disclosure?: string | null;
+  correctionStatus?: string | null;
+  firstPublishedAt?: string | null;
+  editorialModifiedAt?: string | null;
+  updatedReason?: string | null;
+  sources?: any[] | null;
+  corrections?: any[] | null;
 }) {
   await requireAdmin("savePostAction");
   try {
@@ -112,26 +127,54 @@ export async function savePostAction(data: {
         ? data.audioUrlsByLang[lang]
         : (data.audioUrl || null);
 
-      // Atualização do post alvo
-      await prisma.post.update({
-        where: { id: currentPost.id },
-        data: {
-          slug: finalSlug,
-          tag: data.tag,
-          category: data.category,
-          title: data.title,
-          excerpt: data.excerpt,
-          readTime: finalReadTime,
-          img: data.img,
-          imgFocalPoint: data.imgFocalPoint || "50% 50%",
-          status: data.status || currentPost.status || "publicado",
-          blocks: data.blocks as any,
-          seoTitle: data.seoTitle || data.title,
-          seoDescription: data.seoDescription || data.excerpt,
-          seoKeywords: data.seoKeywords || "",
-          audioUrl: targetAudio,
-          lang: lang
+      // Atualização do post alvo com transação editorial V2
+      const savedPost = await prisma.$transaction(async (tx) => {
+        const p = await tx.post.update({
+          where: { id: currentPost.id },
+          data: {
+            slug: finalSlug,
+            tag: data.tag,
+            category: data.category,
+            title: data.title,
+            excerpt: data.excerpt,
+            readTime: finalReadTime,
+            img: data.img,
+            imgFocalPoint: data.imgFocalPoint || "50% 50%",
+            status: data.status || currentPost.status || "publicado",
+            blocks: data.blocks as any,
+            seoTitle: data.seoTitle || data.title,
+            seoDescription: data.seoDescription || data.excerpt,
+            seoKeywords: data.seoKeywords || "",
+            audioUrl: targetAudio,
+            lang: lang
+          }
+        });
+
+        // Editorial V2: collect explicit fields from data (omitted = preserve)
+        const editorialFields = [
+          "editorialType", "trafficIntent", "authorId", "reviewerId",
+          "researchId", "personalExperienceVerified", "factCheckedAt",
+          "disclosure", "correctionStatus", "firstPublishedAt",
+          "editorialModifiedAt", "updatedReason", "sources", "corrections",
+        ] as const;
+        const editorialData: Record<string, any> = {};
+        let hasEditorial = false;
+        for (const f of editorialFields) {
+          if ((data as any)[f] !== undefined) {
+            editorialData[f] = (data as any)[f];
+            hasEditorial = true;
+          }
         }
+        if (hasEditorial) {
+          const { validateEditorialInput, applyEditorialPersistenceTransaction } = await import("../lib/editorial-persistence");
+          const validation = validateEditorialInput(editorialData);
+          if (validation.error) {
+            throw new Error(validation.error);
+          }
+          await applyEditorialPersistenceTransaction(tx, p.id, validation.validated!, true);
+        }
+
+        return p;
       });
 
       // Sincronizar imagens (e áudios específicos de idioma) com todos os posts do mesmo grupo de tradução
@@ -195,26 +238,54 @@ export async function savePostAction(data: {
 
       const numericGroupId = data.translationGroupId ? toNumericGroupId(data.translationGroupId) : null;
 
-      await prisma.post.create({
-        data: {
-          slug: data.slug,
-          tag: data.tag,
-          category: data.category,
-          title: data.title,
-          excerpt: data.excerpt,
-          readTime: finalReadTime,
-          img: data.img,
-          imgFocalPoint: data.imgFocalPoint || "50% 50%",
-          audioUrl: data.audioUrl || null,
-          status: data.status || "publicado",
-          blocks: data.blocks as any,
-          seoTitle: data.seoTitle || data.title,
-          seoDescription: data.seoDescription || data.excerpt,
-          seoKeywords: data.seoKeywords || "",
-          lang: lang,
-          translationGroupId: numericGroupId,
-          date: new Date()
+      const createdPost = await prisma.$transaction(async (tx) => {
+        const p = await tx.post.create({
+          data: {
+            slug: data.slug,
+            tag: data.tag,
+            category: data.category,
+            title: data.title,
+            excerpt: data.excerpt,
+            readTime: finalReadTime,
+            img: data.img,
+            imgFocalPoint: data.imgFocalPoint || "50% 50%",
+            audioUrl: data.audioUrl || null,
+            status: data.status || "publicado",
+            blocks: data.blocks as any,
+            seoTitle: data.seoTitle || data.title,
+            seoDescription: data.seoDescription || data.excerpt,
+            seoKeywords: data.seoKeywords || "",
+            lang: lang,
+            translationGroupId: numericGroupId,
+            date: new Date()
+          }
+        });
+
+        // Editorial V2: collect explicit fields from data (omitted = no editorial data)
+        const editorialFields = [
+          "editorialType", "trafficIntent", "authorId", "reviewerId",
+          "researchId", "personalExperienceVerified", "factCheckedAt",
+          "disclosure", "correctionStatus", "firstPublishedAt",
+          "editorialModifiedAt", "updatedReason", "sources", "corrections",
+        ] as const;
+        const editorialData: Record<string, any> = {};
+        let hasEditorial = false;
+        for (const f of editorialFields) {
+          if ((data as any)[f] !== undefined) {
+            editorialData[f] = (data as any)[f];
+            hasEditorial = true;
+          }
         }
+        if (hasEditorial) {
+          const { validateEditorialInput, applyEditorialPersistenceTransaction } = await import("../lib/editorial-persistence");
+          const validation = validateEditorialInput(editorialData);
+          if (validation.error) {
+            throw new Error(validation.error);
+          }
+          await applyEditorialPersistenceTransaction(tx, p.id, validation.validated!, false);
+        }
+
+        return p;
       });
     }
 

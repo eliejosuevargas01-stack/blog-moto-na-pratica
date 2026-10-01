@@ -483,6 +483,21 @@ function AdminDashboardContent({ initialPosts, initialPages }: AdminDashboardPro
     seoDescription: "",
     seoKeywords: "",
     blocks: [] as Array<{ text: string; image?: string; focalPoint?: string; alt?: string }>,
+    // Editorial V2
+    editorialType: "" as string,
+    trafficIntent: "" as string,
+    authorId: "" as string,
+    reviewerId: "" as string,
+    researchId: "" as string,
+    personalExperienceVerified: false,
+    factCheckedAt: "" as string,
+    disclosure: "" as string,
+    correctionStatus: "" as string,
+    firstPublishedAt: "" as string,
+    editorialModifiedAt: "" as string,
+    updatedReason: "" as string,
+    sourcesJson: "" as string,
+    correctionsJson: "" as string,
   });
 
   const [activeModal, setActiveModal] = useState<{
@@ -574,6 +589,21 @@ function AdminDashboardContent({ initialPosts, initialPages }: AdminDashboardPro
       seoDescription: post.seoDescription || "",
       seoKeywords: post.seoKeywords || "",
       blocks: parsedBlocks,
+      // Editorial V2
+      editorialType: post.editorialType || "",
+      trafficIntent: post.trafficIntent || "",
+      authorId: post.authorId || "",
+      reviewerId: post.reviewerId || "",
+      researchId: post.researchId || "",
+      personalExperienceVerified: post.personalExperienceVerified === true,
+      factCheckedAt: post.factCheckedAt ? new Date(post.factCheckedAt).toISOString().slice(0, 16) : "",
+      disclosure: post.disclosure || "",
+      correctionStatus: post.correctionStatus || "",
+      firstPublishedAt: post.firstPublishedAt ? new Date(post.firstPublishedAt).toISOString().slice(0, 16) : "",
+      editorialModifiedAt: post.editorialModifiedAt ? new Date(post.editorialModifiedAt).toISOString().slice(0, 16) : "",
+      updatedReason: post.updatedReason || "",
+      sourcesJson: post.sources && post.sources.length > 0 ? JSON.stringify(post.sources, null, 2) : "",
+      correctionsJson: post.corrections && post.corrections.length > 0 ? JSON.stringify(post.corrections, null, 2) : "",
     });
   };
 
@@ -596,6 +626,20 @@ function AdminDashboardContent({ initialPosts, initialPages }: AdminDashboardPro
       seoDescription: "",
       seoKeywords: "",
       blocks: [],
+      editorialType: "",
+      trafficIntent: "",
+      authorId: "",
+      reviewerId: "",
+      researchId: "",
+      personalExperienceVerified: false,
+      factCheckedAt: "",
+      disclosure: "",
+      correctionStatus: "",
+      firstPublishedAt: "",
+      editorialModifiedAt: "",
+      updatedReason: "",
+      sourcesJson: "",
+      correctionsJson: "",
     });
   };
 
@@ -625,12 +669,40 @@ function AdminDashboardContent({ initialPosts, initialPages }: AdminDashboardPro
       }
     });
 
-    const payload = {
+    const payload: Record<string, any> = {
       ...(editingPost ? { id: editingPost.id } : {}),
-      ...postData
+      ...postData,
     };
 
-    const res = await savePostAction(payload);
+    // Editorial V2: transform form state to API fields
+    // Only include V2 fields that the user actually set (non-empty = explicit)
+    // Empty string = omit (preserve on update)
+    if (postData.editorialType) payload.editorialType = postData.editorialType;
+    if (postData.trafficIntent) payload.trafficIntent = postData.trafficIntent;
+    if (postData.authorId) payload.authorId = postData.authorId;
+    if (postData.reviewerId) payload.reviewerId = postData.reviewerId;
+    if (postData.researchId) payload.researchId = postData.researchId;
+    if (postData.personalExperienceVerified === true) payload.personalExperienceVerified = true;
+    if (postData.factCheckedAt) payload.factCheckedAt = new Date(postData.factCheckedAt).toISOString();
+    if (postData.disclosure) payload.disclosure = postData.disclosure;
+    if (postData.correctionStatus) payload.correctionStatus = postData.correctionStatus;
+    if (postData.firstPublishedAt) payload.firstPublishedAt = new Date(postData.firstPublishedAt).toISOString();
+    if (postData.editorialModifiedAt) payload.editorialModifiedAt = new Date(postData.editorialModifiedAt).toISOString();
+    if (postData.updatedReason) payload.updatedReason = postData.updatedReason;
+
+    // Parse JSON textareas for sources/corrections
+    if (postData.sourcesJson && postData.sourcesJson.trim()) {
+      try { payload.sources = JSON.parse(postData.sourcesJson); } catch { /* skip invalid JSON */ }
+    }
+    if (postData.correctionsJson && postData.correctionsJson.trim()) {
+      try { payload.corrections = JSON.parse(postData.correctionsJson); } catch { /* skip invalid JSON */ }
+    }
+
+    // Remove form-only fields from payload
+    delete payload.sourcesJson;
+    delete payload.correctionsJson;
+
+    const res = await savePostAction(payload as any);
     if (!res.error) {
       setMessage({ type: "success", text: "Post salvo com sucesso!" });
       handleCancelPostEdit();
@@ -1104,6 +1176,120 @@ function AdminDashboardContent({ initialPosts, initialPages }: AdminDashboardPro
                         </div>
                       </div>
                     ))}
+                  </div>
+                </div>
+
+                {/* Editorial V2 — Metadados Editoriais */}
+                <div className="border border-border rounded-sm p-4 space-y-4 bg-[#0D0D0D]">
+                  <h3 className="text-[13px] font-bold text-primary uppercase tracking-wider">Metadados Editoriais V2</h3>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[11px] text-muted-foreground uppercase tracking-widest block font-bold">Tipo Editorial</label>
+                      <select
+                        value={postForm.editorialType}
+                        onChange={(e) => setPostForm({ ...postForm, editorialType: e.target.value })}
+                        className="w-full bg-[#181818] border border-border rounded-sm text-[13px] text-foreground px-3 py-2 outline-none focus:border-primary/50"
+                      >
+                        <option value="">— Nenhum —</option>
+                        <option value="NEWS">Notícia</option>
+                        <option value="ANALYSIS">Análise</option>
+                        <option value="BUYING_GUIDE">Guia de Compra</option>
+                        <option value="COMPARISON">Comparativo</option>
+                        <option value="MAINTENANCE_GUIDE">Guia de Manutenção</option>
+                        <option value="EXPLAINER">Explicador</option>
+                        <option value="MOTORSPORT_REPORT">Relatório Motorsport</option>
+                        <option value="PERSONAL_EXPERIENCE">Experiência Pessoal</option>
+                        <option value="DATA_STUDY">Estudo de Dados</option>
+                        <option value="REVIEW_VERIFIED">Review Verificado</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[11px] text-muted-foreground uppercase tracking-widest block font-bold">Intenção de Tráfego</label>
+                      <select
+                        value={postForm.trafficIntent}
+                        onChange={(e) => setPostForm({ ...postForm, trafficIntent: e.target.value })}
+                        className="w-full bg-[#181818] border border-border rounded-sm text-[13px] text-foreground px-3 py-2 outline-none focus:border-primary/50"
+                      >
+                        <option value="">— Nenhum —</option>
+                        <option value="SEARCH">Search</option>
+                        <option value="DISCOVER">Discover</option>
+                        <option value="NEWS">News</option>
+                        <option value="EVERGREEN">Evergreen</option>
+                        <option value="AUTHORITY">Authority</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[11px] text-muted-foreground uppercase tracking-widest block font-bold">Status de Correção</label>
+                      <select
+                        value={postForm.correctionStatus}
+                        onChange={(e) => setPostForm({ ...postForm, correctionStatus: e.target.value })}
+                        className="w-full bg-[#181818] border border-border rounded-sm text-[13px] text-foreground px-3 py-2 outline-none focus:border-primary/50"
+                      >
+                        <option value="">— Nenhum —</option>
+                        <option value="NONE">Nenhuma Correção</option>
+                        <option value="PENDING">Correção Pendente</option>
+                        <option value="CORRECTED">Corrigido</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[11px] text-muted-foreground uppercase tracking-widest block font-bold">ID do Autor</label>
+                      <input type="text" value={postForm.authorId} onChange={(e) => setPostForm({ ...postForm, authorId: e.target.value })} placeholder="UUID do autor (opcional)" className="w-full bg-[#181818] border border-border rounded-sm text-[13px] text-foreground px-3 py-2 font-mono outline-none focus:border-primary/50" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] text-muted-foreground uppercase tracking-widest block font-bold">ID do Revisor</label>
+                      <input type="text" value={postForm.reviewerId} onChange={(e) => setPostForm({ ...postForm, reviewerId: e.target.value })} placeholder="UUID do revisor (opcional)" className="w-full bg-[#181818] border border-border rounded-sm text-[13px] text-foreground px-3 py-2 font-mono outline-none focus:border-primary/50" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] text-muted-foreground uppercase tracking-widest block font-bold">Research ID</label>
+                      <input type="text" value={postForm.researchId} onChange={(e) => setPostForm({ ...postForm, researchId: e.target.value })} placeholder="ID do dossiê n8n (opcional)" className="w-full bg-[#181818] border border-border rounded-sm text-[13px] text-foreground px-3 py-2 font-mono outline-none focus:border-primary/50" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[11px] text-muted-foreground uppercase tracking-widest block font-bold">Fact Check</label>
+                      <input type="datetime-local" value={postForm.factCheckedAt} onChange={(e) => setPostForm({ ...postForm, factCheckedAt: e.target.value })} className="w-full bg-[#181818] border border-border rounded-sm text-[13px] text-foreground px-3 py-2 outline-none focus:border-primary/50" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] text-muted-foreground uppercase tracking-widest block font-bold">Primeira Publicação</label>
+                      <input type="datetime-local" value={postForm.firstPublishedAt} onChange={(e) => setPostForm({ ...postForm, firstPublishedAt: e.target.value })} className="w-full bg-[#181818] border border-border rounded-sm text-[13px] text-foreground px-3 py-2 outline-none focus:border-primary/50" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] text-muted-foreground uppercase tracking-widest block font-bold">Modificação Editorial</label>
+                      <input type="datetime-local" value={postForm.editorialModifiedAt} onChange={(e) => setPostForm({ ...postForm, editorialModifiedAt: e.target.value })} className="w-full bg-[#181818] border border-border rounded-sm text-[13px] text-foreground px-3 py-2 outline-none focus:border-primary/50" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[11px] text-muted-foreground uppercase tracking-widest block font-bold">Motivo da Atualização</label>
+                      <input type="text" value={postForm.updatedReason} onChange={(e) => setPostForm({ ...postForm, updatedReason: e.target.value })} placeholder="Ex: Correção de dados técnicos" className="w-full bg-[#181818] border border-border rounded-sm text-[13px] text-foreground px-3 py-2 outline-none focus:border-primary/50" />
+                    </div>
+                    <div className="flex items-center gap-3 pt-4">
+                      <input type="checkbox" id="personalExp" checked={postForm.personalExperienceVerified} onChange={(e) => setPostForm({ ...postForm, personalExperienceVerified: e.target.checked })} className="accent-primary w-4 h-4" />
+                      <label htmlFor="personalExp" className="text-[12px] text-foreground cursor-pointer">Experiência Pessoal Verificada</label>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] text-muted-foreground uppercase tracking-widest block font-bold">Disclosure / Transparência</label>
+                    <textarea rows={2} value={postForm.disclosure} onChange={(e) => setPostForm({ ...postForm, disclosure: e.target.value })} placeholder="Ex: Este artigo contém links de afiliado" className="w-full bg-[#181818] border border-border rounded-sm text-[13px] text-foreground px-3 py-2 outline-none focus:border-primary/50" />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] text-muted-foreground uppercase tracking-widest block font-bold">Fontes (JSON)</label>
+                    <textarea rows={4} value={postForm.sourcesJson} onChange={(e) => setPostForm({ ...postForm, sourcesJson: e.target.value })} placeholder={'[\n  { "url": "https://...", "role": "PRIMARY", "title": "..." }\n]'} className="w-full bg-[#181818] border border-border rounded-sm text-[12px] text-foreground px-3 py-2 font-mono outline-none focus:border-primary/50" />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] text-muted-foreground uppercase tracking-widest block font-bold">Correções (JSON)</label>
+                    <textarea rows={3} value={postForm.correctionsJson} onChange={(e) => setPostForm({ ...postForm, correctionsJson: e.target.value })} placeholder={'[\n  { "description": "Corrigido erro em ...", "material": true }\n]'} className="w-full bg-[#181818] border border-border rounded-sm text-[12px] text-foreground px-3 py-2 font-mono outline-none focus:border-primary/50" />
                   </div>
                 </div>
 
