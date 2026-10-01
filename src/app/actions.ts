@@ -94,6 +94,7 @@ export async function savePostAction(data: {
   authorId?: string | null;
   reviewerId?: string | null;
   researchId?: string | null;
+  topicId?: string | null;
   personalExperienceVerified?: boolean;
   factCheckedAt?: string | null;
   disclosure?: string | null;
@@ -153,7 +154,7 @@ export async function savePostAction(data: {
         // Editorial V2: collect explicit fields from data (omitted = preserve)
         const editorialFields = [
           "editorialType", "trafficIntent", "authorId", "reviewerId",
-          "researchId", "personalExperienceVerified", "factCheckedAt",
+          "researchId", "topicId", "personalExperienceVerified", "factCheckedAt",
           "disclosure", "correctionStatus", "firstPublishedAt",
           "editorialModifiedAt", "updatedReason", "sources", "corrections",
         ] as const;
@@ -264,7 +265,7 @@ export async function savePostAction(data: {
         // Editorial V2: collect explicit fields from data (omitted = no editorial data)
         const editorialFields = [
           "editorialType", "trafficIntent", "authorId", "reviewerId",
-          "researchId", "personalExperienceVerified", "factCheckedAt",
+          "researchId", "topicId", "personalExperienceVerified", "factCheckedAt",
           "disclosure", "correctionStatus", "firstPublishedAt",
           "editorialModifiedAt", "updatedReason", "sources", "corrections",
         ] as const;

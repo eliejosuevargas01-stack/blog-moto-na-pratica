@@ -52,6 +52,7 @@ export interface ValidatedEditorialData {
   authorId?: string | null;
   reviewerId?: string | null;
   researchId?: string | null;
+  topicId?: string | null;
   personalExperienceVerified?: boolean;
   factCheckedAt?: Date | null;
   disclosure?: string | null;
@@ -151,8 +152,22 @@ export function validateEditorialInput(data: unknown): ValidationResult {
     }
   }
 
-  // 5. String scalars: researchId, disclosure, updatedReason
-  for (const field of ["researchId", "disclosure", "updatedReason"] as const) {
+  // 5. String scalars: researchId, topicId, disclosure, updatedReason
+  // researchId: accept string or number (n8n sends integer id_pesquisa)
+  if (input.researchId !== undefined) {
+    if (input.researchId === null || input.researchId === "") {
+      validated.researchId = null;
+    } else {
+      const strVal = String(input.researchId).trim();
+      if (!strVal) {
+        validated.researchId = null;
+      } else {
+        validated.researchId = strVal;
+      }
+    }
+  }
+
+  for (const field of ["topicId", "disclosure", "updatedReason"] as const) {
     if (input[field] !== undefined) {
       if (input[field] === null || input[field] === "") {
         validated[field] = null;
@@ -207,8 +222,17 @@ export function validateEditorialInput(data: unknown): ValidationResult {
         const cleanSources: EditorialSourceInput[] = [];
         for (let i = 0; i < input.sources.length; i++) {
           const s = input.sources[i];
+          // Normalize: accept string URL → {url, role: "PRIMARY"}
+          if (typeof s === "string") {
+            const cleanUrl = sanitizeExternalUrl(s);
+            if (!cleanUrl) {
+              return { error: `Source at index ${i} has invalid or unsafe URL: ${s}` };
+            }
+            cleanSources.push({ url: cleanUrl, role: "PRIMARY" });
+            continue;
+          }
           if (!s || typeof s !== "object") {
-            return { error: `Source at index ${i} is not a valid object.` };
+            return { error: `Source at index ${i} is not a valid object or URL string.` };
           }
           if (!s.url || typeof s.url !== "string") {
             return { error: `Source at index ${i} is missing a valid URL.` };
@@ -309,7 +333,7 @@ export async function applyEditorialPersistenceTransaction(
 
   // Scalar fields — only set if provided (omitted = preserve)
   const scalarFields = [
-    "editorialType", "trafficIntent", "researchId",
+    "editorialType", "trafficIntent", "researchId", "topicId",
     "personalExperienceVerified", "factCheckedAt", "disclosure",
     "correctionStatus", "firstPublishedAt", "editorialModifiedAt", "updatedReason",
   ] as const;

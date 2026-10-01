@@ -431,17 +431,30 @@ export async function POST(req: Request) {
       // Editorial V2: extract and validate once from body-level fields
       const editorialFieldNames = [
         "editorialType", "trafficIntent", "authorId", "reviewerId",
-        "researchId", "personalExperienceVerified", "factCheckedAt",
+        "researchId", "topicId", "personalExperienceVerified", "factCheckedAt",
         "disclosure", "correctionStatus", "firstPublishedAt",
         "editorialModifiedAt", "updatedReason", "sources", "corrections",
       ];
       const rawEditorial: Record<string, any> = {};
       let hasEditorialV2 = false;
+      // Extract V2 from body → output (root level) first
       for (const f of editorialFieldNames) {
         const val = body[f] ?? output[f];
         if (val !== undefined) {
           rawEditorial[f] = val;
           hasEditorialV2 = true;
+        }
+      }
+      // Also check inside langData (Publisher sends V2 inside output.pt/es/en)
+      // langData-level values override body-level for same field
+      for (const checkLang of ["pt", "en", "es"]) {
+        const ld = output[checkLang];
+        if (!ld || typeof ld !== "object") continue;
+        for (const f of editorialFieldNames) {
+          if (ld[f] !== undefined && rawEditorial[f] === undefined) {
+            rawEditorial[f] = ld[f];
+            hasEditorialV2 = true;
+          }
         }
       }
       let validatedEditorial: any = null;
@@ -734,7 +747,7 @@ export async function POST(req: Request) {
     // Editorial V2 for single-post path
     const singleEditorialFields = [
       "editorialType", "trafficIntent", "authorId", "reviewerId",
-      "researchId", "personalExperienceVerified", "factCheckedAt",
+      "researchId", "topicId", "personalExperienceVerified", "factCheckedAt",
       "disclosure", "correctionStatus", "firstPublishedAt",
       "editorialModifiedAt", "updatedReason", "sources", "corrections",
     ];

@@ -50,6 +50,7 @@ model Post {
   authorId                    String?
   reviewerId                  String?
   researchId                  String?  // Rastreabilidade com dossiê do Deep Research / n8n
+  topicId                     String?  // Rastreabilidade com topic_id do Radar/Diretor n8n (tp_xxxx)
   personalExperienceVerified  Boolean  @default(false)
   factCheckedAt               DateTime?
   disclosure                  String?  @db.Text

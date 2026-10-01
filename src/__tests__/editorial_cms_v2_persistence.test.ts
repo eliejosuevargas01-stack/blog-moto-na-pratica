@@ -178,11 +178,65 @@ describe("CMS/API V2 Editorial Validation & Persistence", () => {
       expect(r.validated).not.toHaveProperty("sources");
       expect(r.validated).not.toHaveProperty("corrections");
     });
-  });
+    // --- n8n Publisher payload adaptations ---
+    it("accepts sources as array of URL strings and normalizes to PRIMARY", () => {
+      const r = validateEditorialInput({
+        sources: ["https://honda.com.br/cg160", "https://yamaha.com.br/fz25"],
+      });
+      expect(r.error).toBeUndefined();
+      expect(r.validated!.sources).toHaveLength(2);
+      expect(r.validated!.sources![0]).toEqual({
+        url: "https://honda.com.br/cg160",
+        role: "PRIMARY",
+      });
+      expect(r.validated!.sources![1]).toEqual({
+        url: "https://yamaha.com.br/fz25",
+        role: "PRIMARY",
+      });
+    });
 
-  // ============================================================
-  // 2. PERSISTENCE TRANSACTION (Prisma boundary mock)
-  // ============================================================
+    it("accepts mixed sources (objects and URL strings)", () => {
+      const r = validateEditorialInput({
+        sources: [
+          "https://honda.com.br",
+          { url: "https://fenabrave.org.br", role: "DATA", title: "Emplacamentos" },
+        ],
+      });
+      expect(r.error).toBeUndefined();
+      expect(r.validated!.sources).toHaveLength(2);
+      expect(r.validated!.sources![0].role).toBe("PRIMARY");
+      expect(r.validated!.sources![1].role).toBe("DATA");
+      expect(r.validated!.sources![1].title).toBe("Emplacamentos");
+    });
+
+    it("rejects string source with invalid URL", () => {
+      expect(validateEditorialInput({ sources: ["not-a-url"] }).error).toBeDefined();
+      expect(validateEditorialInput({ sources: ["javascript:alert(1)"] }).error).toBeDefined();
+    });
+
+    it("accepts topicId as string", () => {
+      const r = validateEditorialInput({ topicId: "tp_9f2c1a04b7d3e8f1" });
+      expect(r.error).toBeUndefined();
+      expect(r.validated!.topicId).toBe("tp_9f2c1a04b7d3e8f1");
+    });
+
+    it("clears topicId with null or empty", () => {
+      expect(validateEditorialInput({ topicId: null }).validated!.topicId).toBeNull();
+      expect(validateEditorialInput({ topicId: "" }).validated!.topicId).toBeNull();
+    });
+
+    it("accepts researchId as number (n8n integer id_pesquisa) and converts to string", () => {
+      const r = validateEditorialInput({ researchId: 12345 });
+      expect(r.error).toBeUndefined();
+      expect(r.validated!.researchId).toBe("12345");
+    });
+
+    it("accepts researchId as string", () => {
+      const r = validateEditorialInput({ researchId: "res-abc-123" });
+      expect(r.error).toBeUndefined();
+      expect(r.validated!.researchId).toBe("res-abc-123");
+    });
+  });
   describe("applyEditorialPersistenceTransaction", () => {
     function createMockTx() {
       return {
@@ -226,6 +280,22 @@ describe("CMS/API V2 Editorial Validation & Persistence", () => {
           editorialType: "NEWS",
           trafficIntent: "SEARCH",
           disclosure: "Artigo patrocinado",
+        }),
+      });
+    });
+
+    it("persists topicId and researchId", async () => {
+      const tx = createMockTx();
+      await applyEditorialPersistenceTransaction(tx, "post-1", {
+        topicId: "tp_9f2c1a04b7d3e8f1",
+        researchId: "12345",
+      }, true);
+
+      expect(tx.post.update).toHaveBeenCalledWith({
+        where: { id: "post-1" },
+        data: expect.objectContaining({
+          topicId: "tp_9f2c1a04b7d3e8f1",
+          researchId: "12345",
         }),
       });
     });
